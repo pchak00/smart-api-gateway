@@ -1,18 +1,12 @@
 package com.prakash.gateaway_service.Controller;
 
 import com.prakash.gateaway_service.DTO.*;
-import com.prakash.gateaway_service.Entity.Plan;
-import com.prakash.gateaway_service.Entity.RouteLimit;
-import com.prakash.gateaway_service.Exception.InvalidCredentialsException;
 import com.prakash.gateaway_service.Repository.PlanRepository;
-import com.prakash.gateaway_service.Repository.RouteLimitRepository;
-import com.prakash.gateaway_service.Service.AbuseDetectionService;
-import com.prakash.gateaway_service.Service.ClientService;
-import com.prakash.gateaway_service.Service.UsageLogService;
+import com.prakash.gateaway_service.Service.*;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.Optional;
 
 @RestController
 @RequestMapping("/admin/clients")
@@ -22,19 +16,27 @@ public class GatewayController {
     private ClientService clientService;
     private AbuseDetectionService abuseDetectionService;
     private PlanRepository planRepository;
-    private RouteLimitRepository routeLimitRepository;
+    private PlanService planService;
+    private RouteLimitService routeLimitService;
 
-    GatewayController(UsageLogService usageLogService, ClientService clientService, AbuseDetectionService abuseDetectionService, PlanRepository planRepository,  RouteLimitRepository routeLimitRepository) {
+    GatewayController(UsageLogService usageLogService, ClientService clientService, AbuseDetectionService abuseDetectionService, PlanRepository planRepository,  RouteLimitService routeLimitService, PlanService planService) {
         this.usageLogService = usageLogService;
         this.clientService = clientService;
         this.abuseDetectionService = abuseDetectionService;
         this.planRepository = planRepository;
-        this.routeLimitRepository = routeLimitRepository;
+        this.planService = planService;
+        this.routeLimitService = routeLimitService;
     }
 
     @PostMapping
     public ClientResponseDto createClient(@RequestBody ClientRequestDto clientRequest) {
         return clientService.addClient(clientRequest);
+    }
+
+    @DeleteMapping("/admin/clients/{id}")
+    public ResponseEntity<Void> deleteClient(@PathVariable Long id) {
+        clientService.deleteClient(id);
+        return ResponseEntity.noContent().build();
     }
 
     @GetMapping
@@ -57,27 +59,24 @@ public class GatewayController {
         return abuseDetectionService.findClientAbuse(clientId);
     }
 
-    @PostMapping("createPlans")
+    @PostMapping("/admin/plans")
     public PlanDto createPlan(@RequestBody PlanDto planDto) {
-        Plan plan = new Plan();
-        plan.setName(planDto.planName());
-        plan.setPrice(planDto.price());
-        plan.setRequestsPerMinute(planDto.requestsPerMinute());
-        planRepository.save(plan);
-
-        return planDto;
+        return planService.createPlan(planDto);
     }
 
-    @PostMapping("createRouteLimit")
+    @DeleteMapping("/admin/plans")
+    public void deletePlan(@RequestBody Long planId) {
+        planService.deletePlan(planId);
+    }
+
+    @PostMapping("/admin/routeLimits")
     public RouteLimitDto createRouteLimit(@RequestBody RouteLimitDto routeLimitDto) {
-        RouteLimit routeLimit = new RouteLimit();
-        routeLimit.setRoutePattern(routeLimitDto.routePattern());
-        routeLimit.setRequestsPerMinute(routeLimitDto.requestsPerMinute());
+        return routeLimitService.createRouteLimit(routeLimitDto);
+    }
 
-        Plan plan = planRepository.findPlanByName(routeLimitDto.planName()).orElseThrow(() -> new InvalidCredentialsException("Invalid username or password"));
-        routeLimitRepository.save(routeLimit);
-
-        return routeLimitDto;
+    @DeleteMapping("admin/routeLimits")
+    public void deleteRouteLimit(@RequestBody Long routeLimitId) {
+        routeLimitService.deleteRouteLimit(routeLimitId);
     }
 
 }

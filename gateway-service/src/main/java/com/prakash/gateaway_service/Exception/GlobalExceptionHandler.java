@@ -17,4 +17,24 @@ public class GlobalExceptionHandler {
                 e.getMessage(), System.currentTimeMillis(), request.getRequestURI());
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
     }
+
+    @ExceptionHandler({ClientNotFoundException.class,
+                      PlanNotFoundException.class,
+                       RouteLimitExistException.class,})
+    public ResponseEntity<ExceptionResponse> handleNotFound(
+            RuntimeException e, HttpServletRequest request
+    ) {
+        ExceptionResponse response = new ExceptionResponse(HttpStatus.NOT_FOUND.value(),
+                e.getMessage(), System.currentTimeMillis(), request.getRequestURI());
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
+    }
+
+    @ExceptionHandler({DuplicatePlanException.class, PlanInUseException.class, RouteLimitExistException.class})
+    public ResponseEntity<ExceptionResponse> handleConflict(
+            RuntimeException e, HttpServletRequest request
+    ) {
+        ExceptionResponse response = new ExceptionResponse(HttpStatus.CONFLICT.value(),
+                e.getMessage(), System.currentTimeMillis(), request.getRequestURI());
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(response);
+    }
 }

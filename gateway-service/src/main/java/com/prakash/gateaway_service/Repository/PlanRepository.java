@@ -7,4 +7,5 @@ import java.util.Optional;
 
 public interface PlanRepository extends JpaRepository<Plan, Long> {
     public Optional<Plan> findPlanByName(String name);
+    boolean existsByName(String name);
 }

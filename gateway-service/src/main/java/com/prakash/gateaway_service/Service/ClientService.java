@@ -5,9 +5,11 @@ import com.prakash.gateaway_service.DTO.ClientResponseDto;
 import com.prakash.gateaway_service.DTO.ClientStatsResponseDto;
 import com.prakash.gateaway_service.Entity.Client;
 import com.prakash.gateaway_service.Entity.Plan;
+import com.prakash.gateaway_service.Exception.ClientNotFoundException;
 import com.prakash.gateaway_service.Repository.ClientRepository;
 import com.prakash.gateaway_service.Repository.PlanRepository;
 import com.prakash.gateaway_service.Repository.UsageLogRepository;
+import jakarta.transaction.Transactional;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -60,5 +62,13 @@ public class ClientService {
         clientRepository.save(client);
 
         return new ClientResponseDto(client.getName(), client.getApiKey(), client.getActive() ,client.getPlan().getName());
+    }
+
+    @Transactional
+    public void deleteClient(Long clientId) {
+        Client client = clientRepository.findById(clientId)
+                .orElseThrow(() -> new ClientNotFoundException("Client not found with id: " + clientId));
+
+        clientRepository.delete(client);
     }
 }

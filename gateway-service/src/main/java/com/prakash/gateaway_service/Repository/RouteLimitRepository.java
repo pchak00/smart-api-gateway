@@ -7,4 +7,6 @@ import java.util.Optional;
 
 public interface RouteLimitRepository extends JpaRepository<RouteLimit, Long> {
     Optional<RouteLimit> findByPlanIdAndRoutePattern(Long planId, String routePattern);
+    boolean existsByPlanId(Long planId);
+    boolean existsByPlanIdAndRoutePattern(Long planId, String routePattern);
 }

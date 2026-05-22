@@ -2,6 +2,7 @@ package com.prakash.gateaway_service.Entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
+import jakarta.transaction.Transactional;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -74,5 +75,6 @@ public class Plan {
     public void addRouteLimit(RouteLimit routeLimit) {
         routeLimits.add(routeLimit);
     }
+
 
 }
