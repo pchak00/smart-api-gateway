@@ -1,8 +1,8 @@
 package com.prakash.gateaway_service.Controller;
 
 import com.prakash.gateaway_service.DTO.*;
-import com.prakash.gateaway_service.Repository.PlanRepository;
 import com.prakash.gateaway_service.Service.*;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -14,18 +14,18 @@ public class GatewayController {
 
     private UsageLogService usageLogService;
     private ClientService clientService;
-    private AbuseDetectionService abuseDetectionService;
-    private PlanRepository planRepository;
     private PlanService planService;
     private RouteLimitService routeLimitService;
+    private AdminService adminService;
+    private AbuseDetectionService  abuseDetectionService;
 
-    GatewayController(UsageLogService usageLogService, ClientService clientService, AbuseDetectionService abuseDetectionService, PlanRepository planRepository,  RouteLimitService routeLimitService, PlanService planService) {
+    GatewayController(UsageLogService usageLogService, ClientService clientService, AbuseDetectionService abuseDetectionService,  RouteLimitService routeLimitService, PlanService planService, AdminService adminService) {
         this.usageLogService = usageLogService;
         this.clientService = clientService;
-        this.abuseDetectionService = abuseDetectionService;
-        this.planRepository = planRepository;
         this.planService = planService;
         this.routeLimitService = routeLimitService;
+        this.adminService = adminService;
+        this.abuseDetectionService = abuseDetectionService;
     }
 
     @PostMapping
@@ -79,4 +79,9 @@ public class GatewayController {
         routeLimitService.deleteRouteLimit(routeLimitId);
     }
 
+    @PostMapping("/admin/users")
+    public ResponseEntity<AdminResponseDto> createAdmin(@RequestBody AdminDto request) {
+        AdminResponseDto response = adminService.createAdmin(request);
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    }
 }

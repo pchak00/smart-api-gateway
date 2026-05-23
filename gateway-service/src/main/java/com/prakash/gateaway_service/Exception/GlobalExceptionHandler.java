@@ -29,7 +29,7 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
     }
 
-    @ExceptionHandler({DuplicatePlanException.class, PlanInUseException.class, RouteLimitExistException.class})
+    @ExceptionHandler({DuplicatePlanException.class, PlanInUseException.class, RouteLimitExistException.class, DuplicateAdminException.class})
     public ResponseEntity<ExceptionResponse> handleConflict(
             RuntimeException e, HttpServletRequest request
     ) {
