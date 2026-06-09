@@ -99,4 +99,14 @@ public class GatewayController {
         AdminResponseDto response = adminService.updateAdminRole(id, request);
         return ResponseEntity.ok(response);
     }
+    @PatchMapping("/admin/clients/{id}/plan")
+    public ResponseEntity<ClientResponseDto> updateClientPlan(
+            @PathVariable Long id,
+            @RequestBody UpdateClientPlanRequest request
+    ) {
+        ClientResponseDto response =
+                clientService.updateClientPlan(id, request);
+
+        return ResponseEntity.ok(response);
+    }
 }

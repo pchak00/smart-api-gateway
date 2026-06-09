@@ -3,9 +3,11 @@ package com.prakash.gateaway_service.Service;
 import com.prakash.gateaway_service.DTO.ClientRequestDto;
 import com.prakash.gateaway_service.DTO.ClientResponseDto;
 import com.prakash.gateaway_service.DTO.ClientStatsResponseDto;
+import com.prakash.gateaway_service.DTO.UpdateClientPlanRequest;
 import com.prakash.gateaway_service.Entity.Client;
 import com.prakash.gateaway_service.Entity.Plan;
 import com.prakash.gateaway_service.Exception.ClientNotFoundException;
+import com.prakash.gateaway_service.Exception.PlanNotFoundException;
 import com.prakash.gateaway_service.Repository.ClientRepository;
 import com.prakash.gateaway_service.Repository.PlanRepository;
 import com.prakash.gateaway_service.Repository.UsageLogRepository;
@@ -70,5 +72,28 @@ public class ClientService {
                 .orElseThrow(() -> new ClientNotFoundException("Client not found with id: " + clientId));
 
         clientRepository.delete(client);
+    }
+
+    @Transactional
+    public ClientResponseDto updateClientPlan(
+            Long clientId,
+            UpdateClientPlanRequest request
+    ) {
+
+        Client client = clientRepository.findById(clientId)
+                .orElseThrow(() ->
+                        new ClientNotFoundException(
+                                "Client not found with id: " + clientId));
+
+        Plan plan = planRepository.findById(request.planId())
+                .orElseThrow(() ->
+                        new PlanNotFoundException(
+                                "Plan not found with id: " + request.planId()));
+
+        client.setPlan(plan);
+
+        Client savedClient = clientRepository.save(client);
+
+        return ClientResponseDto.from(savedClient);
     }
 }
