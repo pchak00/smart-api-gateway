@@ -2,6 +2,8 @@ package com.prakash.gateaway_service.Service;
 
 import com.prakash.gateaway_service.DTO.AdminDto;
 import com.prakash.gateaway_service.DTO.AdminResponseDto;
+import com.prakash.gateaway_service.DTO.UpdateAdminRoleDto;
+import com.prakash.gateaway_service.Entity.AdminRole;
 import com.prakash.gateaway_service.Entity.AdminUser;
 import com.prakash.gateaway_service.Exception.AdminNotFoundException;
 import com.prakash.gateaway_service.Exception.DuplicateAdminException;
@@ -41,8 +43,8 @@ public class AdminService {
                 .orElseThrow(() ->
                         new AdminNotFoundException("Admin not found with id: " + adminId));
 
-        if (admin.getRole().equals("SUPER_ADMIN")) {
-            long superAdminCount = adminUserRepository.countByRole("SUPER_ADMIN");
+        if (admin.getRole() == AdminRole.SUPER_ADMIN) {
+            long superAdminCount = adminUserRepository.countByRole(AdminRole.SUPER_ADMIN);
 
             if (superAdminCount <= 1) {
                 throw new LastSuperAdminException("Cannot delete the last SUPER_ADMIN");
@@ -50,5 +52,30 @@ public class AdminService {
         }
 
         adminUserRepository.delete(admin);
+    }
+
+    @Transactional
+    public AdminResponseDto updateAdminRole(Long adminId, UpdateAdminRoleDto request) {
+        AdminUser admin = adminUserRepository.findById(adminId)
+                .orElseThrow(() ->
+                        new AdminNotFoundException("Admin not found with id: " + adminId));
+
+        boolean demotingSuperAdmin =
+                admin.getRole() == AdminRole.SUPER_ADMIN &&
+                        request.role() == AdminRole.READ_ONLY_ADMIN;
+
+        if (demotingSuperAdmin) {
+            long superAdminCount = adminUserRepository.countByRole(AdminRole.SUPER_ADMIN);
+
+            if (superAdminCount <= 1) {
+                throw new LastSuperAdminException("Cannot demote the last SUPER_ADMIN");
+            }
+        }
+
+        admin.setRole(request.role());
+
+        AdminUser saved = adminUserRepository.save(admin);
+
+        return AdminResponseDto.from(saved);
     }
 }

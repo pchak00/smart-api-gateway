@@ -20,7 +20,7 @@ public class AdminUser {
     @Column(nullable = false)
     private String password;
 
-    private String role;
+    private AdminRole role;
 
     public AdminUser() {
     }
@@ -49,11 +49,11 @@ public class AdminUser {
         this.password = password;
     }
 
-    public String getRole() {
+    public AdminRole getRole() {
         return role;
     }
 
-    public void setRole(String role) {
+    public void setRole(AdminRole role) {
         this.role = role;
     }
 }

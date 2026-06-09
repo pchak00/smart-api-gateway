@@ -1,11 +1,12 @@
 package com.prakash.gateaway_service.DTO;
 
+import com.prakash.gateaway_service.Entity.AdminRole;
 import com.prakash.gateaway_service.Entity.AdminUser;
 
 public record AdminResponseDto(String username,
-                               String role) {
+                               AdminRole role) {
     public static AdminResponseDto from(AdminUser adminUser) {
-        return new AdminResponseDto(adminUser.getUsername(), adminUser.getPassword());
+        return new AdminResponseDto(adminUser.getUsername(), adminUser.getRole());
 
     }
 }

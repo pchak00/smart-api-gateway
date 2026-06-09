@@ -90,4 +90,13 @@ public class GatewayController {
         adminService.deleteAdmin(id);
         return ResponseEntity.noContent().build();
     }
+
+    @PatchMapping("/admin/users/{id}/role")
+    public ResponseEntity<AdminResponseDto> updateAdminRole(
+            @PathVariable Long id,
+            @RequestBody UpdateAdminRoleDto request
+    ) {
+        AdminResponseDto response = adminService.updateAdminRole(id, request);
+        return ResponseEntity.ok(response);
+    }
 }
