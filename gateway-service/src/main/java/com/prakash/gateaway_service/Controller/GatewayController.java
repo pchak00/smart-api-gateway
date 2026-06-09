@@ -109,4 +109,15 @@ public class GatewayController {
 
         return ResponseEntity.ok(response);
     }
+
+    @PatchMapping("/admin/route-limits/{id}")
+    public ResponseEntity<RouteLimitResponse> updateRouteLimit(
+            @PathVariable Long id,
+            @RequestBody UpdateRouteLimitRequest request
+    ) {
+        RouteLimitResponse response =
+                routeLimitService.updateRouteLimit(id, request);
+
+        return ResponseEntity.ok(response);
+    }
 }

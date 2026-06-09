@@ -1,6 +1,8 @@
 package com.prakash.gateaway_service.Service;
 
 import com.prakash.gateaway_service.DTO.RouteLimitDto;
+import com.prakash.gateaway_service.DTO.RouteLimitResponse;
+import com.prakash.gateaway_service.DTO.UpdateRouteLimitRequest;
 import com.prakash.gateaway_service.Entity.Plan;
 import com.prakash.gateaway_service.Entity.RouteLimit;
 import com.prakash.gateaway_service.Exception.PlanNotFoundException;
@@ -43,5 +45,23 @@ public class RouteLimitService {
                         new RouteLimitNotFoundException("Route limit not found with id: " + routeLimitId));
 
         routeLimitRepository.delete(routeLimit);
+    }
+
+    @Transactional
+    public RouteLimitResponse updateRouteLimit(
+            Long routeLimitId,
+            UpdateRouteLimitRequest request
+    ) {
+        RouteLimit routeLimit = routeLimitRepository.findById(routeLimitId)
+                .orElseThrow(() ->
+                        new RouteLimitNotFoundException(
+                                "Route limit not found with id: " + routeLimitId));
+
+        routeLimit.setRoutePattern(request.routePattern());
+        routeLimit.setRequestsPerMinute(request.requestPerMinute());
+
+        RouteLimit saved = routeLimitRepository.save(routeLimit);
+
+        return RouteLimitResponse.from(saved);
     }
 }
