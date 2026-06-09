@@ -9,7 +9,9 @@ import com.prakash.gateaway_service.Repository.ClientRepository;
 import com.prakash.gateaway_service.Repository.PlanRepository;
 import com.prakash.gateaway_service.Repository.RouteLimitRepository;
 import jakarta.transaction.Transactional;
+import org.springframework.stereotype.Service;
 
+@Service
 public class PlanService {
     private PlanRepository planRepository;
     private ClientRepository  clientRepository;

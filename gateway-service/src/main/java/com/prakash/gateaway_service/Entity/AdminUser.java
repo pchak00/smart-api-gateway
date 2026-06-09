@@ -20,6 +20,8 @@ public class AdminUser {
     @Column(nullable = false)
     private String password;
 
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
     private AdminRole role;
 
     public AdminUser() {

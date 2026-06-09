@@ -11,7 +11,9 @@ import com.prakash.gateaway_service.Exception.RouteLimitNotFoundException;
 import com.prakash.gateaway_service.Repository.PlanRepository;
 import com.prakash.gateaway_service.Repository.RouteLimitRepository;
 import jakarta.transaction.Transactional;
+import org.springframework.stereotype.Service;
 
+@Service
 public class RouteLimitService {
     private RouteLimitRepository routeLimitRepository;
     private PlanRepository planRepository;

@@ -13,8 +13,9 @@ public class Plan {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(unique = true)
-    private String name;
+    @Column(unique = true, nullable = false)
+    @Enumerated(EnumType.STRING)
+    private PlanName name;
     private Integer requestsPerMinute;
     private Double price;
 
@@ -37,11 +38,11 @@ public class Plan {
     public Plan() {
     }
 
-    public String getName() {
+    public PlanName getName() {
         return name;
     }
 
-    public void setName(String name) {
+    public void setName(PlanName name) {
         this.name = name;
     }
 

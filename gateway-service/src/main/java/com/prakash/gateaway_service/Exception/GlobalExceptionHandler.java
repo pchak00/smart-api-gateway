@@ -20,7 +20,7 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler({ClientNotFoundException.class,
                       PlanNotFoundException.class,
-                       RouteLimitExistException.class, AdminNotFoundException.class,})
+                      AdminNotFoundException.class})
     public ResponseEntity<ExceptionResponse> handleNotFound(
             RuntimeException e, HttpServletRequest request
     ) {

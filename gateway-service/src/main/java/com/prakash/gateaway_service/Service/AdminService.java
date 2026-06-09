@@ -11,7 +11,9 @@ import com.prakash.gateaway_service.Exception.LastSuperAdminException;
 import com.prakash.gateaway_service.Repository.AdminUserRepository;
 import jakarta.transaction.Transactional;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Service;
 
+@Service
 public class AdminService {
     private AdminUserRepository adminUserRepository;
     private PasswordEncoder passwordEncoder;

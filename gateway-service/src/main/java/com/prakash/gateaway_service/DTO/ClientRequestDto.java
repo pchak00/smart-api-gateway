@@ -1,6 +1,8 @@
 package com.prakash.gateaway_service.DTO;
 
+import com.prakash.gateaway_service.Entity.PlanName;
+
 public record ClientRequestDto(String name,
-                               String planName,
+                               PlanName planName,
                                Boolean active) {
 }
