@@ -20,7 +20,7 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler({ClientNotFoundException.class,
                       PlanNotFoundException.class,
-                       RouteLimitExistException.class,})
+                       RouteLimitExistException.class, AdminNotFoundException.class,})
     public ResponseEntity<ExceptionResponse> handleNotFound(
             RuntimeException e, HttpServletRequest request
     ) {
@@ -29,7 +29,7 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
     }
 
-    @ExceptionHandler({DuplicatePlanException.class, PlanInUseException.class, RouteLimitExistException.class, DuplicateAdminException.class})
+    @ExceptionHandler({DuplicatePlanException.class, PlanInUseException.class, RouteLimitExistException.class, DuplicateAdminException.class, LastSuperAdminException.class})
     public ResponseEntity<ExceptionResponse> handleConflict(
             RuntimeException e, HttpServletRequest request
     ) {

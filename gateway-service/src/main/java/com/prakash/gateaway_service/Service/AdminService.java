@@ -3,7 +3,9 @@ package com.prakash.gateaway_service.Service;
 import com.prakash.gateaway_service.DTO.AdminDto;
 import com.prakash.gateaway_service.DTO.AdminResponseDto;
 import com.prakash.gateaway_service.Entity.AdminUser;
+import com.prakash.gateaway_service.Exception.AdminNotFoundException;
 import com.prakash.gateaway_service.Exception.DuplicateAdminException;
+import com.prakash.gateaway_service.Exception.LastSuperAdminException;
 import com.prakash.gateaway_service.Repository.AdminUserRepository;
 import jakarta.transaction.Transactional;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -31,5 +33,22 @@ public class AdminService {
         AdminUser saved = adminUserRepository.save(admin);
 
         return AdminResponseDto.from(saved);
+    }
+
+    @Transactional
+    public void deleteAdmin(Long adminId) {
+        AdminUser admin = adminUserRepository.findById(adminId)
+                .orElseThrow(() ->
+                        new AdminNotFoundException("Admin not found with id: " + adminId));
+
+        if (admin.getRole().equals("SUPER_ADMIN")) {
+            long superAdminCount = adminUserRepository.countByRole("SUPER_ADMIN");
+
+            if (superAdminCount <= 1) {
+                throw new LastSuperAdminException("Cannot delete the last SUPER_ADMIN");
+            }
+        }
+
+        adminUserRepository.delete(admin);
     }
 }

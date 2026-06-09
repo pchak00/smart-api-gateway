@@ -84,4 +84,10 @@ public class GatewayController {
         AdminResponseDto response = adminService.createAdmin(request);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
+
+    @DeleteMapping("/admin/users/{id}")
+    public ResponseEntity<Void> deleteAdmin(@PathVariable Long id) {
+        adminService.deleteAdmin(id);
+        return ResponseEntity.noContent().build();
+    }
 }
