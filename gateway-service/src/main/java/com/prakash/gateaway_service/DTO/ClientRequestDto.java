@@ -2,6 +2,6 @@ package com.prakash.gateaway_service.DTO;
 
 
 public record ClientRequestDto(String name,
-                               String planName,
+                               Long planId,
                                Boolean active) {
 }

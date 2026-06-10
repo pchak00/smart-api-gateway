@@ -55,7 +55,7 @@ public class ClientService {
         Client client = new Client();
 
         client.setName(clientRequestDto.name());
-        Plan plan = planRepository.findPlanByName(clientRequestDto.planName()).orElseThrow(() -> new RuntimeException("Plan not found"));
+        Plan plan = planRepository.findById(clientRequestDto.planId()).orElseThrow(() -> new PlanNotFoundException("Plan not found with id: "+ clientRequestDto.planId()));
         client.setPlan(plan);
         plan.addClient(client);
         client.setActive(clientRequestDto.active());
