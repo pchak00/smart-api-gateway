@@ -1,8 +1,7 @@
 package com.prakash.gateaway_service.DTO;
 
-import com.prakash.gateaway_service.Entity.PlanName;
 
-public record PlanDto(PlanName planName,
+public record PlanDto(String planName,
                       Integer requestsPerMinute,
                       Double price) {
 }

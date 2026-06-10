@@ -34,12 +34,13 @@ public class SecurityConfig {
                         .requestMatchers("/admin/clients/*/abuse").hasAnyRole("SUPER_ADMIN", "READ_ONLY_ADMIN")
 
                         .requestMatchers(HttpMethod.GET, "/admin/clients/**").hasAnyRole("SUPER_ADMIN", "READ_ONLY_ADMIN")
-                        .requestMatchers(HttpMethod.GET,"/admin/plans/**").hasAnyRole("SUPER_ADMIN", "READ_ONLY_ADMIN")
-                        .requestMatchers(HttpMethod.GET,"/admin/route-limits/**").hasAnyRole("SUPER_ADMIN", "READ_ONLY_ADMIN")
+                        //.requestMatchers(HttpMethod.GET,"/admin/plans/**").hasAnyRole("SUPER_ADMIN", "READ_ONLY_ADMIN")
+                        //.requestMatchers(HttpMethod.GET,"/admin/route-limits/**").hasAnyRole("SUPER_ADMIN", "READ_ONLY_ADMIN")
 
                         .requestMatchers("/admin/clients/**").hasRole("SUPER_ADMIN")
-                        .requestMatchers("/admin/plans/**").hasRole("SUPER_ADMIN")
-                        .requestMatchers("/admin/route-limits/**").hasRole("SUPER_ADMIN")
+                       // .requestMatchers("/admin/plans/**").hasRole("SUPER_ADMIN")
+                       // .requestMatchers("/admin/route-limits/**").hasRole("SUPER_ADMIN")
+                        .requestMatchers("/admin/users/**").hasRole("SUPER_ADMIN")
 
                         .requestMatchers("/admin/**").authenticated()
                         .anyRequest().permitAll()

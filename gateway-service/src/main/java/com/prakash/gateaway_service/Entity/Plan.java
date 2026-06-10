@@ -14,8 +14,7 @@ public class Plan {
     private Long id;
 
     @Column(unique = true, nullable = false)
-    @Enumerated(EnumType.STRING)
-    private PlanName name;
+    private String name;
     private Integer requestsPerMinute;
     private Double price;
 
@@ -38,11 +37,11 @@ public class Plan {
     public Plan() {
     }
 
-    public PlanName getName() {
+    public String getName() {
         return name;
     }
 
-    public void setName(PlanName name) {
+    public void setName(String name) {
         this.name = name;
     }
 
