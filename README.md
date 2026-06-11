@@ -337,6 +337,300 @@ curl -X GET http://localhost:8080/api/products \
 ```bash
 docker compose down
 ```
+## API Usage Examples
+
+### Demo Credentials
+
+The application automatically seeds demo data when the database is empty.
+
+#### Admin Users
+
+| Username | Role |
+|-----------|---------|
+| admin | SUPER_ADMIN |
+| viewer | READ_ONLY_ADMIN |
+
+#### Plans
+
+| Plan | Requests Per Minute |
+|------|---------------------|
+| FREE | 10 |
+| PRO | 100 |
+| ENTERPRISE | 1000 |
+
+#### Demo Clients
+
+| Client | Plan |
+|---------|------|
+| demo-free-client | FREE |
+| demo-pro-client | PRO |
+
+---
+
+### Authentication
+
+Obtain a JWT token before accessing administrative endpoints.
+
+#### Login
+
+```bash
+curl -X POST http://localhost:8080/auth/login \
+-H "Content-Type: application/json" \
+-d '{
+  "username":"admin",
+  "password":"password"
+}'
+```
+
+#### Response
+
+```json
+{
+  "token":"eyJhbGciOiJIUzI1NiJ9..."
+}
+```
+
+Use the token for all admin endpoints:
+
+```http
+Authorization: Bearer <token>
+```
+
+---
+
+### Plan Management
+
+#### Create Plan
+
+```bash
+curl -X POST http://localhost:8080/admin/plans \
+-H "Authorization: Bearer <token>" \
+-H "Content-Type: application/json" \
+-d '{
+  "planName":"STARTUP",
+  "requestsPerMinute":250,
+  "price":49.99
+}'
+```
+
+#### Delete Plan
+
+```bash
+curl -X DELETE http://localhost:8080/admin/plans/4 \
+-H "Authorization: Bearer <token>"
+```
+
+#### Safety Rules
+
+- Plans assigned to clients cannot be deleted.
+- Plans referenced by route limits cannot be deleted.
+
+---
+
+### Client Management
+
+#### Create Client
+
+```bash
+curl -X POST http://localhost:8080/admin/clients \
+-H "Authorization: Bearer <token>" \
+-H "Content-Type: application/json" \
+-d '{
+  "clientName":"Acme Corp",
+  "planId":2
+}'
+```
+
+#### Upgrade Client Plan
+
+```bash
+curl -X PATCH http://localhost:8080/admin/clients/1/plan \
+-H "Authorization: Bearer <token>" \
+-H "Content-Type: application/json" \
+-d '{
+  "planId":3
+}'
+```
+
+#### Delete Client
+
+```bash
+curl -X DELETE http://localhost:8080/admin/clients/1 \
+-H "Authorization: Bearer <token>"
+```
+
+---
+
+### Route Limit Management
+
+#### Create Route Limit
+
+```bash
+curl -X POST http://localhost:8080/admin/route-limits \
+-H "Authorization: Bearer <token>" \
+-H "Content-Type: application/json" \
+-d '{
+  "planId":1,
+  "routePattern":"/api/reports",
+  "requestsPerMinute":2
+}'
+```
+
+#### Update Route Limit
+
+```bash
+curl -X PATCH http://localhost:8080/admin/route-limits/1 \
+-H "Authorization: Bearer <token>" \
+-H "Content-Type: application/json" \
+-d '{
+  "routePattern":"/api/reports",
+  "requestsPerMinute":5
+}'
+```
+
+#### Delete Route Limit
+
+```bash
+curl -X DELETE http://localhost:8080/admin/route-limits/1 \
+-H "Authorization: Bearer <token>"
+```
+
+---
+
+### Admin Management
+
+#### Create Admin
+
+```bash
+curl -X POST http://localhost:8080/admin/users \
+-H "Authorization: Bearer <token>" \
+-H "Content-Type: application/json" \
+-d '{
+  "username":"newadmin",
+  "password":"password",
+  "role":"READ_ONLY_ADMIN"
+}'
+```
+
+#### Promote Admin
+
+```bash
+curl -X PATCH http://localhost:8080/admin/users/2/role \
+-H "Authorization: Bearer <token>" \
+-H "Content-Type: application/json" \
+-d '{
+  "role":"SUPER_ADMIN"
+}'
+```
+
+#### Delete Admin
+
+```bash
+curl -X DELETE http://localhost:8080/admin/users/2 \
+-H "Authorization: Bearer <token>"
+```
+
+#### Safety Rules
+
+- Only SUPER_ADMIN users can create, update, or delete administrators.
+- The system prevents deletion of the last SUPER_ADMIN.
+- The system prevents demotion of the last SUPER_ADMIN.
+
+---
+
+### Gateway Usage
+
+Clients authenticate using API keys.
+
+```http
+X-API-Key: <client-api-key>
+```
+
+---
+
+#### Accessing a Protected Endpoint
+
+```bash
+curl -X GET http://localhost:8080/api/products \
+-H "X-API-Key: demo-free-client-key"
+```
+
+#### Successful Response
+
+```json
+{
+  "message":"Request forwarded successfully"
+}
+```
+
+---
+
+#### Plan Based Rate Limiting
+
+Each client inherits the request limit defined by its assigned plan.
+
+| Plan | Requests Per Minute |
+|--------|------------------|
+| FREE | 10 |
+| PRO | 100 |
+| ENTERPRISE | 1000 |
+
+---
+
+#### Route Specific Rate Limiting
+
+Route-specific limits override plan defaults.
+
+Example:
+
+```text
+FREE Plan
+├── Default: 10 requests/minute
+└── /api/reports: 2 requests/minute
+```
+
+In this case:
+
+- Requests to `/api/products` use the FREE plan limit (10 RPM).
+- Requests to `/api/reports` use the route-specific limit (2 RPM).
+
+---
+
+#### Exceeding Rate Limits
+
+When a client exceeds its allowed request rate:
+
+```http
+HTTP 429 Too Many Requests
+```
+
+Example:
+
+```json
+{
+  "message":"Rate limit exceeded"
+}
+```
+
+The gateway:
+
+- Records the blocked request.
+- Updates usage analytics.
+- Evaluates abuse thresholds.
+- Creates or updates alerts when thresholds are exceeded.
+
+---
+
+### Role Based Access Control
+
+| Endpoint Type | READ_ONLY_ADMIN | SUPER_ADMIN |
+|--------------|-----------------|-------------|
+| View Data | allowed         | allowed     |
+| Create Resources | denied          | allowed     |
+| Update Resources | denied          | allowed     |
+| Delete Resources | denied          | allowed     |
+
+This separation allows operational users to monitor the platform while restricting configuration changes to SUPER_ADMIN accounts.
 
 ## Upcomming Updates
 
