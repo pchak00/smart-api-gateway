@@ -1,0 +1,147 @@
+import axios, { AxiosInstance } from 'axios';
+import {
+  LoginRequest,
+  LoginResponse,
+  ClientDto,
+  CreateClientRequest,
+  PlanDto,
+  CreatePlanRequest,
+  RouteLimitDto,
+  CreateRouteLimitRequest,
+  UsageLogDto,
+  AbuseAlertDto,
+  UpdateClientPlanRequest,
+  UpdateRouteLimitRequest,
+  AdminUserDto,
+  ClientStatsDto
+} from '../types';
+
+const baseURL = (import.meta.env.VITE_API_BASE_URL as string) ?? '/';
+
+class ApiClient {
+  private axiosInstance: AxiosInstance;
+
+  constructor() {
+    this.axiosInstance = axios.create({
+      baseURL,
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    });
+
+    // Add request interceptor to include auth token
+    this.axiosInstance.interceptors.request.use((config) => {
+      const token = localStorage.getItem('smart-gateway:token');
+      if (token && config.headers) {
+        config.headers.Authorization = `Bearer ${token}`;
+      }
+      return config;
+    });
+  }
+
+  // Auth endpoints
+  async login(credentials: LoginRequest): Promise<LoginResponse> {
+    const response = await this.axiosInstance.post<LoginResponse>('/auth/login', credentials);
+    return response.data;
+  }
+
+  // Client endpoints
+  async getClients(): Promise<ClientDto[]> {
+    const response = await this.axiosInstance.get<ClientDto[]>('/admin/clients');
+    return response.data;
+  }
+
+  async getClient(id: number): Promise<ClientDto> {
+    const response = await this.axiosInstance.get<ClientDto>(`/admin/clients/${id}`);
+    return response.data;
+  }
+
+  async createClient(payload: CreateClientRequest): Promise<ClientDto> {
+    const response = await this.axiosInstance.post<ClientDto>('/admin/clients', payload);
+    return response.data;
+  }
+
+  async updateClient(id: number, payload: UpdateClientPlanRequest): Promise<ClientDto> {
+    const response = await this.axiosInstance.patch<ClientDto>(`/admin/clients/${id}/plan`, payload);
+    return response.data;
+  }
+
+  async deleteClient(id: number): Promise<void> {
+    await this.axiosInstance.delete(`/admin/clients/${id}`);
+  }
+
+  async getClientStats(clientId: number): Promise<ClientStatsDto> {
+    const response = await this.axiosInstance.get<ClientStatsDto>(`/admin/clients/${clientId}/stats`);
+    return response.data;
+  }
+
+  // Plan endpoints
+  async getPlans(): Promise<PlanDto[]> {
+    const response = await this.axiosInstance.get<PlanDto[]>('/admin/clients/plans');
+    return response.data;
+  }
+
+  async createPlan(payload: CreatePlanRequest): Promise<PlanDto> {
+    const response = await this.axiosInstance.post<PlanDto>('/admin/clients/plans', payload);
+    return response.data;
+  }
+
+  async deletePlan(id: number): Promise<void> {
+    await this.axiosInstance.delete(`/admin/clients/plans/${id}`);
+  }
+
+  // Route limit endpoints
+  async getRouteLimits(): Promise<RouteLimitDto[]> {
+    const response = await this.axiosInstance.get<RouteLimitDto[]>('/admin/clients/routeLimits');
+    return response.data;
+  }
+
+  async createRouteLimit(payload: CreateRouteLimitRequest): Promise<RouteLimitDto> {
+    const response = await this.axiosInstance.post<RouteLimitDto>('/admin/clients/routeLimits', payload);
+    return response.data;
+  }
+
+  async updateRouteLimit(id: number, payload: UpdateRouteLimitRequest): Promise<RouteLimitDto> {
+    const response = await this.axiosInstance.patch<RouteLimitDto>(`/admin/clients/route-limits/${id}`, payload);
+    return response.data;
+  }
+
+  async deleteRouteLimit(id: number): Promise<void> {
+    await this.axiosInstance.delete(`/admin/clients/route-limits/${id}`);
+  }
+
+  // Usage log endpoints
+  async getUsageLogs(clientId: number): Promise<UsageLogDto[]> {
+    const response = await this.axiosInstance.get<UsageLogDto[]>(`/admin/clients/${clientId}/usage`);
+    return response.data;
+  }
+
+  // Abuse alert endpoints
+  async getAbuseAlerts(clientId: number): Promise<AbuseAlertDto[]> {
+    const response = await this.axiosInstance.get<AbuseAlertDto[]>(`/admin/clients/${clientId}/abuse`);
+    return response.data;
+  }
+
+  // Admin user endpoints
+  async getAdminUsers(): Promise<AdminUserDto[]> {
+    const response = await this.axiosInstance.get<AdminUserDto[]>('/admin/users');
+    return response.data;
+  }
+
+  async createAdminUser(payload: { username: string; password: string; role: string }): Promise<AdminUserDto> {
+    const response = await this.axiosInstance.post<AdminUserDto>('/admin/users', payload);
+    return response.data;
+  }
+
+  async updateAdminUserRole(id: number, payload: { role: string }): Promise<AdminUserDto> {
+    const response = await this.axiosInstance.patch<AdminUserDto>(`/admin/users/${id}/role`, payload);
+    return response.data;
+  }
+
+  async deleteAdminUser(id: number): Promise<void> {
+    await this.axiosInstance.delete(`/admin/users/${id}`);
+  }
+}
+
+export const api = new ApiClient();
+
