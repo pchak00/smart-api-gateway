@@ -1,4 +1,5 @@
 import React from 'react';
+import { LogOut } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { SecondaryButton } from './Button';
 
@@ -15,22 +16,25 @@ export const TopBar: React.FC<TopBarProps> = ({ title = 'Dashboard' }) => {
   };
 
   return (
-    <header className="bg-white border-b border-gray-200 px-8 py-4 flex justify-between items-center">
+    <header className="flex items-center justify-between border-b border-slate-800 bg-slate-950/80 px-8 py-4">
       <div>
-        <h2 className="text-2xl font-bold text-gray-900">{title}</h2>
+        <p className="text-xs font-medium uppercase tracking-[0.18em] text-slate-500">
+          Pacific - Smart API Gateway
+        </p>
+        <h2 className="mt-1 text-xl font-semibold tracking-normal text-slate-50">{title}</h2>
       </div>
 
       <div className="flex items-center gap-4">
-        {/* Role badge */}
-        <div className="flex items-center gap-2 px-3 py-2 bg-blue-50 rounded-lg border border-blue-200">
-          <div className="w-2 h-2 bg-blue-600 rounded-full" />
-          <span className="text-sm font-medium text-gray-700">
-            {username || 'Admin'} • <span className="text-blue-600">{role}</span>
+        <div className="flex items-center gap-2 rounded-full border border-slate-800 bg-slate-900 px-3 py-1.5">
+          <span className="h-1.5 w-1.5 rounded-full bg-cyan-300" />
+          <span className="text-sm font-medium text-slate-300">
+            {username || 'Admin'} <span className="text-slate-600">/</span>{' '}
+            <span className="text-blue-200">{role}</span>
           </span>
         </div>
 
-        {/* Logout button */}
-        <SecondaryButton onClick={handleLogout}>
+        <SecondaryButton onClick={handleLogout} className="px-3">
+          <LogOut size={16} aria-hidden="true" />
           Logout
         </SecondaryButton>
       </div>

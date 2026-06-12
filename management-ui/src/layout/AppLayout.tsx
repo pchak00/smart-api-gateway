@@ -13,7 +13,7 @@ const getPageTitle = (pathname: string) => {
   if (pathname === '/analytics') return 'Analytics';
   if (pathname === '/abuse-alerts') return 'Abuse Alerts';
   if (pathname === '/admin-users') return 'Admin Users';
-  return 'Smart API Gateway';
+  return 'Pacific';
 };
 
 export const AppLayout: React.FC = () => {
@@ -21,17 +21,14 @@ export const AppLayout: React.FC = () => {
   const location = useLocation();
 
   return (
-    <div className="flex h-screen bg-gray-50">
-      {/* Sidebar */}
+    <div className="flex h-screen bg-slate-950 text-slate-100">
       <Sidebar isSuperAdmin={isSuperAdmin} />
 
-      {/* Main content */}
       <div className="flex-1 flex flex-col overflow-hidden">
         <TopBar title={getPageTitle(location.pathname)} />
 
-        {/* Page content */}
-        <main className="flex-1 overflow-auto">
-          <div className="p-8">
+        <main className="flex-1 overflow-auto bg-slate-950">
+          <div className="mx-auto w-full max-w-7xl p-8">
             <Outlet />
           </div>
         </main>
