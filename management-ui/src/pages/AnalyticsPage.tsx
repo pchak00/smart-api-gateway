@@ -23,7 +23,7 @@ export const AnalyticsPage: React.FC = () => (
       meta={<DemoBadge>Demo analytics preview</DemoBadge>}
     />
 
-    <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1fr_18rem]">
+    <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1fr_16rem]">
       <Panel className="p-5">
         <div className="mb-5 flex items-center justify-between">
           <div>
@@ -63,26 +63,26 @@ export const AnalyticsPage: React.FC = () => (
         </div>
       </Panel>
 
-      <div className="grid gap-4">
-        <Panel className="p-5">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-slate-400">Allowed requests</p>
-              <p className="mt-2 text-3xl font-semibold text-slate-50">{totalAllowed.toLocaleString()}</p>
-            </div>
-            <Activity className="text-slate-600" size={20} aria-hidden="true" />
+      <Panel className="p-5">
+        <div className="flex items-center justify-between">
+          <h2 className="text-sm font-semibold text-slate-100">Summary</h2>
+          <Activity className="text-slate-600" size={18} aria-hidden="true" />
+        </div>
+
+        <div className="mt-5 divide-y divide-slate-800/35">
+          <div className="pb-4">
+            <p className="text-sm text-slate-400">Requests</p>
+            <p className="mt-2 text-3xl font-semibold text-slate-50">{totalAllowed.toLocaleString()}</p>
           </div>
-        </Panel>
-        <Panel className="p-5">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-slate-400">Blocked requests</p>
-              <p className="mt-2 text-3xl font-semibold text-slate-50">{totalBlocked.toLocaleString()}</p>
-            </div>
-            <span className="text-sm text-slate-600">Demo</span>
+          <div className="py-4">
+            <p className="text-sm text-slate-400">Blocked</p>
+            <p className="mt-2 text-3xl font-semibold text-slate-50">{totalBlocked.toLocaleString()}</p>
           </div>
-        </Panel>
-      </div>
+          <p className="pt-4 text-xs leading-5 text-slate-500">
+            Using seeded gateway data until live analytics is connected.
+          </p>
+        </div>
+      </Panel>
     </div>
   </div>
 );

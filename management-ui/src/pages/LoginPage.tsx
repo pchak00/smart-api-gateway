@@ -36,24 +36,15 @@ export const LoginPage: React.FC = () => {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-slate-950 px-4 py-10">
-      <main className="w-full max-w-sm">
-        <div className="mb-8 flex flex-col items-center text-center">
-          <img
-            src={pacificLogo}
-            alt="pacific logo"
-            className="h-12 w-12 object-contain"
-          />
-          <p className="mt-4 text-xl font-semibold tracking-normal text-slate-100">pacific</p>
-          <p className="mt-1 text-sm text-slate-500">Smart API Gateway Management</p>
-        </div>
+    <div className="min-h-screen bg-slate-950 px-6 py-8 text-slate-100">
+      <main className="mx-auto grid min-h-[calc(100vh-4rem)] w-full max-w-6xl items-center gap-12 lg:grid-cols-[minmax(0,26rem)_1fr]">
+        <section className="w-full">
+          <p className="text-sm font-medium text-slate-500">pacific</p>
+          <h1 className="mt-4 text-3xl font-semibold text-slate-50">Sign in</h1>
 
-        <section className="rounded-2xl bg-slate-900/70 p-6 shadow-xl shadow-black/20">
-          <h1 className="text-xl font-semibold tracking-normal text-slate-100">Sign in</h1>
-
-          <form onSubmit={handleSubmit} className="mt-6 space-y-4">
+          <form onSubmit={handleSubmit} className="mt-8 space-y-7">
             <div>
-              <label htmlFor="username" className="mb-2 block text-sm text-slate-400">
+              <label htmlFor="username" className="block text-sm text-slate-500">
                 Username
               </label>
               <input
@@ -61,14 +52,14 @@ export const LoginPage: React.FC = () => {
                 type="text"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
-                className="w-full rounded-lg bg-slate-950/70 px-4 py-3 text-sm text-slate-100 outline-none ring-1 ring-slate-800/60 transition placeholder:text-slate-700 focus:ring-slate-600"
-                placeholder="Enter username"
+                className="mt-2 w-full border-b border-slate-800 bg-transparent px-0 py-3 text-sm text-slate-100 outline-none transition-colors placeholder:text-slate-700 hover:border-slate-700 focus:border-slate-500"
+                placeholder="username"
                 required
               />
             </div>
 
             <div>
-              <label htmlFor="password" className="mb-2 block text-sm text-slate-400">
+              <label htmlFor="password" className="block text-sm text-slate-500">
                 Password
               </label>
               <input
@@ -76,8 +67,8 @@ export const LoginPage: React.FC = () => {
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full rounded-lg bg-slate-950/70 px-4 py-3 text-sm text-slate-100 outline-none ring-1 ring-slate-800/60 transition placeholder:text-slate-700 focus:ring-slate-600"
-                placeholder="Enter password"
+                className="mt-2 w-full border-b border-slate-800 bg-transparent px-0 py-3 text-sm text-slate-100 outline-none transition-colors placeholder:text-slate-700 hover:border-slate-700 focus:border-slate-500"
+                placeholder="password"
                 required
               />
             </div>
@@ -90,6 +81,18 @@ export const LoginPage: React.FC = () => {
               {isLoading ? 'Signing in...' : 'Sign in'}
             </PrimaryButton>
           </form>
+        </section>
+
+        <section className="hidden min-h-[32rem] items-center justify-center lg:flex">
+          <div className="text-center">
+            <img
+              src={pacificLogo}
+              alt="pacific logo"
+              className="mx-auto h-28 w-28 object-contain"
+            />
+            <p className="mt-7 text-4xl font-semibold text-slate-100">pacific</p>
+            <p className="mt-3 text-sm text-slate-500">smart api gateway management</p>
+          </div>
         </section>
       </main>
     </div>

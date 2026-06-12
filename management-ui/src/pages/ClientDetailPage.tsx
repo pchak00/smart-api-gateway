@@ -13,8 +13,8 @@ export const ClientDetailPage: React.FC = () => {
         description="Inspect a gateway consumer profile, usage history, and policy context once the detail API is connected."
       />
 
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-        <Panel className="p-5">
+      <div className="grid grid-cols-1 gap-3 lg:grid-cols-3">
+        <Panel className="p-5 transition-colors hover:bg-slate-900/45">
           <div className="flex items-center gap-3">
             <Server className="text-slate-600" size={18} aria-hidden="true" />
             <div>
@@ -23,7 +23,7 @@ export const ClientDetailPage: React.FC = () => {
             </div>
           </div>
         </Panel>
-        <Panel className="p-5">
+        <Panel className="p-5 transition-colors hover:bg-slate-900/45">
           <div className="flex items-center gap-3">
             <KeyRound className="text-slate-600" size={18} aria-hidden="true" />
             <div>
@@ -32,7 +32,7 @@ export const ClientDetailPage: React.FC = () => {
             </div>
           </div>
         </Panel>
-        <Panel className="p-5">
+        <Panel className="p-5 transition-colors hover:bg-slate-900/45">
           <div className="flex items-center gap-3">
             <Activity className="text-slate-600" size={18} aria-hidden="true" />
             <div>
@@ -43,13 +43,13 @@ export const ClientDetailPage: React.FC = () => {
         </Panel>
       </div>
 
-      <Panel className="mt-4">
+      <section className="mt-5 border-t border-slate-800/35">
         <EmptyState
           icon={Activity}
           title="Client detail shell"
           description="This polished detail layout is ready for live client stats, usage logs, and abuse signals in a later milestone."
         />
-      </Panel>
+      </section>
     </div>
   );
 };
