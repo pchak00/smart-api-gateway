@@ -16,7 +16,7 @@ export const DisabledButton: React.FC<DisabledButtonProps> = ({
   className = '',
   ...props
 }) => {
-  const baseClass = 'inline-flex items-center justify-center gap-2 rounded-md px-3.5 py-2 text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-blue-400/50';
+  const baseClass = 'inline-flex items-center justify-center gap-2 rounded-md px-3.5 py-2 text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-slate-500/30';
   const disabledClass = disabled ? 'cursor-not-allowed opacity-50' : '';
 
   return (
@@ -34,8 +34,8 @@ export const DisabledButton: React.FC<DisabledButtonProps> = ({
 
 export const PrimaryButton: React.FC<DisabledButtonProps> = (props) => {
   const baseClass = !props.disabled
-    ? 'border border-blue-400/30 bg-blue-600 text-white shadow-sm shadow-blue-950/40 hover:bg-blue-500'
-    : 'border border-blue-400/20 bg-blue-600 text-white';
+    ? 'bg-slate-200 text-slate-950 hover:bg-white'
+    : 'bg-slate-200 text-slate-950';
   return (
     <DisabledButton
       {...props}
@@ -46,8 +46,8 @@ export const PrimaryButton: React.FC<DisabledButtonProps> = (props) => {
 
 export const DangerButton: React.FC<DisabledButtonProps> = (props) => {
   const baseClass = !props.disabled
-    ? 'border border-red-400/20 bg-red-500/10 text-red-200 hover:bg-red-500/20'
-    : 'border border-red-400/10 bg-red-500/10 text-red-200';
+    ? 'bg-red-950/50 text-red-300 hover:bg-red-900/60'
+    : 'bg-red-950/40 text-red-300';
   return (
     <DisabledButton
       {...props}
@@ -58,8 +58,8 @@ export const DangerButton: React.FC<DisabledButtonProps> = (props) => {
 
 export const SecondaryButton: React.FC<DisabledButtonProps> = (props) => {
   const baseClass = !props.disabled
-    ? 'border border-slate-700 bg-slate-900 text-slate-200 hover:border-slate-600 hover:bg-slate-800'
-    : 'border border-slate-800 bg-slate-900 text-slate-300';
+    ? 'bg-slate-900/80 text-slate-300 hover:bg-slate-800 hover:text-slate-100'
+    : 'bg-slate-900/70 text-slate-400';
   return (
     <DisabledButton
       {...props}

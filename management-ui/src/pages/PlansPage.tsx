@@ -11,14 +11,13 @@ export const PlansPage: React.FC = () => {
   return (
     <div>
       <PageHeader
-        eyebrow="Quota catalog"
         title="Plans"
         description="Manage the plan tiers that define default request quotas for API consumers."
         meta={<DemoBadge>Seeded plan preview</DemoBadge>}
         actions={
           <PrimaryButton
             disabled={!isSuperAdmin}
-            tooltip={!isSuperAdmin ? 'SUPER_ADMIN required' : undefined}
+            tooltip={!isSuperAdmin ? 'Owner required' : undefined}
           >
             <Plus size={16} aria-hidden="true" />
             Create Plan
@@ -29,22 +28,20 @@ export const PlansPage: React.FC = () => {
       <Panel className="overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full min-w-[640px]">
-            <thead className="border-b border-slate-800 bg-slate-950/70">
+            <thead className="bg-slate-950/35">
               <tr>
-                <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">Plan</th>
-                <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">Requests/min</th>
-                <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">Price</th>
-                <th className="px-5 py-3 text-right text-xs font-semibold uppercase tracking-wide text-slate-500">Actions</th>
+                <th className="px-5 py-3 text-left text-xs font-medium text-slate-500">Plan</th>
+                <th className="px-5 py-3 text-left text-xs font-medium text-slate-500">Requests/min</th>
+                <th className="px-5 py-3 text-left text-xs font-medium text-slate-500">Price</th>
+                <th className="px-5 py-3 text-right text-xs font-medium text-slate-500">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-800">
+            <tbody className="divide-y divide-slate-800/40">
               {demoPlansList.map((plan) => (
                 <tr key={plan.planName} className="hover:bg-slate-900">
                   <td className="px-5 py-4">
                     <div className="flex items-center gap-3">
-                      <div className="rounded-md border border-slate-800 bg-slate-950 p-2 text-blue-200">
-                        <CreditCard size={16} aria-hidden="true" />
-                      </div>
+                      <CreditCard className="text-slate-600" size={16} aria-hidden="true" />
                       <span className="text-sm font-medium text-slate-100">{plan.planName}</span>
                     </div>
                   </td>
@@ -56,16 +53,16 @@ export const PlansPage: React.FC = () => {
                     <button
                       type="button"
                       disabled={!isSuperAdmin}
-                      title={!isSuperAdmin ? 'SUPER_ADMIN required' : undefined}
-                      className="text-blue-200 hover:text-blue-100 disabled:cursor-not-allowed disabled:opacity-40"
+                      title={!isSuperAdmin ? 'Owner required' : undefined}
+                      className="text-slate-300 hover:text-slate-100 disabled:cursor-not-allowed disabled:opacity-40"
                     >
                       Edit
                     </button>
                     <button
                       type="button"
                       disabled={!isSuperAdmin}
-                      title={!isSuperAdmin ? 'SUPER_ADMIN required' : undefined}
-                      className="ml-4 text-red-200/80 hover:text-red-100 disabled:cursor-not-allowed disabled:opacity-40"
+                      title={!isSuperAdmin ? 'Owner required' : undefined}
+                      className="ml-4 text-red-300/80 hover:text-red-200 disabled:cursor-not-allowed disabled:opacity-40"
                     >
                       Delete
                     </button>

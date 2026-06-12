@@ -42,7 +42,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isSuperAdmin }) => {
   const handleRestrictedClick = (e: React.MouseEvent) => {
     e.preventDefault();
     showToast({
-      message: 'You need SUPER_ADMIN access to perform this action.',
+      message: 'You need Owner access to perform this action.',
       type: 'error',
       duration: 3000,
       dismissible: true
@@ -50,22 +50,21 @@ export const Sidebar: React.FC<SidebarProps> = ({ isSuperAdmin }) => {
   };
 
   return (
-    <aside className="flex h-screen w-72 flex-col border-r border-slate-800 bg-slate-950 text-slate-200">
-      <div className="border-b border-slate-800 px-5 py-5">
+    <aside className="flex h-screen w-72 flex-col bg-slate-950 text-slate-300">
+      <div className="px-5 py-5">
         <div className="flex items-center gap-3">
           <img
             src={pacificLogo}
-            alt="Pacific logo"
+            alt="pacific logo"
             className="h-9 w-9 shrink-0 object-contain"
           />
           <div>
-            <h1 className="text-base font-semibold tracking-normal text-white">Pacific</h1>
-            <p className="mt-0.5 text-xs text-slate-500">Gateway operations</p>
+            <h1 className="text-base font-semibold tracking-normal text-slate-100">pacific</h1>
           </div>
         </div>
       </div>
 
-      <nav className="flex-1 overflow-y-auto px-3 py-5">
+      <nav className="flex-1 overflow-y-auto px-3 py-3">
         {MENU_ITEMS.map((item) => {
           const Icon = item.icon;
           const isActive =
@@ -79,7 +78,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isSuperAdmin }) => {
                 key={item.path}
                 type="button"
                 onClick={handleRestrictedClick}
-                className="mb-1 flex w-full cursor-not-allowed items-center gap-3 rounded-md px-3 py-2.5 text-left text-sm text-slate-500 transition-colors hover:bg-slate-900/80"
+                className="mb-1 flex w-full cursor-not-allowed items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm text-slate-600 transition-colors hover:bg-slate-900/70"
                 aria-disabled="true"
               >
                 <Icon size={17} aria-hidden="true" />
@@ -93,25 +92,19 @@ export const Sidebar: React.FC<SidebarProps> = ({ isSuperAdmin }) => {
             <Link
               key={item.path}
               to={item.path}
-              className={`mb-1 flex items-center gap-3 rounded-md px-3 py-2.5 text-sm transition-colors ${
+              className={`mb-1 flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition-colors ${
                 isActive
-                  ? 'border border-blue-400/20 bg-blue-500/10 text-blue-100 shadow-sm shadow-blue-950/20'
-                  : 'border border-transparent text-slate-400 hover:bg-slate-900 hover:text-slate-100'
+                  ? 'bg-slate-900 text-slate-100'
+                  : 'text-slate-500 hover:bg-slate-900/60 hover:text-slate-300'
               }`}
             >
               <Icon size={17} aria-hidden="true" />
               <span>{item.label}</span>
-              {isActive && <span className="ml-auto h-1.5 w-1.5 rounded-full bg-cyan-300" />}
+              {isActive && <span className="ml-auto h-1 w-1 rounded-full bg-slate-500" />}
             </Link>
           );
         })}
       </nav>
-
-      <div className="border-t border-slate-800 px-5 py-4">
-        <p className="text-xs leading-5 text-slate-500">
-          Policy enforcement, quota visibility, and platform operations in one place.
-        </p>
-      </div>
     </aside>
   );
 };

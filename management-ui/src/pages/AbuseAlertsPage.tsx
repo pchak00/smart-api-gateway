@@ -6,7 +6,6 @@ import { DemoBadge, EmptyState, PageHeader, Panel } from '../components/PageShel
 export const AbuseAlertsPage: React.FC = () => (
   <div>
     <PageHeader
-      eyebrow="Security signals"
       title="Abuse Alerts"
       description="Review clients that repeatedly exceeded rate limits or triggered suspicious gateway behavior."
       meta={<DemoBadge>Demo alert preview</DemoBadge>}
@@ -22,15 +21,15 @@ export const AbuseAlertsPage: React.FC = () => (
       ) : (
         <div className="overflow-x-auto">
           <table className="w-full min-w-[760px]">
-            <thead className="border-b border-slate-800 bg-slate-950/70">
+            <thead className="bg-slate-950/35">
               <tr>
-                <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">Client</th>
-                <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">Blocked Count</th>
-                <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">Severity</th>
-                <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">Last Updated</th>
+                <th className="px-5 py-3 text-left text-xs font-medium text-slate-500">Client</th>
+                <th className="px-5 py-3 text-left text-xs font-medium text-slate-500">Blocked</th>
+                <th className="px-5 py-3 text-left text-xs font-medium text-slate-500">Severity</th>
+                <th className="px-5 py-3 text-left text-xs font-medium text-slate-500">Last updated</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-800">
+            <tbody className="divide-y divide-slate-800/40">
               {demoAbuseAlerts.map((alert, index) => (
                 <tr key={alert.id ?? index} className="hover:bg-slate-900">
                   <td className="px-5 py-4 text-sm font-medium text-slate-100">
@@ -40,7 +39,7 @@ export const AbuseAlertsPage: React.FC = () => (
                     {alert.blockedRequestCount ?? alert.blockedCount ?? 0}
                   </td>
                   <td className="px-5 py-4">
-                    <span className="rounded-full border border-amber-400/20 bg-amber-500/10 px-2.5 py-1 text-xs font-medium text-amber-200">
+                    <span className="rounded-full bg-amber-950/50 px-2.5 py-1 text-xs font-medium text-amber-300">
                       {alert.severity ?? 'Watch'}
                     </span>
                   </td>

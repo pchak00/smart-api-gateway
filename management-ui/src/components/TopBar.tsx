@@ -2,6 +2,7 @@ import React from 'react';
 import { LogOut } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { SecondaryButton } from './Button';
+import { getRoleLabel } from '../utils/roles';
 
 interface TopBarProps {
   title?: string;
@@ -9,6 +10,7 @@ interface TopBarProps {
 
 export const TopBar: React.FC<TopBarProps> = ({ title = 'Dashboard' }) => {
   const { logout, role, username } = useAuth();
+  const roleLabel = getRoleLabel(role);
 
   const handleLogout = () => {
     logout();
@@ -16,24 +18,21 @@ export const TopBar: React.FC<TopBarProps> = ({ title = 'Dashboard' }) => {
   };
 
   return (
-    <header className="flex items-center justify-between border-b border-slate-800 bg-slate-950/80 px-8 py-4">
+    <header className="flex items-center justify-between bg-slate-950 px-8 py-5">
       <div>
-        <p className="text-xs font-medium uppercase tracking-[0.18em] text-slate-500">
-          Pacific - Smart API Gateway
-        </p>
-        <h2 className="mt-1 text-xl font-semibold tracking-normal text-slate-50">{title}</h2>
+        <h2 className="text-xl font-semibold tracking-normal text-slate-100">{title}</h2>
       </div>
 
       <div className="flex items-center gap-4">
-        <div className="flex items-center gap-2 rounded-full border border-slate-800 bg-slate-900 px-3 py-1.5">
-          <span className="h-1.5 w-1.5 rounded-full bg-cyan-300" />
-          <span className="text-sm font-medium text-slate-300">
-            {username || 'Admin'} <span className="text-slate-600">/</span>{' '}
-            <span className="text-blue-200">{role}</span>
+        <div className="text-right text-sm">
+          <span className="font-medium text-slate-300">
+            {username || 'admin'}
           </span>
+          <span className="mx-2 text-slate-700">/</span>
+          <span className="text-slate-500">{roleLabel}</span>
         </div>
 
-        <SecondaryButton onClick={handleLogout} className="px-3">
+        <SecondaryButton onClick={handleLogout} className="px-3 text-xs">
           <LogOut size={16} aria-hidden="true" />
           Logout
         </SecondaryButton>

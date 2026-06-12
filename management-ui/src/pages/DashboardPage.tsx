@@ -4,6 +4,7 @@ import { api } from '../api/client';
 import { demoAnalyticsData, demoClientsList, demoPlansList } from '../utils/demoData';
 import { useAuth } from '../hooks/useAuth';
 import { DemoBadge, PageHeader, Panel } from '../components/PageShell';
+import { getRoleLabel } from '../utils/roles';
 
 interface MetricCardProps {
   label: string;
@@ -19,9 +20,7 @@ const MetricCard: React.FC<MetricCardProps> = ({ label, value, helper, icon: Ico
         <p className="text-sm font-medium text-slate-400">{label}</p>
         <p className="mt-2 text-3xl font-semibold tracking-normal text-slate-50">{value}</p>
       </div>
-      <div className="rounded-lg border border-blue-400/20 bg-blue-500/10 p-2.5 text-blue-200">
-        <Icon size={19} aria-hidden="true" />
-      </div>
+      <Icon className="mt-1 text-slate-600" size={18} aria-hidden="true" />
     </div>
     <p className="mt-4 text-xs leading-5 text-slate-500">{helper}</p>
   </Panel>
@@ -29,6 +28,7 @@ const MetricCard: React.FC<MetricCardProps> = ({ label, value, helper, icon: Ico
 
 export const DashboardPage: React.FC = () => {
   const { role } = useAuth();
+  const roleLabel = getRoleLabel(role);
   const [stats, setStats] = useState({
     totalClients: 0,
     totalPlans: 0,
@@ -64,9 +64,8 @@ export const DashboardPage: React.FC = () => {
   return (
     <div>
       <PageHeader
-        eyebrow="Operations overview"
         title="Dashboard"
-        description="A compact view of gateway clients, plans, traffic preview, and current admin access."
+        description="Gateway clients, plans, and seeded traffic signals in one calm operations view."
         meta={isDemoData && (
           <div className="flex flex-wrap items-center gap-3">
             <DemoBadge />
@@ -91,9 +90,9 @@ export const DashboardPage: React.FC = () => {
           icon={CreditCard}
         />
         <MetricCard
-          label="Preview requests"
+          label="Requests"
           value={stats.totalRequests.toLocaleString()}
-          helper="Seeded request activity used as a dashboard placeholder."
+          helper="Seeded request activity until live analytics is connected."
           icon={Activity}
         />
       </div>
@@ -101,13 +100,11 @@ export const DashboardPage: React.FC = () => {
       <div className="mt-6 grid grid-cols-1 gap-4 lg:grid-cols-[1fr_0.8fr]">
         <Panel className="p-5">
           <div className="flex items-center gap-3">
-            <div className="rounded-lg border border-slate-800 bg-slate-950 p-2.5 text-blue-200">
-              <Gauge size={18} aria-hidden="true" />
-            </div>
+            <Gauge className="text-slate-600" size={18} aria-hidden="true" />
             <div>
               <h2 className="text-sm font-semibold text-slate-100">Gateway posture</h2>
               <p className="mt-1 text-sm text-slate-500">
-                Rate limits, usage logging, and abuse alerts remain the primary operating surfaces for this UI.
+                Rate limits, usage logging, and abuse alerts are the primary operating surfaces.
               </p>
             </div>
           </div>
@@ -115,13 +112,11 @@ export const DashboardPage: React.FC = () => {
 
         <Panel className="p-5">
           <div className="flex items-center gap-3">
-            <div className="rounded-lg border border-slate-800 bg-slate-950 p-2.5 text-cyan-200">
-              <ShieldCheck size={18} aria-hidden="true" />
-            </div>
+            <ShieldCheck className="text-slate-600" size={18} aria-hidden="true" />
             <div>
-              <h2 className="text-sm font-semibold text-slate-100">Signed in as {role}</h2>
+              <h2 className="text-sm font-semibold text-slate-100">Signed in as {roleLabel}</h2>
               <p className="mt-1 text-sm text-slate-500">
-                Role-based navigation and restricted actions are enforced in the dashboard shell.
+                Role-based navigation and restricted actions are preserved.
               </p>
             </div>
           </div>

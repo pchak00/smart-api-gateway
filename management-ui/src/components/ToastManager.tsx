@@ -9,11 +9,11 @@ export const ToastManager: React.FC = () => {
       {toasts.map((toast) => (
         <div
           key={toast.id}
-          className={`flex max-w-sm items-start gap-3 rounded-lg border p-4 text-sm shadow-xl shadow-black/30 ${
-            toast.type === 'success' ? 'border-emerald-400/30 bg-emerald-950 text-emerald-100' :
-            toast.type === 'error' ? 'border-red-400/30 bg-red-950 text-red-100' :
-            toast.type === 'warning' ? 'border-amber-400/30 bg-amber-950 text-amber-100' :
-            'border-blue-400/30 bg-blue-950 text-blue-100'
+          className={`flex max-w-sm items-start gap-3 rounded-lg p-4 text-sm shadow-xl shadow-black/30 ${
+            toast.type === 'success' ? 'bg-emerald-950 text-emerald-100' :
+            toast.type === 'error' ? 'bg-red-950 text-red-100' :
+            toast.type === 'warning' ? 'bg-amber-950 text-amber-100' :
+            'bg-slate-900 text-slate-100'
           }`}
           role="alert"
         >

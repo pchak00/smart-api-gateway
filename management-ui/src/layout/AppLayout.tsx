@@ -13,7 +13,7 @@ const getPageTitle = (pathname: string) => {
   if (pathname === '/analytics') return 'Analytics';
   if (pathname === '/abuse-alerts') return 'Abuse Alerts';
   if (pathname === '/admin-users') return 'Admin Users';
-  return 'Pacific';
+  return 'pacific';
 };
 
 export const AppLayout: React.FC = () => {

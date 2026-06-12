@@ -18,7 +18,6 @@ const totalBlocked = demoAnalyticsData.reduce((sum, point) => sum + point.blocke
 export const AnalyticsPage: React.FC = () => (
   <div>
     <PageHeader
-      eyebrow="Traffic insights"
       title="Analytics"
       description="Preview request trends and blocked traffic patterns for the gateway operations dashboard."
       meta={<DemoBadge>Demo analytics preview</DemoBadge>}
@@ -31,22 +30,22 @@ export const AnalyticsPage: React.FC = () => (
             <h2 className="text-sm font-semibold text-slate-100">Request trend</h2>
             <p className="mt-1 text-sm text-slate-500">Seeded activity until live analytics is connected.</p>
           </div>
-          <BarChart3 className="text-slate-500" size={20} aria-hidden="true" />
+          <BarChart3 className="text-slate-600" size={20} aria-hidden="true" />
         </div>
         <div className="h-72">
           <ResponsiveContainer width="100%" height="100%">
             <AreaChart data={demoAnalyticsData} margin={{ top: 8, right: 8, left: -16, bottom: 0 }}>
               <defs>
                 <linearGradient id="allowedRequests" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#2563eb" stopOpacity={0.35} />
-                  <stop offset="95%" stopColor="#2563eb" stopOpacity={0.02} />
+                  <stop offset="5%" stopColor="#475569" stopOpacity={0.32} />
+                  <stop offset="95%" stopColor="#475569" stopOpacity={0.02} />
                 </linearGradient>
                 <linearGradient id="blockedRequests" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#22d3ee" stopOpacity={0.22} />
-                  <stop offset="95%" stopColor="#22d3ee" stopOpacity={0.02} />
+                  <stop offset="5%" stopColor="#334155" stopOpacity={0.24} />
+                  <stop offset="95%" stopColor="#334155" stopOpacity={0.02} />
                 </linearGradient>
               </defs>
-              <CartesianGrid stroke="#1e293b" strokeDasharray="3 3" vertical={false} />
+              <CartesianGrid stroke="#1e293b" strokeOpacity={0.55} vertical={false} />
               <XAxis dataKey="timestamp" tick={{ fill: '#64748b', fontSize: 12 }} tickLine={false} axisLine={false} />
               <YAxis tick={{ fill: '#64748b', fontSize: 12 }} tickLine={false} axisLine={false} />
               <Tooltip
@@ -57,8 +56,8 @@ export const AnalyticsPage: React.FC = () => (
                   color: '#e2e8f0'
                 }}
               />
-              <Area type="monotone" dataKey="allowedRequests" stroke="#2563eb" fill="url(#allowedRequests)" strokeWidth={2} />
-              <Area type="monotone" dataKey="blockedRequests" stroke="#22d3ee" fill="url(#blockedRequests)" strokeWidth={2} />
+              <Area type="monotone" dataKey="allowedRequests" stroke="#64748b" fill="url(#allowedRequests)" strokeWidth={2} />
+              <Area type="monotone" dataKey="blockedRequests" stroke="#475569" fill="url(#blockedRequests)" strokeWidth={2} />
             </AreaChart>
           </ResponsiveContainer>
         </div>
@@ -71,7 +70,7 @@ export const AnalyticsPage: React.FC = () => (
               <p className="text-sm text-slate-400">Allowed requests</p>
               <p className="mt-2 text-3xl font-semibold text-slate-50">{totalAllowed.toLocaleString()}</p>
             </div>
-            <Activity className="text-blue-200" size={20} aria-hidden="true" />
+            <Activity className="text-slate-600" size={20} aria-hidden="true" />
           </div>
         </Panel>
         <Panel className="p-5">
@@ -80,7 +79,7 @@ export const AnalyticsPage: React.FC = () => (
               <p className="text-sm text-slate-400">Blocked requests</p>
               <p className="mt-2 text-3xl font-semibold text-slate-50">{totalBlocked.toLocaleString()}</p>
             </div>
-            <span className="h-2 w-2 rounded-full bg-cyan-300" />
+            <span className="text-sm text-slate-600">Demo</span>
           </div>
         </Panel>
       </div>
