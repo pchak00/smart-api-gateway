@@ -1,4 +1,4 @@
-import { ClientDto, PlanDto, UsageLogDto, AbuseAlertDto, AnalyticsDataPoint } from '../types';
+import { ClientDto, PlanDto, RouteLimitDto, UsageLogDto, AbuseAlertDto, AnalyticsDataPoint } from '../types';
 
 export const demoPlan: PlanDto = {
   id: 1,
@@ -74,6 +74,12 @@ export const demoUsageLogs: UsageLogDto[] = [
   }
 ];
 
+export const demoRouteLimitsList: RouteLimitDto[] = [
+  { id: 1, planId: 1, routePattern: '/api/reports', requestsPerMinute: 2 },
+  { id: 2, planId: 1, routePattern: '/api/products', requestsPerMinute: 10 },
+  { id: 3, planId: 2, routePattern: '/api/reports', requestsPerMinute: 20 }
+];
+
 export const demoAbuseAlerts: AbuseAlertDto[] = [
   {
     id: 1,
@@ -93,4 +99,3 @@ export const demoAnalyticsData: AnalyticsDataPoint[] = [
   { timestamp: '2024-01-06', allowedRequests: 740, blockedRequests: 5 },
   { timestamp: '2024-01-07', allowedRequests: 820, blockedRequests: 15 }
 ];
-

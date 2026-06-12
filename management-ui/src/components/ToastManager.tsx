@@ -9,11 +9,11 @@ export const ToastManager: React.FC = () => {
       {toasts.map((toast) => (
         <div
           key={toast.id}
-          className={`p-4 rounded-lg shadow-lg text-white max-w-sm flex items-start gap-3 animate-in slide-in-from-top ${
-            toast.type === 'success' ? 'bg-green-500' :
-            toast.type === 'error' ? 'bg-red-500' :
-            toast.type === 'warning' ? 'bg-yellow-500' :
-            'bg-blue-500'
+          className={`flex max-w-sm items-start gap-3 rounded-lg p-4 text-sm shadow-xl shadow-black/30 ${
+            toast.type === 'success' ? 'bg-emerald-950 text-emerald-100' :
+            toast.type === 'error' ? 'bg-red-950 text-red-100' :
+            toast.type === 'warning' ? 'bg-amber-950 text-amber-100' :
+            'bg-slate-900 text-slate-100'
           }`}
           role="alert"
         >
@@ -21,7 +21,7 @@ export const ToastManager: React.FC = () => {
           {toast.dismissible && (
             <button
               onClick={() => dismissToast(toast.id)}
-              className="text-white hover:opacity-80 font-bold text-lg leading-none"
+              className="text-current opacity-70 hover:opacity-100"
               aria-label="Close notification"
             >
               ×
@@ -32,4 +32,3 @@ export const ToastManager: React.FC = () => {
     </div>
   );
 };
-

@@ -3,6 +3,7 @@ import { Navigate, useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { useToast } from '../hooks/useToast';
 import { PrimaryButton } from '../components/Button';
+import pacificLogo from '../assets/pacific-logo.png';
 
 export const LoginPage: React.FC = () => {
   const [username, setUsername] = useState('');
@@ -35,62 +36,62 @@ export const LoginPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-600 to-blue-800 flex items-center justify-center px-4">
-      <div className="bg-white rounded-lg shadow-xl p-8 w-full max-w-md">
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">Smart API Gateway</h1>
-          <p className="text-gray-600 mt-2">Management Dashboard</p>
+    <div className="flex min-h-screen items-center justify-center bg-slate-950 px-4 py-10">
+      <main className="w-full max-w-sm">
+        <div className="mb-8 flex flex-col items-center text-center">
+          <img
+            src={pacificLogo}
+            alt="pacific logo"
+            className="h-12 w-12 object-contain"
+          />
+          <p className="mt-4 text-xl font-semibold tracking-normal text-slate-100">pacific</p>
+          <p className="mt-1 text-sm text-slate-500">Smart API Gateway Management</p>
         </div>
 
-        <form onSubmit={handleSubmit}>
-          <div className="mb-4">
-            <label htmlFor="username" className="block text-sm font-medium text-gray-700 mb-2">
-              Username
-            </label>
-            <input
-              id="username"
-              type="text"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600"
-              placeholder="admin"
-              required
-            />
-          </div>
+        <section className="rounded-2xl bg-slate-900/70 p-6 shadow-xl shadow-black/20">
+          <h1 className="text-xl font-semibold tracking-normal text-slate-100">Sign in</h1>
 
-          <div className="mb-6">
-            <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
-              Password
-            </label>
-            <input
-              id="password"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600"
-              placeholder="••••••••"
-              required
-            />
-          </div>
+          <form onSubmit={handleSubmit} className="mt-6 space-y-4">
+            <div>
+              <label htmlFor="username" className="mb-2 block text-sm text-slate-400">
+                Username
+              </label>
+              <input
+                id="username"
+                type="text"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                className="w-full rounded-lg bg-slate-950/70 px-4 py-3 text-sm text-slate-100 outline-none ring-1 ring-slate-800/60 transition placeholder:text-slate-700 focus:ring-slate-600"
+                placeholder="Enter username"
+                required
+              />
+            </div>
 
-          <PrimaryButton
-            type="submit"
-            disabled={isLoading}
-            className="w-full bg-blue-600 text-white hover:bg-blue-700"
-          >
-            {isLoading ? 'Logging in...' : 'Login'}
-          </PrimaryButton>
-        </form>
+            <div>
+              <label htmlFor="password" className="mb-2 block text-sm text-slate-400">
+                Password
+              </label>
+              <input
+                id="password"
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="w-full rounded-lg bg-slate-950/70 px-4 py-3 text-sm text-slate-100 outline-none ring-1 ring-slate-800/60 transition placeholder:text-slate-700 focus:ring-slate-600"
+                placeholder="Enter password"
+                required
+              />
+            </div>
 
-        {/* Demo credentials info */}
-        <div className="mt-8 pt-8 border-t border-gray-200">
-          <p className="text-sm text-gray-600 mb-3">Demo Credentials:</p>
-          <div className="bg-gray-50 rounded p-3 text-xs">
-            <p><strong>Admin:</strong> admin / password</p>
-            <p><strong>Viewer:</strong> viewer / password</p>
-          </div>
-        </div>
-      </div>
+            <PrimaryButton
+              type="submit"
+              disabled={isLoading}
+              className="w-full py-3"
+            >
+              {isLoading ? 'Signing in...' : 'Sign in'}
+            </PrimaryButton>
+          </form>
+        </section>
+      </main>
     </div>
   );
 };

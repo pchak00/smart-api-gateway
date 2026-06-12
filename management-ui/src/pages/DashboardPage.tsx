@@ -1,10 +1,34 @@
 import React, { useEffect, useState } from 'react';
+import { Activity, CreditCard, Gauge, ShieldCheck, Users } from 'lucide-react';
 import { api } from '../api/client';
-import { demoAnalyticsData } from '../utils/demoData';
+import { demoAnalyticsData, demoClientsList, demoPlansList } from '../utils/demoData';
 import { useAuth } from '../hooks/useAuth';
+import { DemoBadge, PageHeader, Panel } from '../components/PageShell';
+import { getRoleLabel } from '../utils/roles';
+
+interface MetricCardProps {
+  label: string;
+  value: number | string;
+  helper: string;
+  icon: React.ElementType;
+}
+
+const MetricCard: React.FC<MetricCardProps> = ({ label, value, helper, icon: Icon }) => (
+  <Panel className="p-5">
+    <div className="flex items-start justify-between gap-4">
+      <div>
+        <p className="text-sm font-medium text-slate-400">{label}</p>
+        <p className="mt-2 text-3xl font-semibold tracking-normal text-slate-50">{value}</p>
+      </div>
+      <Icon className="mt-1 text-slate-600" size={18} aria-hidden="true" />
+    </div>
+    <p className="mt-4 text-xs leading-5 text-slate-500">{helper}</p>
+  </Panel>
+);
 
 export const DashboardPage: React.FC = () => {
   const { role } = useAuth();
+  const roleLabel = getRoleLabel(role);
   const [stats, setStats] = useState({
     totalClients: 0,
     totalPlans: 0,
@@ -25,11 +49,10 @@ export const DashboardPage: React.FC = () => {
         setIsDemoData(true);
       } catch (error) {
         console.error('Failed to load stats:', error);
-        // Use demo data on error
         setStats({
-          totalClients: 100,
-          totalPlans: 3,
-          totalRequests: 4210
+          totalClients: demoClientsList.length,
+          totalPlans: demoPlansList.length,
+          totalRequests: demoAnalyticsData.reduce((a, b) => a + b.allowedRequests + b.blockedRequests, 0)
         });
         setIsDemoData(true);
       }
@@ -40,38 +63,65 @@ export const DashboardPage: React.FC = () => {
 
   return (
     <div>
-      <h1 className="text-3xl font-bold text-gray-900 mb-8">Dashboard</h1>
+      <PageHeader
+        title="Dashboard"
+        description="Gateway clients, plans, and seeded traffic signals in one calm operations view."
+        meta={isDemoData && (
+          <div className="flex flex-wrap items-center gap-3">
+            <DemoBadge />
+            <span className="text-xs text-slate-500">
+              Using seeded gateway data until live analytics is connected.
+            </span>
+          </div>
+        )}
+      />
 
-      {/* Stats cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-        <div className="bg-white rounded-lg shadow p-6 border-l-4 border-blue-600">
-          <p className="text-gray-600 text-sm font-medium">Total Clients</p>
-          <p className="text-3xl font-bold text-gray-900 mt-2">{stats.totalClients}</p>
-        </div>
-
-        <div className="bg-white rounded-lg shadow p-6 border-l-4 border-green-600">
-          <p className="text-gray-600 text-sm font-medium">Total Plans</p>
-          <p className="text-3xl font-bold text-gray-900 mt-2">{stats.totalPlans}</p>
-        </div>
-
-        <div className="bg-white rounded-lg shadow p-6 border-l-4 border-purple-600">
-          <p className="text-gray-600 text-sm font-medium">Total Requests</p>
-          <p className="text-3xl font-bold text-gray-900 mt-2">{stats.totalRequests}</p>
-        </div>
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+        <MetricCard
+          label="Clients"
+          value={stats.totalClients}
+          helper="Known gateway consumers in the current management view."
+          icon={Users}
+        />
+        <MetricCard
+          label="Plans"
+          value={stats.totalPlans}
+          helper="Quota tiers available to API consumers."
+          icon={CreditCard}
+        />
+        <MetricCard
+          label="Requests"
+          value={stats.totalRequests.toLocaleString()}
+          helper="Seeded request activity until live analytics is connected."
+          icon={Activity}
+        />
       </div>
 
-      {/* Role info */}
-      <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-        <p className="text-sm text-yellow-800">
-          <strong>You are logged in as:</strong> {role === 'SUPER_ADMIN' ? 'Administrator' : 'Viewer'} ({role})
-        </p>
-      </div>
+      <div className="mt-6 grid grid-cols-1 gap-4 lg:grid-cols-[1fr_0.8fr]">
+        <Panel className="p-5">
+          <div className="flex items-center gap-3">
+            <Gauge className="text-slate-600" size={18} aria-hidden="true" />
+            <div>
+              <h2 className="text-sm font-semibold text-slate-100">Gateway posture</h2>
+              <p className="mt-1 text-sm text-slate-500">
+                Rate limits, usage logging, and abuse alerts are the primary operating surfaces.
+              </p>
+            </div>
+          </div>
+        </Panel>
 
-      {isDemoData && (
-        <div className="mt-4 inline-flex rounded border border-blue-200 bg-blue-50 px-3 py-1 text-sm text-blue-800">
-          Showing demo data
-        </div>
-      )}
+        <Panel className="p-5">
+          <div className="flex items-center gap-3">
+            <ShieldCheck className="text-slate-600" size={18} aria-hidden="true" />
+            <div>
+              <h2 className="text-sm font-semibold text-slate-100">Signed in as {roleLabel}</h2>
+              <p className="mt-1 text-sm text-slate-500">
+                Role-based navigation and restricted actions are preserved.
+              </p>
+            </div>
+          </div>
+        </Panel>
+      </div>
     </div>
   );
 };

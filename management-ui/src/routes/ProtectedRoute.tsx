@@ -25,7 +25,7 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
     if (shouldBlockRoute && !hasShownUnauthorizedToast.current) {
       hasShownUnauthorizedToast.current = true;
       showToast({
-        message: 'You need SUPER_ADMIN access to perform this action.',
+        message: 'You need Owner access to perform this action.',
         type: 'error',
         duration: 3000,
         dismissible: true
