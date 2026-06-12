@@ -1,11 +1,15 @@
 import { jwtDecode } from 'jwt-decode';
+import { AdminRole } from '../types';
 
 export interface DecodedToken {
   sub: string;
-  role: 'SUPER_ADMIN' | 'READ_ONLY_ADMIN';
+  role: AdminRole;
   iat: number;
   exp: number;
 }
+
+const isAdminRole = (role: unknown): role is AdminRole =>
+  role === 'SUPER_ADMIN' || role === 'READ_ONLY_ADMIN';
 
 export const decodeToken = (token: string): DecodedToken | null => {
   try {
@@ -24,8 +28,12 @@ export const isTokenExpired = (token: string): boolean => {
   return decoded.exp < now;
 };
 
-export const getTokenRole = (token: string): 'SUPER_ADMIN' | 'READ_ONLY_ADMIN' | null => {
+export const getTokenRole = (token: string): AdminRole | null => {
   const decoded = decodeToken(token);
-  return decoded?.role || null;
+  return isAdminRole(decoded?.role) ? decoded.role : null;
 };
 
+export const getTokenUsername = (token: string): string | null => {
+  const decoded = decodeToken(token);
+  return decoded?.sub || null;
+};

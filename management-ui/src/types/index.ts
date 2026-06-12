@@ -1,3 +1,5 @@
+export type AdminRole = 'SUPER_ADMIN' | 'READ_ONLY_ADMIN';
+
 // Auth & Admin
 export interface LoginRequest {
   username: string;
@@ -9,14 +11,14 @@ export interface LoginResponse {
 }
 
 export interface AdminUserDto {
-  id: number;
+  id?: number;
   username: string;
-  role: 'SUPER_ADMIN' | 'READ_ONLY_ADMIN';
+  role: AdminRole;
 }
 
 // Plans
 export interface PlanDto {
-  id: number;
+  id?: number;
   planName: string;
   requestsPerMinute: number;
   price?: number;
@@ -30,12 +32,13 @@ export interface CreatePlanRequest {
 
 // Clients
 export interface ClientDto {
-  id: number;
+  id?: number;
   clientName: string;
   apiKey: string;
-  plan: PlanDto;
   active: boolean;
-  createdAt: string;
+  plan?: PlanDto;
+  planName?: string;
+  createdAt?: string;
 }
 
 export interface CreateClientRequest {
@@ -48,9 +51,12 @@ export interface UpdateClientPlanRequest {
 }
 
 export interface ClientStatsDto {
+  clientId?: number;
   totalRequests: number;
+  allowedRequests?: number;
   blockedRequests: number;
-  lastRequestTime: string | null;
+  blockRate?: number;
+  lastRequestTime?: string | null;
 }
 
 // Route Limits
@@ -75,22 +81,30 @@ export interface UpdateRouteLimitRequest {
 // Usage Logs
 export interface UsageLogDto {
   id: number;
-  clientId: number;
+  clientId?: number;
   path: string;
   method: string;
-  isAllowed: boolean;
+  isAllowed?: boolean;
+  allowed?: boolean;
   statusCode: number;
-  message: string;
+  message?: string;
+  reason?: string;
   timestamp: string;
 }
 
 // Abuse Alerts
 export interface AbuseAlertDto {
-  id: number;
-  clientId: number;
-  blockedRequestCount: number;
-  alertedAt: string;
-  lastUpdatedAt: string;
+  id?: number;
+  clientId?: number;
+  clientName?: string;
+  blockedRequestCount?: number;
+  blockedCount?: number;
+  severity?: string;
+  message?: string;
+  alertedAt?: string;
+  lastUpdatedAt?: string;
+  windowStart?: string;
+  createdAt?: string;
 }
 
 // Analytics
@@ -99,4 +113,3 @@ export interface AnalyticsDataPoint {
   allowedRequests: number;
   blockedRequests: number;
 }
-

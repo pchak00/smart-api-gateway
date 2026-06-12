@@ -7,7 +7,7 @@ interface TopBarProps {
 }
 
 export const TopBar: React.FC<TopBarProps> = ({ title = 'Dashboard' }) => {
-  const { logout, role } = useAuth();
+  const { logout, role, username } = useAuth();
 
   const handleLogout = () => {
     logout();
@@ -25,7 +25,7 @@ export const TopBar: React.FC<TopBarProps> = ({ title = 'Dashboard' }) => {
         <div className="flex items-center gap-2 px-3 py-2 bg-blue-50 rounded-lg border border-blue-200">
           <div className="w-2 h-2 bg-blue-600 rounded-full" />
           <span className="text-sm font-medium text-gray-700">
-            Admin • <span className="text-blue-600">{role}</span>
+            {username || 'Admin'} • <span className="text-blue-600">{role}</span>
           </span>
         </div>
 
@@ -37,4 +37,3 @@ export const TopBar: React.FC<TopBarProps> = ({ title = 'Dashboard' }) => {
     </header>
   );
 };
-

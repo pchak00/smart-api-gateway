@@ -48,13 +48,16 @@ export const Sidebar: React.FC<SidebarProps> = ({ isSuperAdmin }) => {
       {/* Navigation */}
       <nav className="flex-1 overflow-y-auto py-6">
         {MENU_ITEMS.map((item) => {
-          const isActive = location.pathname === item.path;
+          const isActive =
+            location.pathname === item.path ||
+            (item.path !== '/' && location.pathname.startsWith(`${item.path}/`));
           const isRestricted = item.requiresSuperAdmin && !isSuperAdmin;
 
           if (isRestricted) {
             return (
               <button
                 key={item.path}
+                type="button"
                 onClick={handleRestrictedClick}
                 className="w-full text-left px-6 py-3 opacity-50 cursor-not-allowed flex items-center gap-2 hover:bg-gray-800 transition-colors"
                 aria-disabled="true"
@@ -83,4 +86,3 @@ export const Sidebar: React.FC<SidebarProps> = ({ isSuperAdmin }) => {
     </aside>
   );
 };
-

@@ -10,6 +10,7 @@ export const DashboardPage: React.FC = () => {
     totalPlans: 0,
     totalRequests: 0,
   });
+  const [isDemoData, setIsDemoData] = useState(false);
 
   useEffect(() => {
     const loadStats = async () => {
@@ -21,6 +22,7 @@ export const DashboardPage: React.FC = () => {
           totalPlans: plans.length,
           totalRequests: demoAnalyticsData.reduce((a, b) => a + b.allowedRequests + b.blockedRequests, 0)
         });
+        setIsDemoData(true);
       } catch (error) {
         console.error('Failed to load stats:', error);
         // Use demo data on error
@@ -29,6 +31,7 @@ export const DashboardPage: React.FC = () => {
           totalPlans: 3,
           totalRequests: 4210
         });
+        setIsDemoData(true);
       }
     };
 
@@ -64,13 +67,11 @@ export const DashboardPage: React.FC = () => {
         </p>
       </div>
 
-      {/* Demo data notice */}
-      <div className="mt-4 bg-blue-50 border border-blue-200 rounded-lg p-4">
-        <p className="text-sm text-blue-800">
-          <strong>Note:</strong> Showing demo data. Connect to backend for live analytics.
-        </p>
-      </div>
+      {isDemoData && (
+        <div className="mt-4 inline-flex rounded border border-blue-200 bg-blue-50 px-3 py-1 text-sm text-blue-800">
+          Showing demo data
+        </div>
+      )}
     </div>
   );
 };
-

@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { LoginPage } from '../pages/LoginPage';
 import { DashboardPage } from '../pages/DashboardPage';
 import { ClientsListPage } from '../pages/ClientsListPage';
+import { ClientDetailPage } from '../pages/ClientDetailPage';
 import { PlansPage } from '../pages/PlansPage';
 import { RouteLimitsPage } from '../pages/RouteLimitsPage';
 import { AnalyticsPage } from '../pages/AnalyticsPage';
@@ -41,6 +42,7 @@ export const AppRoutes: React.FC = () => {
         >
           <Route index element={<DashboardPage />} />
           <Route path="clients" element={<ClientsListPage />} />
+          <Route path="clients/:id" element={<ClientDetailPage />} />
           <Route path="plans" element={<PlansPage />} />
           <Route path="route-limits" element={<RouteLimitsPage />} />
           <Route path="analytics" element={<AnalyticsPage />} />
@@ -61,4 +63,3 @@ export const AppRoutes: React.FC = () => {
     </Router>
   );
 };
-

@@ -1,12 +1,14 @@
 import React, { createContext, ReactNode, useEffect, useState } from 'react';
 import { api } from '../api/client';
-import { decodeToken, getTokenRole, isTokenExpired } from '../utils/jwt';
-import { LoginRequest } from '../types';
+import { getTokenRole, getTokenUsername, isTokenExpired } from '../utils/jwt';
+import { AdminRole, LoginRequest } from '../types';
 
 interface AuthContextType {
   token: string | null;
-  role: 'SUPER_ADMIN' | 'READ_ONLY_ADMIN' | null;
+  role: AdminRole | null;
+  username: string | null;
   isAuthenticated: boolean;
+  isSuperAdmin: boolean;
   isLoading: boolean;
   login: (credentials: LoginRequest) => Promise<void>;
   logout: () => void;
@@ -16,18 +18,21 @@ export const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [token, setToken] = useState<string | null>(null);
-  const [role, setRole] = useState<'SUPER_ADMIN' | 'READ_ONLY_ADMIN' | null>(null);
+  const [role, setRole] = useState<AdminRole | null>(null);
+  const [username, setUsername] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   // Initialize auth state from localStorage
   useEffect(() => {
     const storedToken = localStorage.getItem('smart-gateway:token');
-    if (storedToken && !isTokenExpired(storedToken)) {
+    const storedRole = storedToken ? getTokenRole(storedToken) : null;
+
+    if (storedToken && storedRole && !isTokenExpired(storedToken)) {
       setToken(storedToken);
-      const decodedRole = getTokenRole(storedToken);
-      setRole(decodedRole);
+      setRole(storedRole);
+      setUsername(getTokenUsername(storedToken));
     } else if (storedToken) {
-      // Token expired, clear it
+      // Token expired or malformed, clear it.
       localStorage.removeItem('smart-gateway:token');
     }
     setIsLoading(false);
@@ -37,14 +42,17 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     try {
       const response = await api.login(credentials);
       const newToken = response.token;
+      const decodedRole = getTokenRole(newToken);
+
+      if (!decodedRole || isTokenExpired(newToken)) {
+        throw new Error('Login returned an invalid token');
+      }
 
       // Store token
       localStorage.setItem('smart-gateway:token', newToken);
       setToken(newToken);
-
-      // Decode and set role
-      const decodedRole = getTokenRole(newToken);
       setRole(decodedRole);
+      setUsername(getTokenUsername(newToken));
     } catch (error) {
       console.error('Login failed:', error);
       throw error;
@@ -55,16 +63,20 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     localStorage.removeItem('smart-gateway:token');
     setToken(null);
     setRole(null);
+    setUsername(null);
   };
 
-  const isAuthenticated = !!token && !isTokenExpired(token);
+  const isAuthenticated = !!token && !!role && !isTokenExpired(token);
+  const isSuperAdmin = role === 'SUPER_ADMIN';
 
   return (
     <AuthContext.Provider
       value={{
         token,
         role,
+        username,
         isAuthenticated,
+        isSuperAdmin,
         isLoading,
         login,
         logout
@@ -74,4 +86,3 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     </AuthContext.Provider>
   );
 };
-
