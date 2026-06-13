@@ -12,6 +12,9 @@ RUN npm ci
 # Copy source code
 COPY . .
 
+ARG VITE_API_BASE_URL=http://localhost:8080
+ENV VITE_API_BASE_URL=$VITE_API_BASE_URL
+
 # Build the app
 RUN npm run build
 
@@ -27,4 +30,3 @@ COPY nginx.conf /etc/nginx/conf.d/default.conf
 EXPOSE 3000
 
 CMD ["nginx", "-g", "daemon off;"]
-

@@ -38,7 +38,7 @@ export const PageHeader: React.FC<PageHeaderProps> = ({
           {eyebrow}
         </p>
       )}
-      <h1 className="text-2xl font-semibold tracking-normal text-slate-100">{title}</h1>
+      <h1 className="text-2xl font-semibold text-slate-100">{title}</h1>
       <p className="mt-2 text-sm leading-6 text-slate-500">{description}</p>
       {meta && <div className="mt-3">{meta}</div>}
     </div>
@@ -47,7 +47,7 @@ export const PageHeader: React.FC<PageHeaderProps> = ({
 );
 
 export const Panel: React.FC<PanelProps> = ({ children, className = '' }) => (
-  <section className={`rounded-xl bg-slate-900/55 shadow-sm shadow-black/10 ${className}`}>
+  <section className={`rounded-lg bg-slate-900/35 ${className}`}>
     {children}
   </section>
 );
@@ -65,7 +65,7 @@ export const EmptyState: React.FC<EmptyStateProps> = ({ icon: Icon, title, descr
 );
 
 export const DemoBadge: React.FC<DemoBadgeProps> = ({ children = 'Demo preview' }) => (
-  <span className="inline-flex items-center rounded-full bg-slate-800/70 px-2.5 py-1 text-xs font-medium text-slate-400">
+  <span className="inline-flex items-center rounded-md bg-slate-900/70 px-2 py-0.5 text-xs font-medium text-slate-500">
     {children}
   </span>
 );
