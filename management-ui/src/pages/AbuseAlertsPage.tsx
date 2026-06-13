@@ -2,13 +2,21 @@ import React from 'react';
 import { ShieldAlert } from 'lucide-react';
 import { demoAbuseAlerts } from '../utils/demoData';
 import { DemoBadge, EmptyState, PageHeader } from '../components/PageShell';
+import { formatDateTime, getSeverityLabel } from '../utils/display';
 
 export const AbuseAlertsPage: React.FC = () => (
   <div>
     <PageHeader
       title="Abuse Alerts"
       description="Review clients that repeatedly exceeded rate limits or triggered suspicious gateway behavior."
-      meta={<DemoBadge>Demo alert preview</DemoBadge>}
+      meta={
+        <div className="flex flex-wrap items-center gap-3">
+          <DemoBadge>Demo alert preview</DemoBadge>
+          <span className="text-xs text-slate-500">
+            The backend exposes per-client abuse alerts, but not a global alert list yet.
+          </span>
+        </div>
+      }
     />
 
     <section>
@@ -40,11 +48,11 @@ export const AbuseAlertsPage: React.FC = () => (
                   </td>
                   <td className="px-4 py-4">
                     <span className="rounded-md bg-amber-950/30 px-2 py-0.5 text-xs font-medium text-amber-300/90">
-                      {alert.severity ?? 'Watch'}
+                      {getSeverityLabel(alert.severity)}
                     </span>
                   </td>
                   <td className="px-4 py-4 text-sm text-slate-400">
-                    {alert.lastUpdatedAt ?? alert.createdAt ?? alert.alertedAt ?? 'Pending'}
+                    {formatDateTime(alert.lastUpdatedAt ?? alert.createdAt ?? alert.alertedAt)}
                   </td>
                 </tr>
               ))}

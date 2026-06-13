@@ -42,8 +42,9 @@ export interface ClientDto {
 }
 
 export interface CreateClientRequest {
-  clientName: string;
+  name: string;
   planId: number;
+  active: boolean;
 }
 
 export interface UpdateClientPlanRequest {
@@ -61,10 +62,13 @@ export interface ClientStatsDto {
 
 // Route Limits
 export interface RouteLimitDto {
-  id: number;
-  planId: number;
-  routePattern: string;
-  requestsPerMinute: number;
+  id?: number;
+  planId?: number;
+  planName?: string;
+  routePattern?: string;
+  path?: string;
+  requestsPerMinute?: number;
+  requestPerMinute?: number;
 }
 
 export interface CreateRouteLimitRequest {
@@ -75,7 +79,7 @@ export interface CreateRouteLimitRequest {
 
 export interface UpdateRouteLimitRequest {
   routePattern: string;
-  requestsPerMinute: number;
+  requestPerMinute: number;
 }
 
 // Usage Logs

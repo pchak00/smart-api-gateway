@@ -16,7 +16,7 @@ import {
   ClientStatsDto
 } from '../types';
 
-const baseURL = (import.meta.env.VITE_API_BASE_URL as string) ?? '/';
+const baseURL = (import.meta.env.VITE_API_BASE_URL as string | undefined) || '/';
 
 class ApiClient {
   private axiosInstance: AxiosInstance;
@@ -51,11 +51,6 @@ class ApiClient {
     return response.data;
   }
 
-  async getClient(id: number): Promise<ClientDto> {
-    const response = await this.axiosInstance.get<ClientDto>(`/admin/clients/${id}`);
-    return response.data;
-  }
-
   async createClient(payload: CreateClientRequest): Promise<ClientDto> {
     const response = await this.axiosInstance.post<ClientDto>('/admin/clients', payload);
     return response.data;
@@ -75,12 +70,7 @@ class ApiClient {
     return response.data;
   }
 
-  // Plan endpoints
-  async getPlans(): Promise<PlanDto[]> {
-    const response = await this.axiosInstance.get<PlanDto[]>('/admin/clients/plans');
-    return response.data;
-  }
-
+  // Plan mutation endpoints. The backend does not currently expose a plan list endpoint.
   async createPlan(payload: CreatePlanRequest): Promise<PlanDto> {
     const response = await this.axiosInstance.post<PlanDto>('/admin/clients/plans', payload);
     return response.data;
@@ -90,12 +80,7 @@ class ApiClient {
     await this.axiosInstance.delete(`/admin/clients/plans/${id}`);
   }
 
-  // Route limit endpoints
-  async getRouteLimits(): Promise<RouteLimitDto[]> {
-    const response = await this.axiosInstance.get<RouteLimitDto[]>('/admin/clients/routeLimits');
-    return response.data;
-  }
-
+  // Route limit mutation endpoints. The backend does not currently expose a route-limit list endpoint.
   async createRouteLimit(payload: CreateRouteLimitRequest): Promise<RouteLimitDto> {
     const response = await this.axiosInstance.post<RouteLimitDto>('/admin/clients/routeLimits', payload);
     return response.data;
@@ -122,12 +107,7 @@ class ApiClient {
     return response.data;
   }
 
-  // Admin user endpoints
-  async getAdminUsers(): Promise<AdminUserDto[]> {
-    const response = await this.axiosInstance.get<AdminUserDto[]>('/admin/users');
-    return response.data;
-  }
-
+  // Admin user mutation endpoints. The backend does not currently expose an admin-user list endpoint.
   async createAdminUser(payload: { username: string; password: string; role: string }): Promise<AdminUserDto> {
     const response = await this.axiosInstance.post<AdminUserDto>('/admin/users', payload);
     return response.data;
@@ -144,4 +124,3 @@ class ApiClient {
 }
 
 export const api = new ApiClient();
-

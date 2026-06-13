@@ -9,17 +9,27 @@ import { getPlanLabel } from '../utils/display';
 
 export const PlansPage: React.FC = () => {
   const { isSuperAdmin } = useAuth();
+  const writeTooltip = !isSuperAdmin
+    ? 'Admin required'
+    : 'Plan write controls need a backend list view before they are wired';
 
   return (
     <div>
       <PageHeader
         title="Plans"
         description="Manage the plan tiers that define default request quotas for API consumers."
-        meta={<DemoBadge>Seeded plan preview</DemoBadge>}
+        meta={
+          <div className="flex flex-wrap items-center gap-3">
+            <DemoBadge>Seeded plan preview</DemoBadge>
+            <span className="text-xs text-slate-500">
+              The backend does not expose a plan list endpoint yet.
+            </span>
+          </div>
+        }
         actions={
           <PrimaryButton
-            disabled={!isSuperAdmin}
-            tooltip={!isSuperAdmin ? 'Admin required' : undefined}
+            disabled
+            tooltip={writeTooltip}
           >
             <Plus size={16} aria-hidden="true" />
             Create Plan
@@ -58,14 +68,14 @@ export const PlansPage: React.FC = () => {
                       actions={[
                         {
                           label: 'Edit',
-                          disabled: !isSuperAdmin,
-                          title: !isSuperAdmin ? 'Admin required' : undefined
+                          disabled: true,
+                          title: writeTooltip
                         },
                         {
                           label: 'Delete',
                           tone: 'danger',
-                          disabled: !isSuperAdmin,
-                          title: !isSuperAdmin ? 'Admin required' : undefined
+                          disabled: true,
+                          title: writeTooltip
                         }
                       ]}
                     />

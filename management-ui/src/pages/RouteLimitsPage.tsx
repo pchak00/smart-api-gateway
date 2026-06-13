@@ -9,17 +9,27 @@ import { getPlanLabel } from '../utils/display';
 
 export const RouteLimitsPage: React.FC = () => {
   const { isSuperAdmin } = useAuth();
+  const writeTooltip = !isSuperAdmin
+    ? 'Admin required'
+    : 'Route-limit write controls need a backend list view before they are wired';
 
   return (
     <div>
       <PageHeader
         title="Route Limits"
         description="Review route-level overrides for endpoints that need different request quotas than their plan default."
-        meta={<DemoBadge>Seeded route policy preview</DemoBadge>}
+        meta={
+          <div className="flex flex-wrap items-center gap-3">
+            <DemoBadge>Seeded route policy preview</DemoBadge>
+            <span className="text-xs text-slate-500">
+              The backend does not expose a route-limit list endpoint yet.
+            </span>
+          </div>
+        }
         actions={
           <PrimaryButton
-            disabled={!isSuperAdmin}
-            tooltip={!isSuperAdmin ? 'Admin required' : undefined}
+            disabled
+            tooltip={writeTooltip}
           >
             <Plus size={16} aria-hidden="true" />
             Add Route Limit
@@ -61,14 +71,14 @@ export const RouteLimitsPage: React.FC = () => {
                         actions={[
                           {
                             label: 'Edit',
-                            disabled: !isSuperAdmin,
-                            title: !isSuperAdmin ? 'Admin required' : undefined
+                            disabled: true,
+                            title: writeTooltip
                           },
                           {
                             label: 'Delete',
                             tone: 'danger',
-                            disabled: !isSuperAdmin,
-                            title: !isSuperAdmin ? 'Admin required' : undefined
+                            disabled: true,
+                            title: writeTooltip
                           }
                         ]}
                       />

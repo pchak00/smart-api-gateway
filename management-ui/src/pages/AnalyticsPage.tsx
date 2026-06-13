@@ -20,7 +20,14 @@ export const AnalyticsPage: React.FC = () => (
     <PageHeader
       title="Analytics"
       description="Preview request trends and blocked traffic patterns for the gateway operations dashboard."
-      meta={<DemoBadge>Demo analytics preview</DemoBadge>}
+      meta={
+        <div className="flex flex-wrap items-center gap-3">
+          <DemoBadge>Demo analytics preview</DemoBadge>
+          <span className="text-xs text-slate-500">
+            No global analytics read endpoint exists yet.
+          </span>
+        </div>
+      }
     />
 
     <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1fr_16rem]">

@@ -14,6 +14,7 @@ export const ClientsListPage: React.FC = () => {
   const [clients, setClients] = useState<ClientDto[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isDemoData, setIsDemoData] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   useEffect(() => {
     const loadClients = async () => {
@@ -21,10 +22,12 @@ export const ClientsListPage: React.FC = () => {
         const data = await api.getClients();
         setClients(data);
         setIsDemoData(false);
+        setErrorMessage(null);
       } catch (error) {
         console.error('Failed to load clients:', error);
         setClients(demoClientsList);
         setIsDemoData(true);
+        setErrorMessage('Backend clients are unavailable right now; showing seeded preview clients.');
       } finally {
         setIsLoading(false);
       }
@@ -33,12 +36,25 @@ export const ClientsListPage: React.FC = () => {
     loadClients();
   }, []);
 
+  const hasRowsWithoutIds = !isDemoData && clients.some((client) => client.id === undefined);
+  const clientsMeta = isDemoData || hasRowsWithoutIds || errorMessage ? (
+    <div className="flex flex-wrap items-center gap-3">
+      {isDemoData && <DemoBadge>Demo client data</DemoBadge>}
+      {hasRowsWithoutIds && (
+        <span className="text-xs text-slate-500">
+          Backend client rows do not include ids yet, so detail and mutation actions stay disabled for live rows.
+        </span>
+      )}
+      {errorMessage && <span className="text-xs text-slate-500">{errorMessage}</span>}
+    </div>
+  ) : undefined;
+
   return (
     <div>
       <PageHeader
         title="Clients"
         description="Review API consumers, their keys, assigned plans, and current activation state."
-        meta={isDemoData && <DemoBadge>Demo client data</DemoBadge>}
+        meta={clientsMeta}
         actions={
           <PrimaryButton
             disabled={!isSuperAdmin}
@@ -74,8 +90,8 @@ export const ClientsListPage: React.FC = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-800/35">
-                {clients.map((client, index) => {
-                  const routeId = client.id ?? index + 1;
+                {clients.map((client) => {
+                  const hasBackendId = typeof client.id === 'number';
                   const planName = client.plan?.planName ?? client.planName ?? 'Unknown';
 
                   return (
@@ -102,12 +118,22 @@ export const ClientsListPage: React.FC = () => {
                       <td className="px-4 py-4 text-right text-sm">
                         <RowActions
                           actions={[
-                            { label: 'View', to: `/clients/${routeId}` },
+                            hasBackendId
+                              ? { label: 'View', to: `/clients/${client.id}` }
+                              : {
+                                  label: 'View',
+                                  disabled: true,
+                                  title: 'Backend client response does not include an id'
+                                },
                             {
                               label: 'Delete',
                               tone: 'danger',
-                              disabled: !isSuperAdmin,
-                              title: !isSuperAdmin ? 'Admin required' : undefined
+                              disabled: !isSuperAdmin || !hasBackendId,
+                              title: !isSuperAdmin
+                                ? 'Admin required'
+                                : !hasBackendId
+                                  ? 'Backend client response does not include an id'
+                                  : undefined
                             }
                           ]}
                         />
