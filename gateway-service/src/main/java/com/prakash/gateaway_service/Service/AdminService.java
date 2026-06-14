@@ -13,6 +13,8 @@ import jakarta.transaction.Transactional;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
+
 @Service
 public class AdminService {
     private AdminUserRepository adminUserRepository;
@@ -37,6 +39,13 @@ public class AdminService {
         AdminUser saved = adminUserRepository.save(admin);
 
         return AdminResponseDto.from(saved);
+    }
+
+    public List<AdminResponseDto> findAllAdmins() {
+        return adminUserRepository.findAll()
+                .stream()
+                .map(AdminResponseDto::from)
+                .toList();
     }
 
     @Transactional

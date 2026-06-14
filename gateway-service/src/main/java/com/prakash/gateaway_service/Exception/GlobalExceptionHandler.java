@@ -37,4 +37,13 @@ public class GlobalExceptionHandler {
                 e.getMessage(), System.currentTimeMillis(), request.getRequestURI());
         return ResponseEntity.status(HttpStatus.CONFLICT).body(response);
     }
+
+    @ExceptionHandler(InvalidPlanNameException.class)
+    public ResponseEntity<ExceptionResponse> handleBadRequest(
+            RuntimeException e, HttpServletRequest request
+    ) {
+        ExceptionResponse response = new ExceptionResponse(HttpStatus.BAD_REQUEST.value(),
+                e.getMessage(), System.currentTimeMillis(), request.getRequestURI());
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+    }
 }

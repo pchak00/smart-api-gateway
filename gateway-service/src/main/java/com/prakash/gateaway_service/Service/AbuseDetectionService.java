@@ -64,14 +64,21 @@ public class AbuseDetectionService {
 
         }
     }
+    @Transactional
     public List<AbuseAlertResponseDto> findClientAbuse(Long clientId) {
         List<AbuseAlert> alerts = abuseAlertRepository.findByClientIdOrderByCreatedAtDesc(clientId);
         List<AbuseAlertResponseDto> responseDtos = new ArrayList<>();
         for(AbuseAlert alert: alerts) {
-            responseDtos.add(new AbuseAlertResponseDto(alert.getClient().getName(),
-                    alert.getBlockedRequestCount(), alert.getSeverity(),
-                    alert.getMessage(), alert.getWindowStart(), alert.getCreatedAt()));
+            responseDtos.add(AbuseAlertResponseDto.from(alert));
         }
         return responseDtos;
+    }
+
+    @Transactional
+    public List<AbuseAlertResponseDto> findAllAbuseAlerts() {
+        return abuseAlertRepository.findAllByOrderByCreatedAtDesc()
+                .stream()
+                .map(AbuseAlertResponseDto::from)
+                .toList();
     }
 }
