@@ -69,7 +69,7 @@ Important backend behavior:
 - Seeded admin logins from `gateway-service/src/main/resources/data.sql`:
   - `super admin` / `admin123` (`SUPER_ADMIN`)
   - `viewer` / `admin123` (`READ_ONLY_ADMIN`)
-- If a local persisted Postgres volume contains stale demo data such as a `DUMMY` plan, reset it with:
+- If a local persisted Postgres volume contains unexpected old demo data, reset it with:
   `docker compose down -v && docker compose up --build postgres redis backend-service gateway-service`
 
 ## Management UI Context
