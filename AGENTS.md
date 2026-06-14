@@ -215,7 +215,9 @@ This keeps entity structure decoupled from API contracts.
 1. Verify the code builds and (where applicable) runs locally.
 2. Run linters and type checks before committing.
 3. Commit with a focused message describing the change.
-4. Push the branch and open a PR to `main` for review.
+4. Push the feature branch.
+5. Merge the completed milestone into `main` after verification passes, unless the user explicitly asks to keep it unmerged or use a PR-only flow.
+6. Push `main` so the completed task is reflected on the default branch.
 
 ### Merge strategy
 
