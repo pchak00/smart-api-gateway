@@ -1,11 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { Plus, Server, Users } from 'lucide-react';
 import { api } from '../api/client';
-import { demoClientsList } from '../utils/demoData';
 import { ClientDto } from '../types';
 import { useAuth } from '../hooks/useAuth';
 import { PrimaryButton } from '../components/Button';
-import { DemoBadge, EmptyState, PageHeader } from '../components/PageShell';
+import { EmptyState, PageHeader } from '../components/PageShell';
 import { RowActions } from '../components/RowActions';
 import { getPlanLabel } from '../utils/display';
 
@@ -13,7 +12,6 @@ export const ClientsListPage: React.FC = () => {
   const { isSuperAdmin } = useAuth();
   const [clients, setClients] = useState<ClientDto[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [isDemoData, setIsDemoData] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   useEffect(() => {
@@ -21,13 +19,11 @@ export const ClientsListPage: React.FC = () => {
       try {
         const data = await api.getClients();
         setClients(data);
-        setIsDemoData(false);
         setErrorMessage(null);
       } catch (error) {
         console.error('Failed to load clients:', error);
-        setClients(demoClientsList);
-        setIsDemoData(true);
-        setErrorMessage('Backend clients are unavailable right now; showing seeded preview clients.');
+        setClients([]);
+        setErrorMessage('Backend clients are unavailable right now.');
       } finally {
         setIsLoading(false);
       }
@@ -36,13 +32,12 @@ export const ClientsListPage: React.FC = () => {
     loadClients();
   }, []);
 
-  const hasRowsWithoutIds = !isDemoData && clients.some((client) => client.id === undefined);
-  const clientsMeta = isDemoData || hasRowsWithoutIds || errorMessage ? (
+  const hasRowsWithoutIds = clients.some((client) => client.id === undefined);
+  const clientsMeta = hasRowsWithoutIds || errorMessage ? (
     <div className="flex flex-wrap items-center gap-3">
-      {isDemoData && <DemoBadge>Demo client data</DemoBadge>}
       {hasRowsWithoutIds && (
         <span className="text-xs text-slate-500">
-          Backend client rows do not include ids yet, so detail and mutation actions stay disabled for live rows.
+          Some client rows are missing ids, so detail and mutation actions stay disabled for those rows.
         </span>
       )}
       {errorMessage && <span className="text-xs text-slate-500">{errorMessage}</span>}
@@ -69,6 +64,12 @@ export const ClientsListPage: React.FC = () => {
       <section>
         {isLoading ? (
           <div className="px-6 py-12 text-center text-sm text-slate-500">Loading clients...</div>
+        ) : errorMessage ? (
+          <EmptyState
+            icon={Users}
+            title="Clients unavailable"
+            description={errorMessage}
+          />
         ) : clients.length === 0 ? (
           <EmptyState
             icon={Users}
@@ -123,7 +124,7 @@ export const ClientsListPage: React.FC = () => {
                               : {
                                   label: 'View',
                                   disabled: true,
-                                  title: 'Backend client response does not include an id'
+                                  title: 'Client response does not include an id'
                                 },
                             {
                               label: 'Delete',
@@ -132,7 +133,7 @@ export const ClientsListPage: React.FC = () => {
                               title: !isSuperAdmin
                                 ? 'Admin required'
                                 : !hasBackendId
-                                  ? 'Backend client response does not include an id'
+                                  ? 'Client response does not include an id'
                                   : undefined
                             }
                           ]}

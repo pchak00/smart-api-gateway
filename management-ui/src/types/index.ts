@@ -13,7 +13,7 @@ export interface LoginResponse {
 export interface AdminUserDto {
   id?: number;
   username: string;
-  role: AdminRole;
+  role: AdminRole | string;
 }
 
 // Plans
@@ -104,6 +104,7 @@ export interface AbuseAlertDto {
   blockedRequestCount?: number;
   blockedCount?: number;
   severity?: string;
+  status?: string;
   message?: string;
   alertedAt?: string;
   lastUpdatedAt?: string;

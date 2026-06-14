@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { Activity, CreditCard, Gauge, ShieldAlert, ShieldCheck, Users } from 'lucide-react';
+import { Activity, CreditCard, Gauge, Route, ShieldAlert, ShieldCheck, Users } from 'lucide-react';
 import { api } from '../api/client';
-import { demoAbuseAlerts, demoAnalyticsData, demoClientsList, demoPlansList } from '../utils/demoData';
+import { demoAnalyticsData } from '../utils/demoData';
 import { useAuth } from '../hooks/useAuth';
 import { DemoBadge, PageHeader, Panel } from '../components/PageShell';
 import { getRoleLabel } from '../utils/roles';
@@ -34,53 +34,67 @@ const MetricCard: React.FC<MetricCardProps> = ({ label, value, helper, icon: Ico
   </Panel>
 );
 
+const previewRequests = demoAnalyticsData.reduce((a, b) => a + b.allowedRequests + b.blockedRequests, 0);
+const previewBlocked = demoAnalyticsData.reduce((a, b) => a + b.blockedRequests, 0);
+
 export const DashboardPage: React.FC = () => {
   const { role } = useAuth();
   const roleLabel = getRoleLabel(role);
-  const previewRequests = demoAnalyticsData.reduce((a, b) => a + b.allowedRequests + b.blockedRequests, 0);
-  const previewBlocked = demoAnalyticsData.reduce((a, b) => a + b.blockedRequests, 0);
   const [stats, setStats] = useState({
-    totalClients: demoClientsList.length,
-    totalPlans: demoPlansList.length,
+    totalClients: null as number | null,
+    totalPlans: null as number | null,
+    totalRouteLimits: null as number | null,
     totalRequests: previewRequests,
     totalBlocked: previewBlocked,
-    totalAlerts: demoAbuseAlerts.length,
+    totalAlerts: null as number | null,
   });
   const [isLoading, setIsLoading] = useState(true);
-  const [isClientCountLive, setIsClientCountLive] = useState(false);
+  const [liveSources, setLiveSources] = useState({
+    clients: false,
+    plans: false,
+    routeLimits: false,
+    alerts: false
+  });
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   useEffect(() => {
     const loadStats = async () => {
-      try {
-        const clients = await api.getClients();
-        setStats({
-          totalClients: clients.length,
-          totalPlans: demoPlansList.length,
-          totalRequests: previewRequests,
-          totalBlocked: previewBlocked,
-          totalAlerts: demoAbuseAlerts.length
-        });
-        setIsClientCountLive(true);
-        setErrorMessage(null);
-      } catch (error) {
-        console.error('Failed to load stats:', error);
-        setStats({
-          totalClients: demoClientsList.length,
-          totalPlans: demoPlansList.length,
-          totalRequests: previewRequests,
-          totalBlocked: previewBlocked,
-          totalAlerts: demoAbuseAlerts.length
-        });
-        setIsClientCountLive(false);
-        setErrorMessage('Backend clients are unavailable right now; seeded preview values remain visible.');
-      } finally {
-        setIsLoading(false);
-      }
+      const [clientsResult, plansResult, routeLimitsResult, alertsResult] = await Promise.allSettled([
+        api.getClients(),
+        api.getPlans(),
+        api.getRouteLimits(),
+        api.getGlobalAbuseAlerts()
+      ]);
+
+      const clientsLive = clientsResult.status === 'fulfilled';
+      const plansLive = plansResult.status === 'fulfilled';
+      const routeLimitsLive = routeLimitsResult.status === 'fulfilled';
+      const alertsLive = alertsResult.status === 'fulfilled';
+
+      setStats({
+        totalClients: clientsLive ? clientsResult.value.length : null,
+        totalPlans: plansLive ? plansResult.value.length : null,
+        totalRouteLimits: routeLimitsLive ? routeLimitsResult.value.length : null,
+        totalRequests: previewRequests,
+        totalBlocked: previewBlocked,
+        totalAlerts: alertsLive ? alertsResult.value.length : null
+      });
+      setLiveSources({
+        clients: clientsLive,
+        plans: plansLive,
+        routeLimits: routeLimitsLive,
+        alerts: alertsLive
+      });
+      setErrorMessage(
+        clientsLive && plansLive && routeLimitsLive && alertsLive
+          ? null
+          : 'Some backend summaries are unavailable right now.'
+      );
+      setIsLoading(false);
     };
 
     loadStats();
-  }, [previewBlocked, previewRequests]);
+  }, []);
 
   return (
     <div>
@@ -89,30 +103,37 @@ export const DashboardPage: React.FC = () => {
         description="Gateway clients, plans, and traffic signals in one focused operations view."
         meta={(
           <div className="flex flex-wrap items-center gap-3">
-            <DemoBadge>{isClientCountLive ? 'Partial live data' : 'Demo dashboard preview'}</DemoBadge>
+            <DemoBadge>{Object.values(liveSources).some(Boolean) ? 'Live admin summaries' : 'Dashboard preview'}</DemoBadge>
             <span className="text-xs text-slate-500">
               {isLoading
-                ? 'Loading backend client count...'
-                : errorMessage ?? 'Client count is live; analytics, plan, and alert summaries remain preview data until backend read endpoints exist.'}
+                ? 'Loading backend summaries...'
+                : errorMessage ?? 'Client, plan, route-limit, and alert counts use backend read APIs; request analytics remain preview data.'}
             </span>
           </div>
         )}
       />
 
-      <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-5">
+      <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-6">
         <MetricCard
           label="Clients"
-          value={isLoading ? '...' : stats.totalClients}
-          helper={isClientCountLive ? 'Gateway consumers from /admin/clients.' : 'Seeded fallback clients.'}
+          value={isLoading ? '...' : stats.totalClients ?? '...'}
+          helper={liveSources.clients ? 'Gateway consumers from /admin/clients.' : 'Backend client summary unavailable.'}
           icon={Users}
-          source={isClientCountLive ? 'Live' : 'Preview'}
+          source={liveSources.clients ? 'Live' : 'Unavailable'}
         />
         <MetricCard
           label="Plans"
-          value={stats.totalPlans}
-          helper="Quota tiers."
+          value={isLoading ? '...' : stats.totalPlans ?? '...'}
+          helper={liveSources.plans ? 'Quota tiers from /admin/plans.' : 'Backend plan summary unavailable.'}
           icon={CreditCard}
-          source="Preview"
+          source={liveSources.plans ? 'Live' : 'Unavailable'}
+        />
+        <MetricCard
+          label="Route limits"
+          value={isLoading ? '...' : stats.totalRouteLimits ?? '...'}
+          helper={liveSources.routeLimits ? 'Route overrides from /admin/route-limits.' : 'Backend route-limit summary unavailable.'}
+          icon={Route}
+          source={liveSources.routeLimits ? 'Live' : 'Unavailable'}
         />
         <MetricCard
           label="Requests"
@@ -130,10 +151,10 @@ export const DashboardPage: React.FC = () => {
         />
         <MetricCard
           label="Alerts"
-          value={stats.totalAlerts}
-          helper="Demo abuse signal."
+          value={isLoading ? '...' : stats.totalAlerts ?? '...'}
+          helper={liveSources.alerts ? 'Global abuse alerts returned by the backend.' : 'Backend alert summary unavailable.'}
           icon={ShieldAlert}
-          source="Preview"
+          source={liveSources.alerts ? 'Live' : 'Unavailable'}
         />
       </div>
 

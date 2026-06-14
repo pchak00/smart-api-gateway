@@ -3,8 +3,8 @@ import { useParams } from 'react-router-dom';
 import { Activity, KeyRound, Server, ShieldAlert } from 'lucide-react';
 import { api } from '../api/client';
 import { EmptyState, PageHeader, Panel } from '../components/PageShell';
-import { AbuseAlertDto, ClientStatsDto, UsageLogDto } from '../types';
-import { formatDateTime, getSeverityLabel } from '../utils/display';
+import { AbuseAlertDto, ClientDto, ClientStatsDto, UsageLogDto } from '../types';
+import { formatDateTime, getPlanLabel, getSeverityLabel } from '../utils/display';
 
 export const ClientDetailPage: React.FC = () => {
   const { id } = useParams();
@@ -13,6 +13,7 @@ export const ClientDetailPage: React.FC = () => {
   const [stats, setStats] = useState<ClientStatsDto | null>(null);
   const [usageLogs, setUsageLogs] = useState<UsageLogDto[]>([]);
   const [abuseAlerts, setAbuseAlerts] = useState<AbuseAlertDto[]>([]);
+  const [client, setClient] = useState<ClientDto | null>(null);
   const [isLoading, setIsLoading] = useState(hasClientId);
   const [errorMessage, setErrorMessage] = useState<string | null>(
     hasClientId ? null : 'A backend client id is required to load live client activity.'
@@ -23,6 +24,7 @@ export const ClientDetailPage: React.FC = () => {
       setStats(null);
       setUsageLogs([]);
       setAbuseAlerts([]);
+      setClient(null);
       setErrorMessage('A backend client id is required to load live client activity.');
       setIsLoading(false);
       return;
@@ -30,25 +32,44 @@ export const ClientDetailPage: React.FC = () => {
 
     const loadClientActivity = async () => {
       setIsLoading(true);
-      try {
-        const [statsResponse, usageResponse, abuseResponse] = await Promise.all([
-          api.getClientStats(clientId),
-          api.getUsageLogs(clientId),
-          api.getAbuseAlerts(clientId)
-        ]);
-        setStats(statsResponse);
-        setUsageLogs(usageResponse);
-        setAbuseAlerts(abuseResponse);
-        setErrorMessage(null);
-      } catch (error) {
-        console.error('Failed to load client activity:', error);
-        setStats(null);
-        setUsageLogs([]);
-        setAbuseAlerts([]);
-        setErrorMessage('Live client activity could not be loaded for this id.');
-      } finally {
-        setIsLoading(false);
+      const [clientsResult, statsResult, usageResult, abuseResult] = await Promise.allSettled([
+        api.getClients(),
+        api.getClientStats(clientId),
+        api.getUsageLogs(clientId),
+        api.getAbuseAlerts(clientId)
+      ]);
+
+      if (clientsResult.status === 'fulfilled') {
+        setClient(clientsResult.value.find((candidate) => candidate.id === clientId) ?? null);
+      } else {
+        console.error('Failed to load client identity:', clientsResult.reason);
+        setClient(null);
       }
+
+      if (statsResult.status === 'fulfilled') {
+        setStats(statsResult.value);
+      } else {
+        console.error('Failed to load client stats:', statsResult.reason);
+        setStats(null);
+      }
+
+      if (usageResult.status === 'fulfilled') {
+        setUsageLogs(usageResult.value);
+      } else {
+        console.error('Failed to load client usage:', usageResult.reason);
+        setUsageLogs([]);
+      }
+
+      if (abuseResult.status === 'fulfilled') {
+        setAbuseAlerts(abuseResult.value);
+      } else {
+        console.error('Failed to load client abuse alerts:', abuseResult.reason);
+        setAbuseAlerts([]);
+      }
+
+      const activityLoaded = statsResult.status === 'fulfilled' || usageResult.status === 'fulfilled' || abuseResult.status === 'fulfilled';
+      setErrorMessage(activityLoaded ? null : 'Live client activity could not be loaded for this id.');
+      setIsLoading(false);
     };
 
     loadClientActivity();
@@ -57,12 +78,12 @@ export const ClientDetailPage: React.FC = () => {
   return (
     <div>
       <PageHeader
-        title={`Client ${id ?? ''}`.trim()}
-        description="Inspect the live per-client activity endpoints that exist today; identity fields need a backend detail contract."
+        title={client?.clientName ?? `Client ${id ?? ''}`.trim()}
+        description="Inspect live per-client activity and identity fields available from the current admin read APIs."
         meta={
           <span className="text-xs text-slate-500">
             {hasClientId
-              ? 'Using /stats, /usage, and /abuse for this client id.'
+              ? errorMessage ?? 'Using /admin/clients plus /stats, /usage, and /abuse for this client id.'
               : 'Open a client URL with a numeric backend id to load live activity.'}
           </span>
         }
@@ -75,7 +96,11 @@ export const ClientDetailPage: React.FC = () => {
             <div>
               <h2 className="text-sm font-semibold text-slate-100">Client identity</h2>
               <p className="mt-1 text-sm text-slate-500">
-                {hasClientId ? `Backend id ${clientId}` : 'No backend id available.'}
+                {client
+                  ? `${client.active ? 'Active' : 'Inactive'} on ${getPlanLabel(client.planName ?? client.plan?.planName)}`
+                  : hasClientId
+                    ? `Backend id ${clientId}`
+                    : 'No backend id available.'}
               </p>
             </div>
           </div>
@@ -85,7 +110,9 @@ export const ClientDetailPage: React.FC = () => {
             <KeyRound className="text-slate-600" size={18} aria-hidden="true" />
             <div>
               <h2 className="text-sm font-semibold text-slate-100">API key</h2>
-              <p className="mt-1 text-sm text-slate-500">Not exposed by the current detail endpoints.</p>
+              <p className="mt-1 break-all font-mono text-sm text-slate-500">
+                {client?.apiKey ?? 'Not returned by the per-client activity endpoints.'}
+              </p>
             </div>
           </div>
         </Panel>
