@@ -66,6 +66,11 @@ Important backend behavior:
   - `SUPER_ADMIN`
   - `READ_ONLY_ADMIN`
 - Do not rename backend enum values or JWT claims.
+- Seeded admin logins from `gateway-service/src/main/resources/data.sql`:
+  - `super admin` / `admin123` (`SUPER_ADMIN`)
+  - `viewer` / `admin123` (`READ_ONLY_ADMIN`)
+- If a local persisted Postgres volume contains stale demo data such as a `DUMMY` plan, reset it with:
+  `docker compose down -v && docker compose up --build postgres redis backend-service gateway-service`
 
 ## Management UI Context
 
@@ -315,4 +320,3 @@ Keep future UI work:
 - Minimal borders.
 - Muted icons.
 - Owner/Viewer labels in UI, backend enums in logic only.
-

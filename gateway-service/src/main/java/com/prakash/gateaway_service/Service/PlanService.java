@@ -1,8 +1,11 @@
 package com.prakash.gateaway_service.Service;
 
+import com.prakash.gateaway_service.DTO.AllowedPlanName;
 import com.prakash.gateaway_service.DTO.PlanDto;
+import com.prakash.gateaway_service.DTO.PlanResponseDto;
 import com.prakash.gateaway_service.Entity.Plan;
 import com.prakash.gateaway_service.Exception.DuplicatePlanException;
+import com.prakash.gateaway_service.Exception.InvalidPlanNameException;
 import com.prakash.gateaway_service.Exception.PlanInUseException;
 import com.prakash.gateaway_service.Exception.PlanNotFoundException;
 import com.prakash.gateaway_service.Repository.ClientRepository;
@@ -10,6 +13,8 @@ import com.prakash.gateaway_service.Repository.PlanRepository;
 import com.prakash.gateaway_service.Repository.RouteLimitRepository;
 import jakarta.transaction.Transactional;
 import org.springframework.stereotype.Service;
+
+import java.util.List;
 
 @Service
 public class PlanService {
@@ -23,18 +28,27 @@ public class PlanService {
     }
     @Transactional
     public PlanDto createPlan(PlanDto request) {
-        if (planRepository.existsByName(request.planName())) {
-            throw new DuplicatePlanException("Plan already exists: " + request.planName());
+        String planName = normalizePlanName(request.planName());
+
+        if (planRepository.existsByName(planName)) {
+            throw new DuplicatePlanException("Plan already exists: " + planName);
         }
 
         Plan plan = new Plan();
-        plan.setName(request.planName());
+        plan.setName(planName);
         plan.setRequestsPerMinute(request.requestsPerMinute());
         plan.setPrice(request.price());
 
-        Plan savedPlan = planRepository.save(plan);
+        planRepository.save(plan);
 
-        return request;
+        return new PlanDto(planName, request.requestsPerMinute(), request.price());
+    }
+
+    public List<PlanResponseDto> findAllPlans() {
+        return planRepository.findAll()
+                .stream()
+                .map(PlanResponseDto::from)
+                .toList();
     }
 
     @Transactional
@@ -55,5 +69,20 @@ public class PlanService {
         }
 
         planRepository.delete(plan);
+    }
+
+    private String normalizePlanName(String planName) {
+        if (planName == null || planName.isBlank()) {
+            throw new InvalidPlanNameException("Plan name is required");
+        }
+
+        String normalized = planName.trim().toUpperCase();
+        try {
+            AllowedPlanName.valueOf(normalized);
+        } catch (IllegalArgumentException e) {
+            throw new InvalidPlanNameException("Unsupported plan name: " + planName);
+        }
+
+        return normalized;
     }
 }

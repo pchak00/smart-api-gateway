@@ -8,5 +8,6 @@ import java.util.Optional;
 
 public interface AbuseAlertRepository extends JpaRepository<AbuseAlert, Long> {
     List<AbuseAlert> findByClientIdOrderByCreatedAtDesc(Long clientId);
+    List<AbuseAlert> findAllByOrderByCreatedAtDesc();
     Optional<AbuseAlert> findTopByClientIdOrderByCreatedAtDesc(Long clientId);
 }

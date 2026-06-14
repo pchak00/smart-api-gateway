@@ -13,6 +13,8 @@ import com.prakash.gateaway_service.Repository.RouteLimitRepository;
 import jakarta.transaction.Transactional;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
+
 @Service
 public class RouteLimitService {
     private RouteLimitRepository routeLimitRepository;
@@ -38,6 +40,14 @@ public class RouteLimitService {
         routeLimitRepository.save(routeLimit);
 
         return request;
+    }
+
+    @Transactional
+    public List<RouteLimitResponse> findAllRouteLimits() {
+        return routeLimitRepository.findAll()
+                .stream()
+                .map(RouteLimitResponse::from)
+                .toList();
     }
 
     @Transactional

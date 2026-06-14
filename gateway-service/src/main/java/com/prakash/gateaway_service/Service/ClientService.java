@@ -42,15 +42,17 @@ public class ClientService {
         return new ClientStatsResponseDto(clientId, total, allowed, blocked, blockRate);
     }
 
+    @Transactional
     public List<ClientResponseDto> showAllClients() {
         List<ClientResponseDto> clientResponseDtoList = new ArrayList<>();
         List<Client>  clients = clientRepository.findAll();
         for( Client client : clients ) {
-            clientResponseDtoList.add(new ClientResponseDto(client.getName(), client.getApiKey(), client.getActive(),client.getPlan().getName()));
+            clientResponseDtoList.add(ClientResponseDto.from(client));
         }
         return clientResponseDtoList;
     }
 
+    @Transactional
     public ClientResponseDto addClient(ClientRequestDto clientRequestDto) {
         Client client = new Client();
 
@@ -63,7 +65,7 @@ public class ClientService {
 
         clientRepository.save(client);
 
-        return new ClientResponseDto(client.getName(), client.getApiKey(), client.getActive() ,client.getPlan().getName());
+        return ClientResponseDto.from(client);
     }
 
     @Transactional
