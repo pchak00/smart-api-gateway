@@ -59,3 +59,21 @@ export const formatDateTime = (value: string | null | undefined) => {
     minute: '2-digit'
   }).format(date);
 };
+
+export const formatNumber = (value: number | null | undefined) => {
+  if (typeof value !== 'number' || Number.isNaN(value)) return '0';
+
+  return new Intl.NumberFormat().format(value);
+};
+
+export const formatBucket = (value: string | null | undefined) => {
+  if (!value) return 'No date';
+
+  const date = new Date(`${value}T00:00:00`);
+  if (Number.isNaN(date.getTime())) return value;
+
+  return new Intl.DateTimeFormat(undefined, {
+    month: 'short',
+    day: 'numeric'
+  }).format(date);
+};

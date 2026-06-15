@@ -13,7 +13,11 @@ import {
   UpdateClientPlanRequest,
   UpdateRouteLimitRequest,
   AdminUserDto,
-  ClientStatsDto
+  ClientStatsDto,
+  DashboardSummaryDto,
+  RouteAnalyticsDto,
+  ClientAnalyticsDto,
+  TrafficAnalyticsDto
 } from '../types';
 
 const baseURL = (import.meta.env.VITE_API_BASE_URL as string | undefined) || '/';
@@ -140,6 +144,27 @@ class ApiClient {
 
   async deleteAdminUser(id: number): Promise<void> {
     await this.axiosInstance.delete(`/admin/users/${id}`);
+  }
+
+  // Dashboard and analytics endpoints
+  async getDashboardSummary(): Promise<DashboardSummaryDto> {
+    const response = await this.axiosInstance.get<DashboardSummaryDto>('/admin/dashboard/summary');
+    return response.data;
+  }
+
+  async getRouteAnalytics(): Promise<RouteAnalyticsDto[]> {
+    const response = await this.axiosInstance.get<RouteAnalyticsDto[]>('/admin/analytics/routes');
+    return response.data;
+  }
+
+  async getClientAnalytics(): Promise<ClientAnalyticsDto[]> {
+    const response = await this.axiosInstance.get<ClientAnalyticsDto[]>('/admin/analytics/clients');
+    return response.data;
+  }
+
+  async getTrafficAnalytics(): Promise<TrafficAnalyticsDto[]> {
+    const response = await this.axiosInstance.get<TrafficAnalyticsDto[]>('/admin/analytics/traffic');
+    return response.data;
   }
 }
 

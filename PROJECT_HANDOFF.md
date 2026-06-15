@@ -1,6 +1,6 @@
 # PROJECT_HANDOFF.md - Smart API Gateway
 
-Last updated: 2026-06-12  
+Last updated: 2026-06-15
 Repo path: `/home/prakash/Desktop/Projects/Smart Api Gateaway`
 
 ## Current State
@@ -10,7 +10,7 @@ This project is a Spring Boot Smart API Gateway with a separate React/Vite manag
 Current branch:
 
 ```bash
-feat/ui-calm-polish
+feat/ui-dashboard-analytics
 ```
 
 Current branch stack:
@@ -26,10 +26,10 @@ origin/main
 Recent commits:
 
 ```text
+9d28d40 feat(admin): add dashboard analytics APIs
 6694437 feat(ui): calm Pacific product interface
 729896b feat(ui): polish Pacific product dashboard
 699dafc fix(ui): stabilize management scaffold
-3e5af5d chore(ui): init vite + react + typescript + tailwind
 ```
 
 Open PR links:
@@ -151,8 +151,14 @@ Data behavior:
 
 - Existing real data calls are preserved.
 - Demo/fallback data remains in `src/utils/demoData.ts`.
-- No new backend integrations were added during the recent polish milestones.
-- Fallback/demo data is labeled subtly as demo/seeded preview data.
+- Dashboard summary is wired to `GET /admin/dashboard/summary`.
+- Analytics route/client/traffic sections are wired to:
+  - `GET /admin/analytics/routes`
+  - `GET /admin/analytics/clients`
+  - `GET /admin/analytics/traffic`
+- Dashboard and analytics preview values were replaced where backend data now exists.
+- Remaining demo/fallback data is isolated to pages where backend data is still unavailable or intentionally not wired yet.
+- Abuse alert counts currently represent persisted alerts because the backend does not yet have alert status/resolution lifecycle fields.
 
 Vite proxy:
 
@@ -236,6 +242,29 @@ npm run build
 ```
 
 Both passed. Build still reports the known large chunk warning.
+
+### `feat/ui-dashboard-analytics`
+
+Wired the dashboard and analytics UI to real backend read endpoints.
+
+Key work:
+
+- Added typed dashboard and analytics API methods in `management-ui/src/api/client.ts`.
+- Added frontend DTO types for dashboard summary, route analytics, client analytics, and traffic analytics.
+- Replaced dashboard preview request values with `GET /admin/dashboard/summary`.
+- Replaced analytics preview chart data with `GET /admin/analytics/traffic`.
+- Added route and client analytics tables backed by real usage-log aggregations.
+- Preserved the calm Pacific styling, routing, auth behavior, role gating, sidebar/profile behavior, and logout behavior.
+- Kept empty/error states honest; no fake analytics rows are shown when backend analytics are empty or unavailable.
+
+Verification:
+
+```bash
+npm run lint
+npm run build
+```
+
+Both passed. Build still reports the known large chunk warning because Recharts/lucide are bundled.
 
 ## How To Test Locally
 

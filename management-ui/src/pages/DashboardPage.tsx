@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { Activity, CreditCard, Gauge, Route, ShieldAlert, ShieldCheck, Users } from 'lucide-react';
 import { api } from '../api/client';
-import { demoAnalyticsData } from '../utils/demoData';
+import { DashboardSummaryDto } from '../types';
 import { useAuth } from '../hooks/useAuth';
 import { DemoBadge, PageHeader, Panel } from '../components/PageShell';
+import { formatNumber } from '../utils/display';
 import { getRoleLabel } from '../utils/roles';
 
 interface MetricCardProps {
@@ -34,63 +35,34 @@ const MetricCard: React.FC<MetricCardProps> = ({ label, value, helper, icon: Ico
   </Panel>
 );
 
-const previewRequests = demoAnalyticsData.reduce((a, b) => a + b.allowedRequests + b.blockedRequests, 0);
-const previewBlocked = demoAnalyticsData.reduce((a, b) => a + b.blockedRequests, 0);
+const valueOrLoading = (value: number | null | undefined, isLoading: boolean) => {
+  if (isLoading) return '...';
+  if (typeof value !== 'number' || Number.isNaN(value)) return 'Unavailable';
+
+  return formatNumber(value);
+};
 
 export const DashboardPage: React.FC = () => {
   const { role } = useAuth();
   const roleLabel = getRoleLabel(role);
-  const [stats, setStats] = useState({
-    totalClients: null as number | null,
-    totalPlans: null as number | null,
-    totalRouteLimits: null as number | null,
-    totalRequests: previewRequests,
-    totalBlocked: previewBlocked,
-    totalAlerts: null as number | null,
-  });
+  const [summary, setSummary] = useState<DashboardSummaryDto | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [liveSources, setLiveSources] = useState({
-    clients: false,
-    plans: false,
-    routeLimits: false,
-    alerts: false
-  });
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const cardSource = isLoading ? 'Loading' : errorMessage ? 'Unavailable' : 'Live';
 
   useEffect(() => {
     const loadStats = async () => {
-      const [clientsResult, plansResult, routeLimitsResult, alertsResult] = await Promise.allSettled([
-        api.getClients(),
-        api.getPlans(),
-        api.getRouteLimits(),
-        api.getGlobalAbuseAlerts()
-      ]);
-
-      const clientsLive = clientsResult.status === 'fulfilled';
-      const plansLive = plansResult.status === 'fulfilled';
-      const routeLimitsLive = routeLimitsResult.status === 'fulfilled';
-      const alertsLive = alertsResult.status === 'fulfilled';
-
-      setStats({
-        totalClients: clientsLive ? clientsResult.value.length : null,
-        totalPlans: plansLive ? plansResult.value.length : null,
-        totalRouteLimits: routeLimitsLive ? routeLimitsResult.value.length : null,
-        totalRequests: previewRequests,
-        totalBlocked: previewBlocked,
-        totalAlerts: alertsLive ? alertsResult.value.length : null
-      });
-      setLiveSources({
-        clients: clientsLive,
-        plans: plansLive,
-        routeLimits: routeLimitsLive,
-        alerts: alertsLive
-      });
-      setErrorMessage(
-        clientsLive && plansLive && routeLimitsLive && alertsLive
-          ? null
-          : 'Some backend summaries are unavailable right now.'
-      );
-      setIsLoading(false);
+      try {
+        const data = await api.getDashboardSummary();
+        setSummary(data);
+        setErrorMessage(null);
+      } catch (error) {
+        console.error('Failed to load dashboard summary:', error);
+        setSummary(null);
+        setErrorMessage('Dashboard summary is unavailable right now.');
+      } finally {
+        setIsLoading(false);
+      }
     };
 
     loadStats();
@@ -103,11 +75,11 @@ export const DashboardPage: React.FC = () => {
         description="Gateway clients, plans, and traffic signals in one focused operations view."
         meta={(
           <div className="flex flex-wrap items-center gap-3">
-            <DemoBadge>{Object.values(liveSources).some(Boolean) ? 'Live admin summaries' : 'Dashboard preview'}</DemoBadge>
+            <DemoBadge>{errorMessage ? 'Summary unavailable' : 'Live dashboard summary'}</DemoBadge>
             <span className="text-xs text-slate-500">
               {isLoading
-                ? 'Loading backend summaries...'
-                : errorMessage ?? 'Client, plan, route-limit, and alert counts use backend read APIs; request analytics remain preview data.'}
+                ? 'Loading dashboard summary...'
+                : errorMessage ?? 'Cards use backend usage logs, clients, plans, route limits, and persisted abuse alerts.'}
             </span>
           </div>
         )}
@@ -116,45 +88,49 @@ export const DashboardPage: React.FC = () => {
       <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-6">
         <MetricCard
           label="Clients"
-          value={isLoading ? '...' : stats.totalClients ?? '...'}
-          helper={liveSources.clients ? 'Gateway consumers from /admin/clients.' : 'Backend client summary unavailable.'}
+          value={valueOrLoading(summary?.clientCount, isLoading)}
+          helper="Gateway consumers from the clients repository."
           icon={Users}
-          source={liveSources.clients ? 'Live' : 'Unavailable'}
+          source={cardSource}
         />
         <MetricCard
           label="Plans"
-          value={isLoading ? '...' : stats.totalPlans ?? '...'}
-          helper={liveSources.plans ? 'Quota tiers from /admin/plans.' : 'Backend plan summary unavailable.'}
+          value={valueOrLoading(summary?.planCount, isLoading)}
+          helper="Quota tiers from the plans repository."
           icon={CreditCard}
-          source={liveSources.plans ? 'Live' : 'Unavailable'}
+          source={cardSource}
         />
         <MetricCard
           label="Route limits"
-          value={isLoading ? '...' : stats.totalRouteLimits ?? '...'}
-          helper={liveSources.routeLimits ? 'Route overrides from /admin/route-limits.' : 'Backend route-limit summary unavailable.'}
+          value={valueOrLoading(summary?.routeLimitCount, isLoading)}
+          helper="Route-specific quota overrides."
           icon={Route}
-          source={liveSources.routeLimits ? 'Live' : 'Unavailable'}
+          source={cardSource}
         />
         <MetricCard
           label="Requests"
-          value={stats.totalRequests.toLocaleString()}
-          helper="Seeded activity."
+          value={valueOrLoading(summary?.totalRequests, isLoading)}
+          helper={
+            typeof summary?.allowedRequests === 'number'
+              ? `Allowed: ${formatNumber(summary.allowedRequests)} from persisted usage logs.`
+              : 'Allowed request total from persisted usage logs.'
+          }
           icon={Activity}
-          source="Preview"
+          source={cardSource}
         />
         <MetricCard
           label="Blocked"
-          value={stats.totalBlocked.toLocaleString()}
-          helper="Rejected requests."
+          value={valueOrLoading(summary?.blockedRequests, isLoading)}
+          helper="Rejected gateway requests from persisted usage logs."
           icon={ShieldCheck}
-          source="Preview"
+          source={cardSource}
         />
         <MetricCard
           label="Alerts"
-          value={isLoading ? '...' : stats.totalAlerts ?? '...'}
-          helper={liveSources.alerts ? 'Global abuse alerts returned by the backend.' : 'Backend alert summary unavailable.'}
+          value={valueOrLoading(summary?.openAlertCount, isLoading)}
+          helper="Persisted abuse alerts; alert lifecycle status is not tracked yet."
           icon={ShieldAlert}
-          source={liveSources.alerts ? 'Live' : 'Unavailable'}
+          source={cardSource}
         />
       </div>
 

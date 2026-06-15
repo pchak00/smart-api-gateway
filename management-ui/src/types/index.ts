@@ -118,3 +118,35 @@ export interface AnalyticsDataPoint {
   allowedRequests: number;
   blockedRequests: number;
 }
+
+export interface DashboardSummaryDto {
+  clientCount?: number;
+  planCount?: number;
+  routeLimitCount?: number;
+  totalRequests?: number;
+  allowedRequests?: number;
+  blockedRequests?: number;
+  openAlertCount?: number;
+}
+
+export interface RouteAnalyticsDto {
+  route?: string;
+  totalRequests?: number;
+  allowedRequests?: number;
+  blockedRequests?: number;
+}
+
+export interface ClientAnalyticsDto {
+  clientId?: number;
+  clientName?: string | null;
+  totalRequests?: number;
+  allowedRequests?: number;
+  blockedRequests?: number;
+}
+
+export interface TrafficAnalyticsDto {
+  bucket?: string;
+  totalRequests?: number;
+  allowedRequests?: number;
+  blockedRequests?: number;
+}
