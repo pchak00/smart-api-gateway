@@ -33,6 +33,8 @@ public class SecurityConfig {
                         .requestMatchers("/admin/clients/*/stats").hasAnyRole("SUPER_ADMIN", "READ_ONLY_ADMIN")
                         .requestMatchers("/admin/clients/*/abuse").hasAnyRole("SUPER_ADMIN", "READ_ONLY_ADMIN")
 
+                        .requestMatchers(HttpMethod.GET, "/admin/dashboard", "/admin/dashboard/**").hasAnyRole("SUPER_ADMIN", "READ_ONLY_ADMIN")
+                        .requestMatchers(HttpMethod.GET, "/admin/analytics", "/admin/analytics/**").hasAnyRole("SUPER_ADMIN", "READ_ONLY_ADMIN")
                         .requestMatchers(HttpMethod.GET, "/admin/clients", "/admin/clients/**").hasAnyRole("SUPER_ADMIN", "READ_ONLY_ADMIN")
                         .requestMatchers(HttpMethod.GET, "/admin/plans", "/admin/plans/**").hasAnyRole("SUPER_ADMIN", "READ_ONLY_ADMIN")
                         .requestMatchers(HttpMethod.GET, "/admin/route-limits", "/admin/route-limits/**").hasAnyRole("SUPER_ADMIN", "READ_ONLY_ADMIN")
