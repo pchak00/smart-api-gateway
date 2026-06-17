@@ -148,7 +148,7 @@ It exists mainly for routing demonstrations, integration testing, and showing ho
 
 #### Docker Compose
 
-Docker Compose is used to run the full system locally with separate containers for the gateway, backend service, Redis, and PostgreSQL.
+Docker Compose is used to run the full system locally with separate containers for the management UI, gateway, backend service, Redis, and PostgreSQL.
 
 This creates a more production-like development environment and demonstrates container networking, service isolation, and infrastructure configuration.
 
@@ -256,6 +256,7 @@ A cooldown mechanism is used to avoid repeatedly generating duplicate alerts for
 The platform is fully containerized using Docker and Docker Compose.
 
 Separate containers are used for:
+- Management UI
 - Gateway Service
 - Backend Service
 - Redis
@@ -314,10 +315,25 @@ This starts the following services:
 
 | Service | Port |
 |---|---|
+| Management UI | `3000` |
 | Gateway Service | `8080` |
 | Backend Service | `8081` |
 | PostgreSQL | `5432` |
 | Redis | `6379` |
+
+Open the management UI in your browser:
+
+```text
+http://localhost:3000
+```
+
+The gateway and admin API are available at:
+
+```text
+http://localhost:8080
+```
+
+The browser-based frontend calls `http://localhost:8080`. The Docker hostname `gateway-service` is only for container-to-container networking and is not used by browser code.
 
 ---
 
@@ -337,6 +353,13 @@ curl -X GET http://localhost:8080/api/products \
 ```bash
 docker compose down
 ```
+
+If your local database volume contains stale seeded data and you need a clean demo database:
+
+```bash
+docker compose down -v
+```
+
 ## API Usage Examples
 
 ### Demo Credentials
@@ -347,7 +370,7 @@ The application automatically seeds demo data when the database is empty.
 
 | Username | Role |
 |-----------|---------|
-| admin | SUPER_ADMIN |
+| super admin | SUPER_ADMIN |
 | viewer | READ_ONLY_ADMIN |
 
 #### Plans
@@ -377,8 +400,8 @@ Obtain a JWT token before accessing administrative endpoints.
 curl -X POST http://localhost:8080/auth/login \
 -H "Content-Type: application/json" \
 -d '{
-  "username":"admin",
-  "password":"password"
+  "username":"super admin",
+  "password":"admin123"
 }'
 ```
 
@@ -670,9 +693,9 @@ Planned improvements include:
 
 ### Management UI
 
-A future management interface may provide a web-based dashboard for operating the gateway without manually calling admin APIs.
+The current management UI provides a web-based dashboard for operating the gateway without manually calling admin APIs.
 
-Planned UI capabilities may include:
+Current UI capabilities include:
 
 - admin login page
 - client creation and API key management

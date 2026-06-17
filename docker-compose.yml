@@ -45,16 +45,13 @@ services:
   management-ui:
     build:
       context: ./management-ui
-      dockerfile: Dockerfile
       args:
         VITE_API_BASE_URL: http://localhost:8080
     container_name: management-ui
     ports:
-      - "3000:3000"
+      - "3000:80"
     depends_on:
       - gateway-service
-    environment:
-      VITE_API_BASE_URL: http://localhost:8080
 
 volumes:
   postgres_data:

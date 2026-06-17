@@ -36,8 +36,8 @@ A modern, role-based management dashboard for the Smart API Gateway built with R
 3. Open [http://localhost:5173](http://localhost:5173) in your browser
 
 4. Login with demo credentials:
-   - **Admin username:** `admin` / password: `password`
-   - **Viewer username:** `viewer` / password: `password`
+   - **Owner username:** `super admin` / password: `admin123`
+   - **Viewer username:** `viewer` / password: `admin123`
 
 ### Build
 
@@ -58,15 +58,15 @@ npm run lint
 ### Build Image
 
 ```bash
-docker build -t smart-api-gateway-ui:latest .
+docker build \
+  --build-arg VITE_API_BASE_URL=http://localhost:8080 \
+  -t smart-api-gateway-ui:latest .
 ```
 
 ### Run Container
 
 ```bash
-docker run -p 3000:3000 \
-  -e VITE_API_BASE_URL=http://localhost:8080 \
-  smart-api-gateway-ui:latest
+docker run -p 3000:80 smart-api-gateway-ui:latest
 ```
 
 Access the UI at [http://localhost:3000](http://localhost:3000)
@@ -108,8 +108,9 @@ The API client (`src/api/client.ts`) handles all backend communication. It:
 
 ### Base URL Configuration
 
-- **Development:** Vite dev proxy routes all `/api` and `/auth` requests to `http://localhost:8080`
-- **Production (Docker):** Set `VITE_API_BASE_URL` environment variable (default: `/`)
+- **Development:** Vite dev proxy routes `/api`, `/auth`, and `/admin` requests to `http://localhost:8080` when `VITE_API_BASE_URL=/`
+- **Production (Docker):** Set `VITE_API_BASE_URL` as a Docker build argument. Vite embeds it into the static browser bundle at build time.
+- **Docker Compose demo:** Uses `VITE_API_BASE_URL=http://localhost:8080` so browser requests target the host-published gateway, not the internal Docker hostname.
 
 ### Example API Call
 
@@ -163,7 +164,8 @@ Ensure the Vite dev proxy is correctly configured in `vite.config.ts`:
 server: {
   proxy: {
     '/api': 'http://localhost:8080',
-    '/auth': 'http://localhost:8080'
+    '/auth': 'http://localhost:8080',
+    '/admin': 'http://localhost:8080'
   }
 }
 ```
@@ -175,4 +177,3 @@ Run `npm ci` to ensure clean dependency installation, then retry `npm run build`
 ## License
 
 MIT
-
