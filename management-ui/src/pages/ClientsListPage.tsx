@@ -1,36 +1,141 @@
-import React, { useEffect, useState } from 'react';
+import React, { FormEvent, useEffect, useState } from 'react';
 import { Plus, Server, Users } from 'lucide-react';
 import { api } from '../api/client';
-import { ClientDto } from '../types';
+import { ClientDto, PlanDto } from '../types';
 import { useAuth } from '../hooks/useAuth';
-import { PrimaryButton } from '../components/Button';
+import { useToast } from '../hooks/useToast';
+import { PrimaryButton, SecondaryButton } from '../components/Button';
 import { EmptyState, PageHeader } from '../components/PageShell';
 import { RowActions } from '../components/RowActions';
 import { getPlanLabel } from '../utils/display';
+import { getApiErrorMessage } from '../utils/apiError';
 
 export const ClientsListPage: React.FC = () => {
-  const { isSuperAdmin } = useAuth();
+  const { canMutate } = useAuth();
+  const { showToast } = useToast();
   const [clients, setClients] = useState<ClientDto[]>([]);
+  const [plans, setPlans] = useState<PlanDto[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [editingClient, setEditingClient] = useState<ClientDto | null>(null);
+  const [newClientName, setNewClientName] = useState('');
+  const [newClientPlanId, setNewClientPlanId] = useState('');
+  const [newClientActive, setNewClientActive] = useState(true);
+  const [selectedPlanId, setSelectedPlanId] = useState('');
+
+  const loadClients = async () => {
+    try {
+      const data = await api.getClients();
+      setClients(data);
+      setErrorMessage(null);
+    } catch (error) {
+      console.error('Failed to load clients:', error);
+      setClients([]);
+      setErrorMessage('Backend clients are unavailable right now.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const loadClients = async () => {
+    loadClients();
+  }, []);
+
+  useEffect(() => {
+    const loadPlans = async () => {
       try {
-        const data = await api.getClients();
-        setClients(data);
-        setErrorMessage(null);
+        setPlans(await api.getPlans());
       } catch (error) {
-        console.error('Failed to load clients:', error);
-        setClients([]);
-        setErrorMessage('Backend clients are unavailable right now.');
-      } finally {
-        setIsLoading(false);
+        console.error('Failed to load plans for client actions:', error);
       }
     };
 
-    loadClients();
+    loadPlans();
   }, []);
+
+  useEffect(() => {
+    if (!newClientPlanId && plans[0]?.id !== undefined) {
+      setNewClientPlanId(String(plans[0].id));
+    }
+  }, [newClientPlanId, plans]);
+
+  const resetCreateForm = () => {
+    setNewClientName('');
+    setNewClientPlanId(plans[0]?.id !== undefined ? String(plans[0].id) : '');
+    setNewClientActive(true);
+  };
+
+  const handleCreateClient = async (event: FormEvent) => {
+    event.preventDefault();
+    if (!canMutate || !newClientPlanId) return;
+
+    setIsSubmitting(true);
+    try {
+      await api.createClient({
+        name: newClientName.trim(),
+        planId: Number(newClientPlanId),
+        active: newClientActive
+      });
+      showToast({ message: 'Client created.', type: 'success' });
+      resetCreateForm();
+      setIsCreateOpen(false);
+      await loadClients();
+    } catch (error) {
+      showToast({
+        message: getApiErrorMessage(error, 'Could not create client.'),
+        type: 'error'
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const startPlanEdit = (client: ClientDto) => {
+    setEditingClient(client);
+    const currentPlan = plans.find((plan) => plan.planName === (client.plan?.planName ?? client.planName));
+    setSelectedPlanId(currentPlan?.id !== undefined ? String(currentPlan.id) : '');
+  };
+
+  const handleUpdateClientPlan = async (event: FormEvent) => {
+    event.preventDefault();
+    if (!canMutate || !editingClient?.id || !selectedPlanId) return;
+
+    setIsSubmitting(true);
+    try {
+      await api.updateClient(editingClient.id, { planId: Number(selectedPlanId) });
+      showToast({ message: 'Client plan updated.', type: 'success' });
+      setEditingClient(null);
+      await loadClients();
+    } catch (error) {
+      showToast({
+        message: getApiErrorMessage(error, 'Could not update client plan.'),
+        type: 'error'
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleDeleteClient = async (client: ClientDto) => {
+    if (!canMutate || !client.id) return;
+    if (!window.confirm(`Delete ${client.clientName}?`)) return;
+
+    setIsSubmitting(true);
+    try {
+      await api.deleteClient(client.id);
+      showToast({ message: 'Client deleted.', type: 'success' });
+      await loadClients();
+    } catch (error) {
+      showToast({
+        message: getApiErrorMessage(error, 'Could not delete client.'),
+        type: 'error'
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   const hasRowsWithoutIds = clients.some((client) => client.id === undefined);
   const clientsMeta = hasRowsWithoutIds || errorMessage ? (
@@ -52,14 +157,93 @@ export const ClientsListPage: React.FC = () => {
         meta={clientsMeta}
         actions={
           <PrimaryButton
-            disabled={!isSuperAdmin}
-            tooltip={!isSuperAdmin ? 'Admin required' : undefined}
+            type="button"
+            disabled={!canMutate}
+            tooltip={!canMutate ? 'Admin required' : undefined}
+            onClick={() => {
+              resetCreateForm();
+              setEditingClient(null);
+              setIsCreateOpen((open) => !open);
+            }}
           >
             <Plus size={16} aria-hidden="true" />
             Create Client
           </PrimaryButton>
         }
       />
+
+      {isCreateOpen && (
+        <form onSubmit={handleCreateClient} className="mb-8 grid gap-4 border-y border-slate-800/40 py-5 md:grid-cols-[minmax(0,1fr)_12rem_8rem_auto] md:items-end">
+          <label className="block text-sm text-slate-500">
+            Client name
+            <input
+              value={newClientName}
+              onChange={(event) => setNewClientName(event.target.value)}
+              className="mt-2 w-full rounded-md border border-slate-800 bg-slate-950 px-3 py-2 text-sm text-slate-100 outline-none focus:border-slate-600"
+              required
+            />
+          </label>
+          <label className="block text-sm text-slate-500">
+            Plan
+            <select
+              value={newClientPlanId}
+              onChange={(event) => setNewClientPlanId(event.target.value)}
+              className="mt-2 w-full rounded-md border border-slate-800 bg-slate-950 px-3 py-2 text-sm text-slate-100 outline-none focus:border-slate-600"
+              required
+            >
+              {plans.map((plan) => (
+                <option key={plan.id} value={plan.id}>{getPlanLabel(plan.planName)}</option>
+              ))}
+            </select>
+          </label>
+          <label className="flex items-center gap-2 pb-2 text-sm text-slate-400">
+            <input
+              type="checkbox"
+              checked={newClientActive}
+              onChange={(event) => setNewClientActive(event.target.checked)}
+              className="h-4 w-4 rounded border-slate-700 bg-slate-950"
+            />
+            Active
+          </label>
+          <div className="flex gap-2">
+            <PrimaryButton type="submit" disabled={isSubmitting || plans.length === 0}>
+              Create
+            </PrimaryButton>
+            <SecondaryButton type="button" onClick={() => setIsCreateOpen(false)}>
+              Cancel
+            </SecondaryButton>
+          </div>
+        </form>
+      )}
+
+      {editingClient && (
+        <form onSubmit={handleUpdateClientPlan} className="mb-8 flex flex-wrap items-end gap-4 border-y border-slate-800/40 py-5">
+          <div className="min-w-56 flex-1">
+            <p className="text-sm font-medium text-slate-100">{editingClient.clientName}</p>
+            <p className="mt-1 text-xs text-slate-500">Change assigned plan</p>
+          </div>
+          <label className="block min-w-48 text-sm text-slate-500">
+            Plan
+            <select
+              value={selectedPlanId}
+              onChange={(event) => setSelectedPlanId(event.target.value)}
+              className="mt-2 w-full rounded-md border border-slate-800 bg-slate-950 px-3 py-2 text-sm text-slate-100 outline-none focus:border-slate-600"
+              required
+            >
+              <option value="" disabled>Select plan</option>
+              {plans.map((plan) => (
+                <option key={plan.id} value={plan.id}>{getPlanLabel(plan.planName)}</option>
+              ))}
+            </select>
+          </label>
+          <PrimaryButton type="submit" disabled={isSubmitting || !selectedPlanId}>
+            Save
+          </PrimaryButton>
+          <SecondaryButton type="button" onClick={() => setEditingClient(null)}>
+            Cancel
+          </SecondaryButton>
+        </form>
+      )}
 
       <section>
         {isLoading ? (
@@ -125,16 +309,29 @@ export const ClientsListPage: React.FC = () => {
                                   label: 'View',
                                   disabled: true,
                                   title: 'Client response does not include an id'
-                                },
+                            },
                             {
-                              label: 'Delete',
-                              tone: 'danger',
-                              disabled: !isSuperAdmin || !hasBackendId,
-                              title: !isSuperAdmin
+                              label: 'Change plan',
+                              disabled: !canMutate || !hasBackendId || plans.length === 0,
+                              title: !canMutate
                                 ? 'Admin required'
                                 : !hasBackendId
                                   ? 'Client response does not include an id'
-                                  : undefined
+                                  : plans.length === 0
+                                    ? 'Plans are unavailable'
+                                    : undefined,
+                              onClick: () => startPlanEdit(client)
+                            },
+                            {
+                              label: 'Delete',
+                              tone: 'danger',
+                              disabled: !canMutate || !hasBackendId,
+                              title: !canMutate
+                                ? 'Admin required'
+                                : !hasBackendId
+                                  ? 'Client response does not include an id'
+                                  : undefined,
+                              onClick: () => handleDeleteClient(client)
                             }
                           ]}
                         />

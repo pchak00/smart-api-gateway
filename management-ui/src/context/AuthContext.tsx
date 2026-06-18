@@ -2,6 +2,7 @@ import React, { createContext, ReactNode, useEffect, useState } from 'react';
 import { api } from '../api/client';
 import { getTokenRole, getTokenUsername, isTokenExpired } from '../utils/jwt';
 import { AdminRole, LoginRequest } from '../types';
+import { canMutate as canRoleMutate } from '../utils/roles';
 
 interface AuthContextType {
   token: string | null;
@@ -9,6 +10,7 @@ interface AuthContextType {
   username: string | null;
   isAuthenticated: boolean;
   isSuperAdmin: boolean;
+  canMutate: boolean;
   isLoading: boolean;
   login: (credentials: LoginRequest) => Promise<void>;
   logout: () => void;
@@ -67,7 +69,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   const isAuthenticated = !!token && !!role && !isTokenExpired(token);
-  const isSuperAdmin = role === 'SUPER_ADMIN';
+  const canMutate = canRoleMutate(role);
+  const isSuperAdmin = canMutate;
 
   return (
     <AuthContext.Provider
@@ -77,6 +80,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         username,
         isAuthenticated,
         isSuperAdmin,
+        canMutate,
         isLoading,
         login,
         logout

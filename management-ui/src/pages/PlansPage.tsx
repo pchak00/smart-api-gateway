@@ -1,39 +1,97 @@
-import React, { useEffect, useState } from 'react';
+import React, { FormEvent, useEffect, useState } from 'react';
 import { CreditCard, Plus } from 'lucide-react';
 import { api } from '../api/client';
 import { useAuth } from '../hooks/useAuth';
+import { useToast } from '../hooks/useToast';
 import { PlanDto } from '../types';
-import { PrimaryButton } from '../components/Button';
+import { PrimaryButton, SecondaryButton } from '../components/Button';
 import { EmptyState, PageHeader } from '../components/PageShell';
 import { RowActions } from '../components/RowActions';
 import { getPlanLabel } from '../utils/display';
+import { getApiErrorMessage } from '../utils/apiError';
 
 export const PlansPage: React.FC = () => {
-  const { isSuperAdmin } = useAuth();
+  const { canMutate } = useAuth();
+  const { showToast } = useToast();
   const [plans, setPlans] = useState<PlanDto[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const writeTooltip = !isSuperAdmin
+  const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [planName, setPlanName] = useState('');
+  const [requestsPerMinute, setRequestsPerMinute] = useState('100');
+  const [price, setPrice] = useState('0');
+  const writeTooltip = !canMutate
     ? 'Admin required'
-    : 'Plan write controls need forms before they are wired';
+    : undefined;
+
+  const loadPlans = async () => {
+    try {
+      const data = await api.getPlans();
+      setPlans(data);
+      setErrorMessage(null);
+    } catch (error) {
+      console.error('Failed to load plans:', error);
+      setPlans([]);
+      setErrorMessage('Backend plans are unavailable right now.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const loadPlans = async () => {
-      try {
-        const data = await api.getPlans();
-        setPlans(data);
-        setErrorMessage(null);
-      } catch (error) {
-        console.error('Failed to load plans:', error);
-        setPlans([]);
-        setErrorMessage('Backend plans are unavailable right now.');
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
     loadPlans();
   }, []);
+
+  const resetForm = () => {
+    setPlanName('');
+    setRequestsPerMinute('100');
+    setPrice('0');
+  };
+
+  const handleCreatePlan = async (event: FormEvent) => {
+    event.preventDefault();
+    if (!canMutate) return;
+
+    setIsSubmitting(true);
+    try {
+      await api.createPlan({
+        planName: planName.trim(),
+        requestsPerMinute: Number(requestsPerMinute),
+        price: Number(price)
+      });
+      showToast({ message: 'Plan created.', type: 'success' });
+      resetForm();
+      setIsCreateOpen(false);
+      await loadPlans();
+    } catch (error) {
+      showToast({
+        message: getApiErrorMessage(error, 'Could not create plan.'),
+        type: 'error'
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleDeletePlan = async (plan: PlanDto) => {
+    if (!canMutate || !plan.id) return;
+    if (!window.confirm(`Delete ${getPlanLabel(plan.planName)}?`)) return;
+
+    setIsSubmitting(true);
+    try {
+      await api.deletePlan(plan.id);
+      showToast({ message: 'Plan deleted.', type: 'success' });
+      await loadPlans();
+    } catch (error) {
+      showToast({
+        message: getApiErrorMessage(error, 'Could not delete plan.'),
+        type: 'error'
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   return (
     <div>
@@ -43,14 +101,61 @@ export const PlansPage: React.FC = () => {
         meta={errorMessage ? <span className="text-xs text-slate-500">{errorMessage}</span> : undefined}
         actions={
           <PrimaryButton
-            disabled
+            type="button"
+            disabled={!canMutate}
             tooltip={writeTooltip}
+            onClick={() => setIsCreateOpen((open) => !open)}
           >
             <Plus size={16} aria-hidden="true" />
             Create Plan
           </PrimaryButton>
         }
       />
+
+      {isCreateOpen && (
+        <form onSubmit={handleCreatePlan} className="mb-8 grid gap-4 border-y border-slate-800/40 py-5 md:grid-cols-[minmax(0,1fr)_10rem_8rem_auto] md:items-end">
+          <label className="block text-sm text-slate-500">
+            Plan name
+            <input
+              value={planName}
+              onChange={(event) => setPlanName(event.target.value)}
+              className="mt-2 w-full rounded-md border border-slate-800 bg-slate-950 px-3 py-2 text-sm text-slate-100 outline-none focus:border-slate-600"
+              required
+            />
+          </label>
+          <label className="block text-sm text-slate-500">
+            Requests/min
+            <input
+              type="number"
+              min="1"
+              value={requestsPerMinute}
+              onChange={(event) => setRequestsPerMinute(event.target.value)}
+              className="mt-2 w-full rounded-md border border-slate-800 bg-slate-950 px-3 py-2 text-sm text-slate-100 outline-none focus:border-slate-600"
+              required
+            />
+          </label>
+          <label className="block text-sm text-slate-500">
+            Price
+            <input
+              type="number"
+              min="0"
+              step="0.01"
+              value={price}
+              onChange={(event) => setPrice(event.target.value)}
+              className="mt-2 w-full rounded-md border border-slate-800 bg-slate-950 px-3 py-2 text-sm text-slate-100 outline-none focus:border-slate-600"
+              required
+            />
+          </label>
+          <div className="flex gap-2">
+            <PrimaryButton type="submit" disabled={isSubmitting}>
+              Create
+            </PrimaryButton>
+            <SecondaryButton type="button" onClick={() => setIsCreateOpen(false)}>
+              Cancel
+            </SecondaryButton>
+          </div>
+        </form>
+      )}
 
       <section>
         {isLoading ? (
@@ -98,21 +203,19 @@ export const PlansPage: React.FC = () => {
                         : 'Not returned'}
                     </td>
                     <td className="px-4 py-4 text-right text-sm">
-                      <RowActions
-                        actions={[
-                          {
-                            label: 'Edit',
-                            disabled: true,
-                            title: writeTooltip
-                          },
-                          {
-                            label: 'Delete',
-                            tone: 'danger',
-                            disabled: true,
-                            title: writeTooltip
-                          }
-                        ]}
-                      />
+                      {plan.id !== undefined && (
+                        <RowActions
+                          actions={[
+                            {
+                              label: 'Delete',
+                              tone: 'danger',
+                              disabled: !canMutate,
+                              title: writeTooltip,
+                              onClick: () => handleDeletePlan(plan)
+                            }
+                          ]}
+                        />
+                      )}
                     </td>
                   </tr>
                 ))}
