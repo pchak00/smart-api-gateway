@@ -343,7 +343,7 @@ Example request using an API key:
 
 ```bash
 curl -X GET http://localhost:8080/api/products \
-  -H "X-API-Key: YOUR_API_KEY"
+  -H "X-API-Key: free-demo-api-key"
 ```
 
 ---
@@ -368,10 +368,10 @@ The application automatically seeds demo data when the database is empty.
 
 #### Admin Users
 
-| Username | Role |
-|-----------|---------|
-| super admin | SUPER_ADMIN |
-| viewer | READ_ONLY_ADMIN |
+| Username | Password | Role |
+|-----------|-----------|---------|
+| super admin | admin123 | SUPER_ADMIN |
+| viewer | admin123 | READ_ONLY_ADMIN |
 
 #### Plans
 
@@ -575,7 +575,7 @@ X-API-Key: <client-api-key>
 
 ```bash
 curl -X GET http://localhost:8080/api/products \
--H "X-API-Key: demo-free-client-key"
+-H "X-API-Key: free-demo-api-key"
 ```
 
 #### Successful Response

@@ -100,7 +100,7 @@ PostgreSQL uses automatic schema creation (`spring.jpa.hibernate.ddl-auto=update
 Demo data includes:
 - Admin users: `super admin` (SUPER_ADMIN), `viewer` (READ_ONLY_ADMIN), password `admin123`
 - Plans: FREE (10 RPM), PRO (100 RPM), ENTERPRISE (1000 RPM)
-- Clients: `demo-free-client`, `demo-pro-client` (auto-generated API keys)
+- Clients: `Demo Free Client` (`free-demo-api-key`), `Demo Pro Client` (`pro-demo-api-key`)
 
 ### Testing API Endpoints
 
@@ -114,7 +114,7 @@ curl -X POST http://localhost:8080/auth/login \
 Gateway request with API key:
 ```bash
 curl -X GET http://localhost:8080/api/products \
-  -H "X-API-Key: demo-free-client-key"
+  -H "X-API-Key: free-demo-api-key"
 ```
 
 ## Code Organization & Navigation
@@ -167,7 +167,7 @@ The backend is a simple Spring Boot app deployed as a separate Docker service. R
 ### Naming Conventions
 
 - Table/Entity: `Client`, `Plan` (singular, PascalCase)
-- API Keys: Auto-generated and stored in Client entity (example: `demo-free-client-key`)
+- API Keys: Auto-generated and stored in Client entity (example: `free-demo-api-key`)
 - Rate limit Redis keys: `rate_limit:{apiKey}:{path}` (colon-delimited, lowercase)
 - Request timestamps: ISO-8601 (stored in `UsageLog.timestamp`)
 

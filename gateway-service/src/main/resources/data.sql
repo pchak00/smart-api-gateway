@@ -19,7 +19,9 @@ VALUES (
            '$2a$10$VesL5BPpxoJCpR3IyPN58uSDxrCpElhhO0x0P38VrttzV2dk1js0i', -- admin123
            'SUPER_ADMIN'
        )
-    ON CONFLICT (username) DO NOTHING;
+    ON CONFLICT (username) DO UPDATE
+    SET password = EXCLUDED.password,
+        role = EXCLUDED.role;
 
 
 INSERT INTO admin_user (username, password, role)
@@ -28,7 +30,9 @@ VALUES (
            '$2a$10$VesL5BPpxoJCpR3IyPN58uSDxrCpElhhO0x0P38VrttzV2dk1js0i', -- admin123
            'READ_ONLY_ADMIN'
        )
-    ON CONFLICT (username) DO NOTHING;
+    ON CONFLICT (username) DO UPDATE
+    SET password = EXCLUDED.password,
+        role = EXCLUDED.role;
 
 INSERT INTO client (name, api_key, plan_id, active)
 SELECT
