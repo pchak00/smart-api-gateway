@@ -1,712 +1,516 @@
 # Smart API Gateway
 
-A self-hostable API gateway and API management platform built with Spring Boot, Redis, PostgreSQL, and Docker.
+Smart API Gateway is a developer-first API management platform built with Spring Boot, PostgreSQL, Redis, Docker, and a React/TypeScript management UI branded as `pacific`.
 
-Features include:
-- distributed Redis-backed rate limiting
-- plan-based quotas
-- route-specific throttling
-- JWT authentication
+The gateway demonstrates a full-stack API operations workflow:
+
+- API gateway routing and API-key enforcement
+- Redis-backed rate limiting
+- plan-based quotas and route-specific limits
+- PostgreSQL persistence for platform data
+- JWT admin authentication
 - role-based authorization
 - usage analytics
-- abuse detection
+- blocked-request abuse detection
+- Dockerized full-stack deployment
+- Pacific React/TypeScript admin console
 
-Designed as a developer-first, SaaS-oriented gateway platform for small-to-mid sized teams.
-
-## Why This Project?
-
-Modern applications increasingly rely on API gateways for authentication,
-traffic management, rate limiting, observability, and security.
-
-Existing solutions such as Kong, AWS API Gateway, Apigee, and NGINX-based setups
-are powerful, but can be very expensive and often optimized toward either:
-
-- infrastructure-heavy configurations
-- enterprise-scale deployments
-- or paid platform ecosystems
-
-At the same time, many free open-source gateway solutions provide strong routing and proxy capabilities but lack 
-built-in product-oriented features such as:
-- plan-based quota management
-- integrated analytics
-- abuse monitoring
-- developer-focused administration
-- and simplified onboarding experiences
-
-Smart API Gateway was built to explore a middle ground:
-a developer-first, self-hostable API management platform that combines infrastructure capabilities with SaaS-style management features.
-
-The goal is not to compete with low-level high-performance proxies,
-but to provide a more accessible and product-oriented gateway experience for developers, startups, and small-to-mid sized teams.
+The goal is to show a practical, self-hostable gateway platform for demos, portfolio review, and local experimentation. It is not positioned as a replacement for production gateway products such as Kong, Apigee, AWS API Gateway, or NGINX.
 
 ## Architecture Overview
 
-Smart API Gateway is designed as a containerized, multi-service backend system where the gateway acts as the central policy enforcement layer between API consumers and backend services.
+The platform has two request flows:
 
-Instead of acting only as a request router, the gateway is responsible for enforcing access rules, applying traffic policies, recording usage, detecting abuse, and protecting administrative platform features.
+1. **API consumer flow** - external clients call protected `/api/**` routes with an `X-API-Key` header.
+2. **Admin platform flow** - operators use the Pacific management UI or admin API with JWT authentication.
 
-The architecture is easiest to understand through two main request flows:
+```text
+Browser
+  -> management-ui (Pacific console, http://localhost:3000)
+  -> gateway-service (admin API, http://localhost:8080)
+  -> postgres / redis
 
-1. **API Consumer Flow** — requests made by external clients using API keys
-2. **Admin Platform Flow** — requests made by admins using JWT authentication and role-based authorization
-
-### API Consumer Flow
-
-This flow represents requests made by external API consumers to protected backend services.
-
-```mermaid
-flowchart TD
-    A[API Consumer] --> B[Gateway Service]
-    B --> C[API Key Validation]
-    C --> D{Valid API Key?}
-
-    D -- No --> E[Reject Request]
-    D -- Yes --> F[Determine Request Limit<br/>Based on service policy<br/>Use Route-Specific Limit<br/>or a default plan limit]
-
-    F --> G{Within Limit?}
-
-    G -- Yes --> H[Forward Request to Backend Service]
-    H --> I[Backend Service Response]
-    I --> J[Record Usage Log & Update Analytics]
-    J --> K[Return Response to API Consumer]
-
-    G -- No --> L[Return 429 Too Many Requests]
-    L --> M[Record Blocked Request]
-    M --> N[Check Abuse Thresholds<br/>Create or Update Alert<br/>if Threshold exceeded]
-    
+API Consumer
+  -> gateway-service (API key validation, rate limiting)
+  -> backend-service (demo upstream API)
 ```
 
+### Services
 
-### Admin Platform Flow
+| Service | Port | Responsibility |
+|---|---:|---|
+| `gateway-service` | `8080` | Public gateway and admin entry point. Validates API keys for `/api/**`, enforces rate limits, records usage, detects abuse, and serves JWT-protected admin APIs. |
+| `backend-service` | `8081` | Demo upstream API used to verify gateway routing and traffic policies. |
+| `postgres` | `5432` | Persistent platform data: clients, plans, route limits, usage logs, abuse alerts, and admin users. |
+| `redis` | `6379` | Shared rate-limit counters for per-client/per-path request windows. |
+| `management-ui` | `3000` | Pacific React admin console served by Nginx in Docker Compose. |
 
-Admin authentication is intentionally separated from API consumer authentication. API consumers access protected backend services using API keys, while platform administrators use JWT-based authentication to manage internal gateway resources and administrative features.
+The browser UI calls `http://localhost:8080`. The Docker DNS name `gateway-service` is only for container-to-container communication and should not be used by browser code.
 
-The platform currently supports two administrative roles:
+## Core Capabilities
 
-- `READ_ONLY_ADMIN` — can access read-only administrative endpoints such as analytics, usage statistics,view clients, plans, route specific policies and abuse alerts
-- `SUPER_ADMIN` — has full administrative access, including managing clients, plans, route policies, and other gateway configuration resources
+### API Gateway
 
-This separation allows the platform to enforce role-based access control for sensitive management operations while still supporting restricted monitoring and observability access.
+- API consumers authenticate with `X-API-Key`.
+- Valid gateway requests are routed to the demo backend service.
+- Rate limits are resolved from a route-specific override when one exists; otherwise the client's assigned plan limit is used.
+- Redis stores rate-limit counters using per-client/per-path keys.
 
-```mermaid
-flowchart TD
-    A[Admin User] --> B[Login with Admin Credentials]
-    B --> C[Generate JWT Access Token]
-    C --> D[Request Protected Admin Endpoint]
-    D --> E[Validate JWT]
-    E --> F{Valid Token?}
+### Pacific Management UI
 
-    F -- No --> G[Reject Request]
-    F -- Yes --> H[Check Admin Role]
+The Pacific console runs at `http://localhost:3000` when started through Docker Compose.
 
-    H --> I{Authorized for Action?}
-    I -- No --> J[Return 403 Forbidden]
-    I -- Yes --> K[Execute Admin Operation]
+Current UI capabilities include:
 
-    K --> L[Return Admin Response]
-```
+- dashboard summary
+- client list, detail, provisioning, deletion, plan changes, usage, stats, and abuse history
+- plan list, creation, and deletion
+- route-limit list, creation, update, and deletion
+- admin-user list, creation, deletion, and role updates
+- analytics pages for route, client, and traffic data
+- global abuse-alert list
 
-### Infrastructure & Service Responsibilities
+### Authentication And Roles
 
-The system is separated into multiple services so each component has a clear responsibility.
+Admin authentication uses JWTs issued by `POST /auth/login`.
 
-#### Gateway Service
+Backend enum values remain:
 
-The Gateway Service is the core application in the system. It acts as the central policy enforcement layer for incoming traffic.
+- `SUPER_ADMIN`
+- `READ_ONLY_ADMIN`
 
-Responsibilities include:
+The UI displays customer-facing labels:
 
-- validating API keys for API consumers
-- resolving plan-based and route-specific rate limits
-- forwarding valid requests to backend services
-- recording usage logs for analytics
-- tracking blocked requests for abuse detection
-- protecting admin endpoints with JWT authentication and role-based authorization
+- `SUPER_ADMIN` as `Admin`
+- `READ_ONLY_ADMIN` as `Viewer`
 
-#### Redis
+`SUPER_ADMIN` users can create, update, and delete supported resources. `READ_ONLY_ADMIN` users can view allowed pages and data, cannot mutate resources, and are blocked from the Admin Users page.
 
-Redis is used for fast, shared rate-limiting counters.
+### Analytics And Abuse Detection
 
-Rate limit state is kept outside the gateway process so the system is not dependent on local application memory. This allows multiple gateway instances to share request counters and supports a more horizontally scalable design.
+Usage logs are written for gateway traffic and power dashboard and analytics endpoints. Abuse detection is based on blocked requests only. When a client repeatedly exceeds limits, the gateway persists abuse alerts.
 
-#### PostgreSQL
+Current limitation: alerts do not yet have lifecycle statuses such as `Open`, `Acknowledged`, or `Resolved`, so alert counts represent persisted alerts.
 
-PostgreSQL stores persistent platform data such as:
+## Quick Start
 
-- clients and API keys
-- plans and quota rules
-- route-specific limits
-- usage logs
-- abuse alerts
-- admin users and roles
-
-#### Backend Service
-
-The Backend Service is a demo service used to validate gateway behavior.
-
-It exists mainly for routing demonstrations, integration testing, and showing how protected backend APIs can sit behind the gateway.
-
-#### Docker Compose
-
-Docker Compose is used to run the full system locally with separate containers for the management UI, gateway, backend service, Redis, and PostgreSQL.
-
-This creates a more production-like development environment and demonstrates container networking, service isolation, and infrastructure configuration.
-
-## Core Features
-
-### Traffic Management
-
-#### Plan-Based Rate Limiting
-
-Clients are assigned to centralized plans such as `FREE`, `PRO`, and `ENTERPRISE`, each with configurable default request quotas.
-
-This allows quota policies to be managed centrally without duplicating configuration across individual clients.
-
-#### Route-Specific Traffic Policies
-
-The gateway supports route-level rate limit overrides for endpoints with different operational costs.
-
-For example, expensive endpoints such as AI inference, image generation, or report-processing APIs can enforce stricter limits than lightweight endpoints, even when clients belong to the same plan.
-
-When a route-specific policy exists, it overrides the default plan quota for that endpoint.
-
-#### Distributed Redis-Backed Rate Limiting
-
-Rate limiting uses Redis-based shared counters instead of local in-memory tracking.
-
-This allows multiple gateway instances to share rate limit state consistently and supports a more horizontally scalable architecture compared to application-local counters.
-
-#### Centralized Policy Enforcement
-
-Traffic policies are enforced at the gateway layer before requests reach backend services.
-
-This allows authentication, quota enforcement, and traffic control to remain centralized rather than being duplicated across individual backend applications.
-
-### Authentication & Authorization
-
-#### API Key Authentication
-
-External API consumers authenticate using API keys provided through the `X-API-Key` header.
-
-Requests are validated at the gateway layer before traffic is forwarded to backend services.
-
-#### JWT-Based Admin Authentication
-
-Administrative platform endpoints are protected using JWT-based authentication.
-
-Admins authenticate through a login endpoint and receive a signed JWT access token used for subsequent protected requests.
-
-#### Role-Based Authorization
-
-Administrative actions are protected using role-based access control.
-
-Current roles include:
-
-- `READ_ONLY_ADMIN` — can access monitoring and observability endpoints such as analytics, usage statistics, and abuse alerts
-- `SUPER_ADMIN` — has full access to management operations including clients, plans, route policies, and administrative configuration
-
-This separation allows sensitive platform operations to remain protected while still supporting restricted operational visibility for lower-privileged administrators.
-
-#### Centralized Security Enforcement
-
-Authentication and authorization are enforced centrally at the gateway layer rather than being duplicated across backend services.
-
-This keeps security policies consistent across the platform and simplifies backend service design.## Analytics & Abuse Detection
-
-### Analytics & Abuse Detection
-
-#### Usage Logging
-
-Requests processed through the gateway are recorded for monitoring and analytics purposes.
-
-Logged information includes:
-- client identity
-- request path
-- HTTP method
-- status code
-- request timestamp
-- allowed or blocked request state
-
-#### Analytics & Monitoring
-
-Usage data is aggregated to support operational analytics and platform monitoring.
-
-This allows administrators to observe:
-- request activity
-- blocked traffic patterns
-- client usage behavior
-- route-level traffic trends
-
-#### Abuse Detection
-
-The platform monitors blocked request activity to identify potentially abusive behavior.
-
-When clients repeatedly exceed configured rate limits within a defined time window, the system evaluates abuse thresholds and tracks suspicious activity patterns.
-
-#### Alerting System
-
-When abuse thresholds are exceeded, the gateway creates or updates abuse alerts associated with the affected client.
-
-A cooldown mechanism is used to avoid repeatedly generating duplicate alerts for the same abusive activity window.
-
-## Infrastructure & Deployment
-
-### Dockerized Multi-Service Architecture
-
-The platform is fully containerized using Docker and Docker Compose.
-
-Separate containers are used for:
-- Management UI
-- Gateway Service
-- Backend Service
-- Redis
-- PostgreSQL
-
-This keeps infrastructure responsibilities isolated and creates a more production-like development environment.
-
-### Container Networking
-
-Services communicate through Docker Compose networking using service-level DNS resolution rather than localhost-based communication.
-
-This more closely mirrors real distributed backend deployments where services communicate across isolated runtime environments.
-
-### Environment-Based Configuration
-
-Service configuration is managed through environment variables and container configuration rather than hardcoded infrastructure settings.
-
-This simplifies deployment portability and environment-specific configuration management.
-
-### Production-Oriented Separation
-
-The architecture separates:
-- traffic management
-- backend business services
-- distributed caching/state
-- persistent storage
-
-into independent services that can be scaled, replaced, or deployed separately.
-
-## Getting Started
-
-### Prerequisites
-
-Before running the project, ensure Docker is installed and running and for convenience use an api tester like Insomnia or Postman.
-
----
-
-### Clone the Repository
-
-```bash
-git clone https://github.com/pchak00/gateway-api.git
-cd smart-api-gateway
-```
-
----
-
-### Start the Platform
-
-Build and start all services:
+Run from the repository root:
 
 ```bash
 docker compose up --build
 ```
 
-This starts the following services:
-
-| Service | Port |
-|---|---|
-| Management UI | `3000` |
-| Gateway Service | `8080` |
-| Backend Service | `8081` |
-| PostgreSQL | `5432` |
-| Redis | `6379` |
-
-Open the management UI in your browser:
+Open:
 
 ```text
-http://localhost:3000
+Pacific management UI: http://localhost:3000
+Gateway/Admin API:     http://localhost:8080
+Demo backend API:      http://localhost:8081
 ```
 
-The gateway and admin API are available at:
-
-```text
-http://localhost:8080
-```
-
-The browser-based frontend calls `http://localhost:8080`. The Docker hostname `gateway-service` is only for container-to-container networking and is not used by browser code.
-
----
-
-### Verify the Gateway
-
-Example request using an API key:
-
-```bash
-curl -X GET http://localhost:8080/api/products \
-  -H "X-API-Key: free-demo-api-key"
-```
-
----
-
-### Stop the Platform
+Stop the stack:
 
 ```bash
 docker compose down
 ```
 
-If your local database volume contains stale seeded data and you need a clean demo database:
+Reset local Docker volumes and reload seed data on the next startup:
 
 ```bash
 docker compose down -v
 ```
 
-## API Usage Examples
+Use `docker compose down -v` when you want a clean local PostgreSQL database with the seeded demo accounts, plans, clients, and route limits.
 
-### Demo Credentials
+## Seeded Local Demo Data
 
-The application automatically seeds demo data when the database is empty.
+Seed data is loaded from `gateway-service/src/main/resources/data.sql`.
 
-#### Admin Users
+### Admin Users
 
-| Username | Password | Role |
-|-----------|-----------|---------|
-| super admin | admin123 | SUPER_ADMIN |
-| viewer | admin123 | READ_ONLY_ADMIN |
+```text
+Super admin:
+username: super admin
+password: admin123
+role: SUPER_ADMIN
+UI label: Admin
 
-#### Plans
+Read-only viewer:
+username: viewer
+password: admin123
+role: READ_ONLY_ADMIN
+UI label: Viewer
+```
 
-| Plan | Requests Per Minute |
-|------|---------------------|
-| FREE | 10 |
-| PRO | 100 |
-| ENTERPRISE | 1000 |
+These credentials are for local demo use only.
 
-#### Demo Clients
+### Plans
 
-| Client | Plan |
-|---------|------|
-| demo-free-client | FREE |
-| demo-pro-client | PRO |
+| Plan | Requests Per Minute | Price |
+|---|---:|---:|
+| `FREE` | 10 | 0.00 |
+| `PRO` | 100 | 29.00 |
+| `ENTERPRISE` | 1000 | 199.00 |
 
----
+Custom plan names are also supported by the admin API and UI.
 
-### Authentication
+### Demo Clients
 
-Obtain a JWT token before accessing administrative endpoints.
+| Client | API Key | Plan |
+|---|---|---|
+| Demo Free Client | `free-demo-api-key` | `FREE` |
+| Demo Pro Client | `pro-demo-api-key` | `PRO` |
 
-#### Login
+### Seeded Route Limits
+
+| Plan | Route | Requests Per Minute |
+|---|---|---:|
+| `FREE` | `/api/products` | 5 |
+| `FREE` | `/api/reports` | 2 |
+
+These route-specific limits override the `FREE` plan default for those exact paths.
+
+## Demo Walkthrough
+
+This flow lets a reviewer run and exercise the platform in about 10 minutes.
+
+### A. Start The Stack
+
+```bash
+docker compose up --build
+```
+
+Wait until `management-ui`, `gateway-service`, `backend-service`, `postgres`, and `redis` are running.
+
+### B. Open Pacific
+
+Open:
+
+```text
+http://localhost:3000
+```
+
+### C. Log In As Admin
+
+Use the seeded super-admin credentials:
+
+```text
+username: super admin
+password: admin123
+```
+
+### D. Review Dashboard
+
+The dashboard shows live platform counts and request activity where data exists:
+
+- client count
+- plan count
+- route-limit count
+- total, allowed, and blocked requests
+- persisted abuse-alert count
+
+Fresh databases may show no request analytics until traffic is sent through the gateway.
+
+### E. Create Or Inspect An API Client
+
+Use the Clients page to inspect the seeded clients or create a new API client. Manual admin provisioning is currently supported through the Pacific console and admin API.
+
+Each client receives:
+
+- a generated API key
+- an assigned plan
+- an active/inactive state
+
+This is useful for demos, internal service clients, enterprise/manual onboarding, and support operations. Programmatic provisioning for external application signup is planned for a future milestone.
+
+### F. Call A Protected Route Through The Gateway
+
+Use a seeded API key or copy the API key from a client created in the UI:
+
+```bash
+curl -i -H "X-API-Key: free-demo-api-key" http://localhost:8080/api/products
+```
+
+Other demo backend routes behind the gateway:
+
+```bash
+curl -i -H "X-API-Key: free-demo-api-key" http://localhost:8080/api/orders
+curl -i -H "X-API-Key: free-demo-api-key" http://localhost:8080/api/reports
+curl -i -H "X-API-Key: free-demo-api-key" http://localhost:8080/api/health
+```
+
+### G. Trigger Rate Limiting
+
+The seeded `FREE` route limit for `/api/products` is 5 requests per minute. This loop should produce allowed responses followed by `429 Too Many Requests` responses:
+
+```bash
+for i in {1..8}; do curl -i -H "X-API-Key: free-demo-api-key" http://localhost:8080/api/products; echo; done
+```
+
+Abuse alerts require repeated blocked requests. Current abuse detection creates an alert after at least 10 blocked requests for the same client within the detection window:
+
+```bash
+for i in {1..18}; do curl -i -H "X-API-Key: free-demo-api-key" http://localhost:8080/api/products; echo; done
+```
+
+### H. Return To Pacific
+
+Refresh the dashboard and analytics pages. Request activity should appear in:
+
+- dashboard summary
+- traffic analytics
+- route analytics
+- client analytics
+- client detail usage/stats views
+
+Abuse alerts may appear after blocked-request thresholds are crossed.
+
+### I. Verify Viewer Permissions
+
+Log out and log in as:
+
+```text
+username: viewer
+password: admin123
+```
+
+Verify that the Viewer can inspect dashboard, clients, plans, route limits, analytics, and alerts, but cannot create, update, or delete resources. The Admin Users page is blocked for the Viewer role.
+
+## Client Onboarding Model
+
+### Current Model
+
+Admins can manually provision API clients from the Pacific console or admin API. Each client receives an API key and assigned plan.
+
+This supports:
+
+- local demos
+- internal service clients
+- enterprise/manual onboarding
+- support and operations workflows
+
+### Future Model
+
+Programmatic client provisioning is planned so an external application backend can call Pacific during user signup. That flow should use a limited provisioning token rather than a full admin JWT.
+
+A public developer self-service portal may be added later as a separate extension.
+
+## API Examples
+
+### Login
 
 ```bash
 curl -X POST http://localhost:8080/auth/login \
--H "Content-Type: application/json" \
--d '{
-  "username":"super admin",
-  "password":"admin123"
-}'
+  -H "Content-Type: application/json" \
+  -d '{
+    "username": "super admin",
+    "password": "admin123"
+  }'
 ```
 
-#### Response
-
-```json
-{
-  "token":"eyJhbGciOiJIUzI1NiJ9..."
-}
-```
-
-Use the token for all admin endpoints:
-
-```http
-Authorization: Bearer <token>
-```
-
----
-
-### Plan Management
-
-#### Create Plan
+Copy the returned token and use it for admin API calls:
 
 ```bash
-curl -X POST http://localhost:8080/admin/plans \
--H "Authorization: Bearer <token>" \
--H "Content-Type: application/json" \
--d '{
-  "planName":"STARTUP",
-  "requestsPerMinute":250,
-  "price":49.99
-}'
+TOKEN="<paste-token-here>"
 ```
 
-#### Delete Plan
+### List Clients
 
 ```bash
-curl -X DELETE http://localhost:8080/admin/plans/4 \
--H "Authorization: Bearer <token>"
+curl -H "Authorization: Bearer $TOKEN" \
+  http://localhost:8080/admin/clients
 ```
 
-#### Safety Rules
-
-- Plans assigned to clients cannot be deleted.
-- Plans referenced by route limits cannot be deleted.
-
----
-
-### Client Management
-
-#### Create Client
+### Create Client
 
 ```bash
 curl -X POST http://localhost:8080/admin/clients \
--H "Authorization: Bearer <token>" \
--H "Content-Type: application/json" \
--d '{
-  "clientName":"Acme Corp",
-  "planId":2
-}'
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Acme Demo Client",
+    "planId": 1,
+    "active": true
+  }'
 ```
 
-#### Upgrade Client Plan
+The response includes the generated `apiKey`.
+
+### Change Client Plan
 
 ```bash
 curl -X PATCH http://localhost:8080/admin/clients/1/plan \
--H "Authorization: Bearer <token>" \
--H "Content-Type: application/json" \
--d '{
-  "planId":3
-}'
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "planId": 2
+  }'
 ```
 
-#### Delete Client
+### Client Detail Data
 
 ```bash
-curl -X DELETE http://localhost:8080/admin/clients/1 \
--H "Authorization: Bearer <token>"
+curl -H "Authorization: Bearer $TOKEN" http://localhost:8080/admin/clients/1/stats
+curl -H "Authorization: Bearer $TOKEN" http://localhost:8080/admin/clients/1/usage
+curl -H "Authorization: Bearer $TOKEN" http://localhost:8080/admin/clients/1/abuse
 ```
 
----
-
-### Route Limit Management
-
-#### Create Route Limit
+### List Plans
 
 ```bash
-curl -X POST http://localhost:8080/admin/route-limits \
--H "Authorization: Bearer <token>" \
--H "Content-Type: application/json" \
--d '{
-  "planId":1,
-  "routePattern":"/api/reports",
-  "requestsPerMinute":2
-}'
+curl -H "Authorization: Bearer $TOKEN" \
+  http://localhost:8080/admin/plans
 ```
 
-#### Update Route Limit
+### Create Plan
+
+The current create-plan endpoint is nested under `/admin/clients`:
 
 ```bash
-curl -X PATCH http://localhost:8080/admin/route-limits/1 \
--H "Authorization: Bearer <token>" \
--H "Content-Type: application/json" \
--d '{
-  "routePattern":"/api/reports",
-  "requestsPerMinute":5
-}'
+curl -X POST http://localhost:8080/admin/clients/plans \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "planName": "STARTUP",
+    "requestsPerMinute": 250,
+    "price": 49.99
+  }'
 ```
 
-#### Delete Route Limit
+### List Route Limits
 
 ```bash
-curl -X DELETE http://localhost:8080/admin/route-limits/1 \
--H "Authorization: Bearer <token>"
+curl -H "Authorization: Bearer $TOKEN" \
+  http://localhost:8080/admin/route-limits
 ```
 
----
+### Create Route Limit
 
-### Admin Management
-
-#### Create Admin
+The current create-route-limit endpoint uses the legacy path `/admin/clients/routeLimits`:
 
 ```bash
+curl -X POST http://localhost:8080/admin/clients/routeLimits \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "planId": 2,
+    "routePattern": "/api/reports",
+    "requestsPerMinute": 20
+  }'
+```
+
+### Update Route Limit
+
+The current update request body uses `requestPerMinute`:
+
+```bash
+curl -X PATCH http://localhost:8080/admin/clients/route-limits/1 \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "routePattern": "/api/products",
+    "requestPerMinute": 10
+  }'
+```
+
+### Dashboard Summary
+
+```bash
+curl -H "Authorization: Bearer $TOKEN" \
+  http://localhost:8080/admin/dashboard/summary
+```
+
+### Analytics
+
+```bash
+curl -H "Authorization: Bearer $TOKEN" http://localhost:8080/admin/analytics/routes
+curl -H "Authorization: Bearer $TOKEN" http://localhost:8080/admin/analytics/clients
+curl -H "Authorization: Bearer $TOKEN" http://localhost:8080/admin/analytics/traffic
+```
+
+### Abuse Alerts
+
+```bash
+curl -H "Authorization: Bearer $TOKEN" \
+  http://localhost:8080/admin/abuse-alerts
+```
+
+### Admin Users
+
+```bash
+curl -H "Authorization: Bearer $TOKEN" http://localhost:8080/admin/users
+
 curl -X POST http://localhost:8080/admin/users \
--H "Authorization: Bearer <token>" \
--H "Content-Type: application/json" \
--d '{
-  "username":"newadmin",
-  "password":"password",
-  "role":"READ_ONLY_ADMIN"
-}'
-```
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "username": "ops-viewer",
+    "password": "admin123",
+    "role": "READ_ONLY_ADMIN"
+  }'
 
-#### Promote Admin
-
-```bash
 curl -X PATCH http://localhost:8080/admin/users/2/role \
--H "Authorization: Bearer <token>" \
--H "Content-Type: application/json" \
--d '{
-  "role":"SUPER_ADMIN"
-}'
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "role": "SUPER_ADMIN"
+  }'
 ```
 
-#### Delete Admin
+The backend prevents deleting or demoting the last `SUPER_ADMIN`.
+
+### Gateway API Traffic
 
 ```bash
-curl -X DELETE http://localhost:8080/admin/users/2 \
--H "Authorization: Bearer <token>"
+curl -i -H "X-API-Key: free-demo-api-key" http://localhost:8080/api/products
 ```
 
-#### Safety Rules
+Missing or invalid API keys return `401`. Inactive clients return `403`. Exceeded rate limits return `429`.
 
-- Only SUPER_ADMIN users can create, update, or delete administrators.
-- The system prevents deletion of the last SUPER_ADMIN.
-- The system prevents demotion of the last SUPER_ADMIN.
+## Local Development
 
----
-
-### Gateway Usage
-
-Clients authenticate using API keys.
-
-```http
-X-API-Key: <client-api-key>
-```
-
----
-
-#### Accessing a Protected Endpoint
+### Gateway Service
 
 ```bash
-curl -X GET http://localhost:8080/api/products \
--H "X-API-Key: free-demo-api-key"
+cd gateway-service
+./mvnw clean package
 ```
 
-#### Successful Response
+### Backend Service
 
-```json
-{
-  "message":"Request forwarded successfully"
-}
+```bash
+cd backend-service
+./mvnw clean package
 ```
-
----
-
-#### Plan Based Rate Limiting
-
-Each client inherits the request limit defined by its assigned plan.
-
-| Plan | Requests Per Minute |
-|--------|------------------|
-| FREE | 10 |
-| PRO | 100 |
-| ENTERPRISE | 1000 |
-
----
-
-#### Route Specific Rate Limiting
-
-Route-specific limits override plan defaults.
-
-Example:
-
-```text
-FREE Plan
-├── Default: 10 requests/minute
-└── /api/reports: 2 requests/minute
-```
-
-In this case:
-
-- Requests to `/api/products` use the FREE plan limit (10 RPM).
-- Requests to `/api/reports` use the route-specific limit (2 RPM).
-
----
-
-#### Exceeding Rate Limits
-
-When a client exceeds its allowed request rate:
-
-```http
-HTTP 429 Too Many Requests
-```
-
-Example:
-
-```json
-{
-  "message":"Rate limit exceeded"
-}
-```
-
-The gateway:
-
-- Records the blocked request.
-- Updates usage analytics.
-- Evaluates abuse thresholds.
-- Creates or updates alerts when thresholds are exceeded.
-
----
-
-### Role Based Access Control
-
-| Endpoint Type | READ_ONLY_ADMIN | SUPER_ADMIN |
-|--------------|-----------------|-------------|
-| View Data | allowed         | allowed     |
-| Create Resources | denied          | allowed     |
-| Update Resources | denied          | allowed     |
-| Delete Resources | denied          | allowed     |
-
-This separation allows operational users to monitor the platform while restricting configuration changes to SUPER_ADMIN accounts.
-
-## Upcomming Updates
-
-Planned improvements and future platform enhancements include:
-
-### Advanced Rate Limiting Algorithms
-
-The current implementation uses a fixed-window rate limiting strategy.
-
-Future versions will introduce:
-- sliding window rate limiting
-- token bucket algorithms
-- burst traffic handling
-- dynamic quota policies
-
-to provide more accurate and flexible traffic control behavior.
-
-### Multi-Tenant Platform Support
-
-Future versions will support tenant or organization-level resource management, allowing multiple teams or companies to manage clients, plans, and gateway configuration within isolated platform boundaries.
-
-### Webhook-Based Alerting
-
-The abuse detection system may be extended with webhook notifications for operational alerts such as:
-- repeated rate limit violations
-- suspicious traffic activity
-- quota exhaustion events
-
-### Enhanced Analytics & Observability
-
-Planned improvements include:
-- real-time traffic dashboards
-- request trend visualization
-- client-level usage insights
-- route-level analytics
-- operational monitoring improvements
 
 ### Management UI
 
-The current management UI provides a web-based dashboard for operating the gateway without manually calling admin APIs.
+```bash
+cd management-ui
+npm install
+npm run dev
+```
 
-Current UI capabilities include:
+The Vite dev server runs on `http://localhost:5173` and proxies `/api`, `/auth`, and `/admin` to `http://localhost:8080` unless `VITE_API_BASE_URL` is set differently.
 
-- admin login page
-- client creation and API key management
-- plan assignment and quota updates
-- route-specific rate limit configuration
-- analytics and usage dashboards
-- abuse alert review
-- admin user management
+## Current Limitations And Roadmap
 
-## Feedback & Contributions
+Planned improvements include:
 
-Feedback, bug reports, and improvement suggestions are welcome.
+- client provisioning API with a limited provisioning token
+- gateway settings UI/API for runtime upstream configuration
+- dynamic upstream routing from database settings with environment fallback
+- alert lifecycle statuses such as `Open`, `Acknowledged`, and `Resolved`
+- API key hashing and rotation if not fully implemented
+- improved test profile and Testcontainers support if Spring context currently requires PostgreSQL
+- pagination and filtering for admin lists and analytics
+- expanded production deployment guidance
 
-If you encounter issues while running the platform or have ideas for improvements, feel free to open an issue or reach out through GitHub discussions.
+These are future improvements, not current platform behavior.
+
+## Repository Notes
+
+- Full-stack demo usage should run from the repository root with `docker compose up --build`.
+- The compose build serves the management UI with Nginx on host port `3000`.
+- Browser frontend code should call `http://localhost:8080`, not `http://gateway-service:8080`.
+- The demo backend routes currently available through the gateway are `/api/products`, `/api/orders`, `/api/reports`, and `/api/health`.
