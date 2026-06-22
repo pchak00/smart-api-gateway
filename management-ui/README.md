@@ -1,113 +1,179 @@
-# Pacific Management UI
+# Smart API Gateway Management UI
 
-Pacific is the React/TypeScript admin console for the Smart API Gateway. It provides a calm dark management interface for operating clients, plans, route limits, analytics, abuse alerts, and admin users.
+A modern, role-based management dashboard for the Smart API Gateway built with React, TypeScript, Vite, and Tailwind CSS.
 
-## Local Development
+## Features
 
-Install dependencies:
+- Role-based access control (SUPER_ADMIN and READ_ONLY_ADMIN)
+- Client management
+- Plan configuration
+- Route-specific rate limiting
+- Usage analytics
+- Abuse alert monitoring
+- Admin user management
+- JWT-based authentication with localStorage persistence
 
-```bash
-npm install
-```
+## Development
 
-Start the Vite dev server:
+### Prerequisites
 
-```bash
-npm run dev
-```
+- Node.js 18+
+- npm or yarn
+- Backend gateway service running on `http://localhost:8080`
 
-Open:
+### Setup
 
-```text
-http://localhost:5173
-```
+1. Install dependencies:
+   ```bash
+   npm install
+   ```
 
-The gateway service should be running on:
+2. Start the development server (Vite proxy will forward API calls to localhost:8080):
+   ```bash
+   npm run dev
+   ```
 
-```text
-http://localhost:8080
-```
+3. Open [http://localhost:5173](http://localhost:5173) in your browser
 
-The Vite dev proxy forwards `/api`, `/auth`, and `/admin` requests to `http://localhost:8080` when `VITE_API_BASE_URL` is not set or is `/`.
+4. Login with demo credentials:
+   - **Owner username:** `super admin` / password: `admin123`
+   - **Viewer username:** `viewer` / password: `admin123`
 
-## Production Compose Usage
-
-For the full local demo, run from the repository root:
-
-```bash
-docker compose up --build
-```
-
-Docker Compose builds this UI and serves it through Nginx at:
-
-```text
-http://localhost:3000
-```
-
-The compose build passes:
-
-```text
-VITE_API_BASE_URL=http://localhost:8080
-```
-
-This is intentional: browser requests must target the host-published gateway URL. Do not use the internal Docker hostname `http://gateway-service:8080` in browser code unless a reverse proxy is added later.
-
-## Demo Login
-
-Local seed data creates:
-
-| UI Label | Backend Role | Username | Password |
-|---|---|---|---|
-| Admin | `SUPER_ADMIN` | `super admin` | `admin123` |
-| Viewer | `READ_ONLY_ADMIN` | `viewer` | `admin123` |
-
-These credentials are for local demo use only.
-
-## Available Scripts
+### Build
 
 ```bash
-npm run dev
 npm run build
+```
+
+The built files will be in the `dist/` directory.
+
+### Lint & Type Check
+
+```bash
 npm run lint
 ```
 
-`npm run lint` currently runs `tsc --noEmit`.
+## Docker
 
-## Configuration
+### Build Image
 
-`VITE_API_BASE_URL` controls the API base URL embedded into the browser bundle.
-
-Common values:
-
-```text
-VITE_API_BASE_URL=/                      # Vite dev proxy
-VITE_API_BASE_URL=http://localhost:8080  # Docker Compose browser demo
+```bash
+docker build \
+  --build-arg VITE_API_BASE_URL=http://localhost:8080 \
+  -t smart-api-gateway-ui:latest .
 ```
 
-JWT tokens are stored in `localStorage` under:
+### Run Container
 
-```text
-smart-gateway:token
+```bash
+docker run -p 3000:80 smart-api-gateway-ui:latest
 ```
 
-## Role Behavior
-
-- `SUPER_ADMIN` is displayed as `Admin` and can create, update, and delete supported resources.
-- `READ_ONLY_ADMIN` is displayed as `Viewer` and can view allowed pages/data, but mutation controls are disabled.
-- The Admin Users page is blocked for Viewer accounts.
+Access the UI at [http://localhost:3000](http://localhost:3000)
 
 ## Project Structure
 
-```text
-src/
-|-- api/
-|-- components/
-|-- context/
-|-- hooks/
-|-- layout/
-|-- pages/
-|-- routes/
-|-- types/
-|-- utils/
-`-- main.tsx
 ```
+src/
+├── api/              # API client wrapper
+├── components/       # Reusable UI components
+├── context/          # React context providers (Auth, Toast)
+├── hooks/            # Custom hooks (useAuth, useToast)
+├── layout/           # Layout components (Sidebar, TopBar)
+├── pages/            # Page components
+├── routes/           # Route setup and guards
+├── types/            # TypeScript type definitions
+├── utils/            # Utilities (JWT, demo data)
+└── main.tsx          # Application entry point
+```
+
+## Technology Stack
+
+- **React 18** — UI framework
+- **TypeScript** — Type safety
+- **Vite** — Fast build tool and dev server
+- **Tailwind CSS** — Utility-first styling
+- **React Router v6** — Client-side routing
+- **Axios** — HTTP client
+- **jwt-decode** — JWT token decoding
+- **Recharts** — Data visualization (ready for analytics)
+
+## API Integration
+
+The API client (`src/api/client.ts`) handles all backend communication. It:
+
+- Automatically includes the JWT token from localStorage in request headers
+- Uses Axios interceptors for centralized token management
+- Provides typed methods for all endpoints
+
+### Base URL Configuration
+
+- **Development:** Vite dev proxy routes `/api`, `/auth`, and `/admin` requests to `http://localhost:8080` when `VITE_API_BASE_URL=/`
+- **Production (Docker):** Set `VITE_API_BASE_URL` as a Docker build argument. Vite embeds it into the static browser bundle at build time.
+- **Docker Compose demo:** Uses `VITE_API_BASE_URL=http://localhost:8080` so browser requests target the host-published gateway, not the internal Docker hostname.
+
+### Example API Call
+
+```typescript
+// In a component
+import { api } from '../api/client';
+
+const clients = await api.getClients();
+```
+
+## Authentication
+
+JWT tokens are stored in `localStorage` at key `smart-gateway:token`. The `AuthContext` provides:
+
+- Token management
+- Role extraction from JWT claim
+- Login/logout functionality
+- Automatic token validation
+
+## Role-Based Access Control
+
+### SUPER_ADMIN
+
+- Full access to all pages and features
+- Can create, update, and delete clients, plans, route limits, and admin users
+
+### READ_ONLY_ADMIN
+
+- Can view all pages except "Admin Users"
+- All mutation controls (Create, Edit, Delete buttons) are disabled
+- Permission denied toast appears when attempting restricted actions
+
+## Demo Data
+
+The app includes demo data fallbacks in `src/utils/demoData.ts`. When API calls fail, the app gracefully displays demo data and shows a notice that the backend is unavailable.
+
+## Security Considerations
+
+- JWT tokens are stored in `localStorage` for MVP convenience
+- **Future:** Consider HTTP-only cookies for production deployments
+- XSS vulnerability exists with localStorage; sanitize responses appropriately
+- CORS configuration is required on the backend for cross-origin requests
+
+## Troubleshooting
+
+### API calls not working in dev?
+
+Ensure the Vite dev proxy is correctly configured in `vite.config.ts`:
+
+```typescript
+server: {
+  proxy: {
+    '/api': 'http://localhost:8080',
+    '/auth': 'http://localhost:8080',
+    '/admin': 'http://localhost:8080'
+  }
+}
+```
+
+### Build fails?
+
+Run `npm ci` to ensure clean dependency installation, then retry `npm run build`.
+
+## License
+
+MIT
