@@ -13,7 +13,11 @@ public class Client {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(unique = true, nullable = false)
     private String name;
+
+    private String externalReference;
+
     @Column(unique = true)
     private String apiKey;
 
@@ -59,6 +63,14 @@ public class Client {
 
     public void setName(String name) {
         this.name = name;
+    }
+
+    public String getExternalReference() {
+        return externalReference;
+    }
+
+    public void setExternalReference(String externalReference) {
+        this.externalReference = externalReference;
     }
 
     public String getApiKey() {

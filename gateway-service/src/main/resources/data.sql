@@ -34,6 +34,20 @@ VALUES (
     SET password = EXCLUDED.password,
         role = EXCLUDED.role;
 
+-- Local development only. Raw token: demo-provisioning-token
+INSERT INTO provisioning_token (name, token_hash, default_plan_name, active, created_at)
+VALUES (
+           'Local Demo Provisioner',
+           '$2a$10$0moifO.zZhsGrz/gspi4EeKQjeZkEBbp2Ea7qnFhFfvadWNfPHd1C',
+           'FREE',
+           true,
+           CURRENT_TIMESTAMP
+       )
+    ON CONFLICT (name) DO UPDATE
+    SET token_hash = EXCLUDED.token_hash,
+        default_plan_name = EXCLUDED.default_plan_name,
+        active = EXCLUDED.active;
+
 INSERT INTO client (name, api_key, plan_id, active)
 SELECT
     'Demo Free Client',

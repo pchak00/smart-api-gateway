@@ -388,6 +388,10 @@ The application automatically seeds demo data when the database is empty.
 | Demo Free Client | `free-demo-api-key` | FREE |
 | Demo Pro Client | `pro-demo-api-key` | PRO |
 
+#### Demo Provisioning Token
+
+The local seed includes `demo-provisioning-token`, restricted to the `FREE` plan. This value is for local development only.
+
 ---
 
 ### Demo Walkthrough
@@ -477,7 +481,24 @@ curl -X POST http://localhost:8080/admin/clients \
 
 #### Current Client Onboarding
 
-The current version supports manual admin provisioning through the pacific management UI or admin API. Creating a client provisions an API key and assigns a plan, which supports demos, service clients, enterprise/manual onboarding, and admin support workflows. Future programmatic provisioning will let trusted external backends create clients during signup using a limited provisioning token, not a full admin JWT.
+Manual admin provisioning remains available through the pacific management UI or admin API. Trusted external backends can also create clients during signup through the server-to-server provisioning API, without using a full admin JWT.
+
+#### Server-to-Server Provisioning
+
+Send `POST /provisioning/clients` with an `X-Provisioning-Token` header. Do not call this endpoint from browser code; it creates an active API client and returns its generated API key.
+
+```bash
+curl -X POST http://localhost:8080/provisioning/clients \
+-H "X-Provisioning-Token: demo-provisioning-token" \
+-H "Content-Type: application/json" \
+-d '{
+  "clientName":"signup-user-123",
+  "planName":"FREE",
+  "externalReference":"user_123"
+}'
+```
+
+If `planName` is omitted, the token's default plan is used. A request cannot override that plan.
 
 #### Upgrade Client Plan
 
@@ -715,7 +736,6 @@ Planned improvements include:
 ### Platform Hardening and Configuration
 
 Planned incremental improvements include:
-- a client provisioning API secured by a limited provisioning token
 - gateway settings UI/API for runtime upstream configuration
 - dynamic upstream routing from database settings with an environment-variable fallback
 - alert lifecycle statuses such as Open, Acknowledged, and Resolved

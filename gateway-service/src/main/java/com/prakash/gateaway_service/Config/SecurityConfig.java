@@ -36,6 +36,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         .requestMatchers("/api/**").permitAll()
                         .requestMatchers("/auth/**").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/provisioning/clients").permitAll()
 
                         .requestMatchers("/admin/clients/*/usage").hasAnyRole("SUPER_ADMIN", "READ_ONLY_ADMIN")
                         .requestMatchers("/admin/clients/*/stats").hasAnyRole("SUPER_ADMIN", "READ_ONLY_ADMIN")
