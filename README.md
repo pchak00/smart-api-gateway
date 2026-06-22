@@ -158,7 +158,7 @@ This creates a more production-like development environment and demonstrates con
 
 #### Plan-Based Rate Limiting
 
-Clients are assigned to centralized plans such as `FREE`, `PRO`, and `ENTERPRISE`, each with configurable default request quotas.
+Clients are assigned to centralized plans with configurable default request quotas. `FREE`, `PRO`, and `ENTERPRISE` are seeded defaults, and admins can create custom plans.
 
 This allows quota policies to be managed centrally without duplicating configuration across individual clients.
 
@@ -211,7 +211,7 @@ This separation allows sensitive platform operations to remain protected while s
 
 Authentication and authorization are enforced centrally at the gateway layer rather than being duplicated across backend services.
 
-This keeps security policies consistent across the platform and simplifies backend service design.## Analytics & Abuse Detection
+This keeps security policies consistent across the platform and simplifies backend service design.
 
 ### Analytics & Abuse Detection
 
@@ -383,10 +383,20 @@ The application automatically seeds demo data when the database is empty.
 
 #### Demo Clients
 
-| Client | Plan |
-|---------|------|
-| demo-free-client | FREE |
-| demo-pro-client | PRO |
+| Client | API Key | Plan |
+|---------|---------|------|
+| Demo Free Client | `free-demo-api-key` | FREE |
+| Demo Pro Client | `pro-demo-api-key` | PRO |
+
+---
+
+### Demo Walkthrough
+
+1. Run `docker compose up --build`, then open `http://localhost:3000`.
+2. Log in as `super admin` with password `admin123`, then create or inspect an API client and note its API key and assigned plan.
+3. Call a protected seeded route with `curl http://localhost:8080/api/reports -H "X-API-Key: <client-api-key>"` and repeat the request until the gateway returns `429 Too Many Requests`.
+4. Return to the UI to inspect dashboard, analytics, and abuse-alert behavior.
+5. Log out and sign in as `viewer` with password `admin123` to confirm view-only access.
 
 ---
 
@@ -426,7 +436,7 @@ Authorization: Bearer <token>
 #### Create Plan
 
 ```bash
-curl -X POST http://localhost:8080/admin/plans \
+curl -X POST http://localhost:8080/admin/clients/plans \
 -H "Authorization: Bearer <token>" \
 -H "Content-Type: application/json" \
 -d '{
@@ -439,7 +449,7 @@ curl -X POST http://localhost:8080/admin/plans \
 #### Delete Plan
 
 ```bash
-curl -X DELETE http://localhost:8080/admin/plans/4 \
+curl -X DELETE http://localhost:8080/admin/clients/plans/4 \
 -H "Authorization: Bearer <token>"
 ```
 
@@ -459,10 +469,15 @@ curl -X POST http://localhost:8080/admin/clients \
 -H "Authorization: Bearer <token>" \
 -H "Content-Type: application/json" \
 -d '{
-  "clientName":"Acme Corp",
-  "planId":2
+  "name":"Acme Corp",
+  "planId":2,
+  "active":true
 }'
 ```
+
+#### Current Client Onboarding
+
+The current version supports manual admin provisioning through the pacific management UI or admin API. Creating a client provisions an API key and assigns a plan, which supports demos, service clients, enterprise/manual onboarding, and admin support workflows. Future programmatic provisioning will let trusted external backends create clients during signup using a limited provisioning token, not a full admin JWT.
 
 #### Upgrade Client Plan
 
@@ -489,7 +504,7 @@ curl -X DELETE http://localhost:8080/admin/clients/1 \
 #### Create Route Limit
 
 ```bash
-curl -X POST http://localhost:8080/admin/route-limits \
+curl -X POST http://localhost:8080/admin/clients/routeLimits \
 -H "Authorization: Bearer <token>" \
 -H "Content-Type: application/json" \
 -d '{
@@ -502,19 +517,19 @@ curl -X POST http://localhost:8080/admin/route-limits \
 #### Update Route Limit
 
 ```bash
-curl -X PATCH http://localhost:8080/admin/route-limits/1 \
+curl -X PATCH http://localhost:8080/admin/clients/route-limits/1 \
 -H "Authorization: Bearer <token>" \
 -H "Content-Type: application/json" \
 -d '{
   "routePattern":"/api/reports",
-  "requestsPerMinute":5
+  "requestPerMinute":5
 }'
 ```
 
 #### Delete Route Limit
 
 ```bash
-curl -X DELETE http://localhost:8080/admin/route-limits/1 \
+curl -X DELETE http://localhost:8080/admin/clients/route-limits/1 \
 -H "Authorization: Bearer <token>"
 ```
 
@@ -581,9 +596,11 @@ curl -X GET http://localhost:8080/api/products \
 #### Successful Response
 
 ```json
-{
-  "message":"Request forwarded successfully"
-}
+[
+  {"id":1,"name":"Laptop","price":1299.99},
+  {"id":2,"name":"Keyboard","price":89.99},
+  {"id":3,"name":"Mouse","price":49.99}
+]
 ```
 
 ---
@@ -597,6 +614,8 @@ Each client inherits the request limit defined by its assigned plan.
 | FREE | 10 |
 | PRO | 100 |
 | ENTERPRISE | 1000 |
+
+These are seeded default plans; administrators can create additional custom plans.
 
 ---
 
@@ -655,7 +674,9 @@ The gateway:
 
 This separation allows operational users to monitor the platform while restricting configuration changes to SUPER_ADMIN accounts.
 
-## Upcomming Updates
+The UI presents these roles with the customer-facing labels Owner and Viewer, while API payloads and JWT authorization continue to use `SUPER_ADMIN` and `READ_ONLY_ADMIN`.
+
+## Upcoming Updates
 
 Planned improvements and future platform enhancements include:
 
@@ -690,6 +711,16 @@ Planned improvements include:
 - client-level usage insights
 - route-level analytics
 - operational monitoring improvements
+
+### Platform Hardening and Configuration
+
+Planned incremental improvements include:
+- a client provisioning API secured by a limited provisioning token
+- gateway settings UI/API for runtime upstream configuration
+- dynamic upstream routing from database settings with an environment-variable fallback
+- alert lifecycle statuses such as Open, Acknowledged, and Resolved
+- API key hashing and rotation support
+- an isolated test profile or Testcontainers so Spring context tests do not require a local PostgreSQL instance
 
 ### Management UI
 
