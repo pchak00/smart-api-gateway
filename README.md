@@ -483,6 +483,8 @@ curl -X POST http://localhost:8080/admin/clients \
 
 Manual admin provisioning remains available through the pacific management UI or admin API. Trusted external backends can also create clients during signup through the server-to-server provisioning API, without using a full admin JWT.
 
+For server-to-server client onboarding, see [Client Provisioning](docs/CLIENT_PROVISIONING.md).
+
 #### Server-to-Server Provisioning
 
 Send `POST /provisioning/clients` with an `X-Provisioning-Token` header. Do not call this endpoint from browser code; it creates an active API client and returns its generated API key.
