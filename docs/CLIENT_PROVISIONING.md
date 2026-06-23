@@ -110,6 +110,30 @@ curl -i http://localhost:8080/api/products \
   -H "X-API-Key: <returned-api-key>"
 ```
 
+## Admin Token Management
+
+Admins can manage provisioning tokens through the admin API without editing seed data.
+
+| Endpoint | Roles | Description |
+|---|---|---|
+| `GET /admin/provisioning-tokens` | `SUPER_ADMIN`, `READ_ONLY_ADMIN` | Lists safe token metadata only. Raw tokens and token hashes are never returned. |
+| `POST /admin/provisioning-tokens` | `SUPER_ADMIN` | Creates a provisioning token and returns the raw token once. |
+| `PATCH /admin/provisioning-tokens/{id}/disable` | `SUPER_ADMIN` | Disables a token so it can no longer provision clients. |
+
+Create a token:
+
+```bash
+curl -X POST http://localhost:8080/admin/provisioning-tokens \
+  -H "Authorization: Bearer <admin-token>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Acme signup integration",
+    "defaultPlanName": "FREE"
+  }'
+```
+
+The create response includes a `token` field. Store it immediately in the trusted external backend's secret store; it cannot be retrieved again from list or disable responses.
+
 ## Error Behavior
 
 | Condition | Status | Meaning |
@@ -127,22 +151,22 @@ curl -i http://localhost:8080/api/products \
 - Do not expose provisioning tokens in frontend applications, public repositories, logs, or client-facing responses.
 - Store provisioning tokens as secrets in the calling backend's secret-management system.
 - Pacific stores only BCrypt hashes of provisioning tokens, not their raw values.
+- New provisioning tokens are generated server-side and the raw value is returned only once when created.
 - The seeded demo token is for local development only and must not be used as a production credential.
 - An admin JWT alone does not authorize `POST /provisioning/clients`; the provisioning header is still required.
 - A provisioning token can assign only its configured default plan in the current implementation.
 
 ## Current Limitations
 
-- Admin CRUD for provisioning tokens is intentionally deferred.
-- Local development currently uses one seeded provisioning token.
+- Local development still includes one seeded provisioning token.
 - Each token can assign only its configured default plan.
 - No frontend UI exists for provisioning token management.
 - A public developer self-service portal is future work.
 
 ## Future Improvements
 
-- Admin UI and API support to create and revoke provisioning tokens.
-- Token metadata views that never expose token hashes or raw secrets.
+- Admin UI support to create and revoke provisioning tokens.
+- Token re-enable workflows.
 - Per-token allowed-plan lists.
 - Token expiration and rotation.
 - Audit logs for provisioning events.

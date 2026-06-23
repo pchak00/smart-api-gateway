@@ -1,13 +1,20 @@
 package com.prakash.gateaway_service.Service;
 
+import com.prakash.gateaway_service.DTO.CreateProvisioningTokenRequestDto;
+import com.prakash.gateaway_service.DTO.CreateProvisioningTokenResponseDto;
 import com.prakash.gateaway_service.DTO.ProvisionClientRequestDto;
 import com.prakash.gateaway_service.DTO.ProvisionClientResponseDto;
+import com.prakash.gateaway_service.DTO.ProvisioningTokenResponseDto;
 import com.prakash.gateaway_service.Entity.Client;
 import com.prakash.gateaway_service.Entity.Plan;
 import com.prakash.gateaway_service.Entity.ProvisioningToken;
 import com.prakash.gateaway_service.Exception.DisallowedProvisioningPlanException;
+import com.prakash.gateaway_service.Exception.DuplicateProvisioningTokenException;
 import com.prakash.gateaway_service.Exception.InactiveProvisioningTokenException;
+import com.prakash.gateaway_service.Exception.InvalidProvisioningRequestException;
 import com.prakash.gateaway_service.Exception.InvalidProvisioningTokenException;
+import com.prakash.gateaway_service.Exception.PlanNotFoundException;
+import com.prakash.gateaway_service.Exception.ProvisioningTokenNotFoundException;
 import com.prakash.gateaway_service.Repository.PlanRepository;
 import com.prakash.gateaway_service.Repository.ProvisioningTokenRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -15,13 +22,17 @@ import org.junit.jupiter.api.Test;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -127,6 +138,128 @@ class ProvisioningServiceTest {
                 () -> provisioningService.provisionClient(RAW_TOKEN, request)
         );
         verify(planRepository, never()).findPlanByName("PRO");
+    }
+
+    @Test
+    void listsSafeProvisioningTokenMetadata() {
+        ProvisioningToken token = token(true);
+        token.setId(7L);
+        token.setName("Local Demo Provisioner");
+        token.setCreatedAt(LocalDateTime.now().minusDays(1));
+        token.setLastUsedAt(LocalDateTime.now());
+        when(provisioningTokenRepository.findAll()).thenReturn(List.of(token));
+
+        List<ProvisioningTokenResponseDto> response = provisioningService.findAllProvisioningTokens();
+
+        assertEquals(1, response.size());
+        assertEquals(7L, response.get(0).id());
+        assertEquals("Local Demo Provisioner", response.get(0).name());
+        assertEquals("FREE", response.get(0).defaultPlanName());
+        assertEquals(true, response.get(0).active());
+        assertNotNull(response.get(0).createdAt());
+        assertNotNull(response.get(0).lastUsedAt());
+    }
+
+    @Test
+    void createsProvisioningTokenWithRawTokenReturnedOnceAndHashStored() {
+        Plan plan = plan("FREE");
+        when(provisioningTokenRepository.existsByNameIgnoreCase("Acme signup integration")).thenReturn(false);
+        when(planRepository.findPlanByName("FREE")).thenReturn(Optional.of(plan));
+        when(provisioningTokenRepository.save(any(ProvisioningToken.class)))
+                .thenAnswer(invocation -> {
+                    ProvisioningToken saved = invocation.getArgument(0);
+                    saved.setId(99L);
+                    return saved;
+                });
+
+        CreateProvisioningTokenResponseDto response = provisioningService.createProvisioningToken(
+                new CreateProvisioningTokenRequestDto(" Acme signup integration ", " FREE ")
+        );
+
+        assertEquals(99L, response.id());
+        assertEquals("Acme signup integration", response.name());
+        assertTrue(response.token().startsWith("prov_"));
+        assertEquals("FREE", response.defaultPlanName());
+        assertEquals(true, response.active());
+        assertNotNull(response.createdAt());
+
+        verify(provisioningTokenRepository).save(argThat(savedToken ->
+                savedToken.getTokenHash() != null
+                        && !savedToken.getTokenHash().equals(response.token())
+                        && passwordEncoder.matches(response.token(), savedToken.getTokenHash())
+        ));
+    }
+
+    @Test
+    void rejectsDuplicateProvisioningTokenName() {
+        when(provisioningTokenRepository.existsByNameIgnoreCase("Acme")).thenReturn(true);
+
+        assertThrows(
+                DuplicateProvisioningTokenException.class,
+                () -> provisioningService.createProvisioningToken(
+                        new CreateProvisioningTokenRequestDto(" Acme ", "FREE")
+                )
+        );
+        verifyNoInteractions(planRepository);
+    }
+
+    @Test
+    void rejectsBlankProvisioningTokenName() {
+        assertThrows(
+                InvalidProvisioningRequestException.class,
+                () -> provisioningService.createProvisioningToken(
+                        new CreateProvisioningTokenRequestDto(" ", "FREE")
+                )
+        );
+    }
+
+    @Test
+    void rejectsBlankDefaultPlanName() {
+        assertThrows(
+                InvalidProvisioningRequestException.class,
+                () -> provisioningService.createProvisioningToken(
+                        new CreateProvisioningTokenRequestDto("Acme", " ")
+                )
+        );
+    }
+
+    @Test
+    void rejectsUnknownDefaultPlanName() {
+        when(provisioningTokenRepository.existsByNameIgnoreCase("Acme")).thenReturn(false);
+        when(planRepository.findPlanByName("UNKNOWN")).thenReturn(Optional.empty());
+
+        assertThrows(
+                PlanNotFoundException.class,
+                () -> provisioningService.createProvisioningToken(
+                        new CreateProvisioningTokenRequestDto("Acme", "UNKNOWN")
+                )
+        );
+    }
+
+    @Test
+    void disablesProvisioningToken() {
+        ProvisioningToken token = token(true);
+        token.setId(12L);
+        token.setName("Acme");
+        token.setCreatedAt(LocalDateTime.now());
+        when(provisioningTokenRepository.findById(12L)).thenReturn(Optional.of(token));
+        when(provisioningTokenRepository.save(token)).thenReturn(token);
+
+        ProvisioningTokenResponseDto response = provisioningService.disableProvisioningToken(12L);
+
+        assertEquals(12L, response.id());
+        assertFalse(response.active());
+        verify(provisioningTokenRepository).save(token);
+    }
+
+    @Test
+    void rejectsDisableForMissingProvisioningToken() {
+        when(provisioningTokenRepository.findById(404L)).thenReturn(Optional.empty());
+
+        assertThrows(
+                ProvisioningTokenNotFoundException.class,
+                () -> provisioningService.disableProvisioningToken(404L)
+        );
     }
 
     private ProvisioningToken token(boolean active) {

@@ -49,9 +49,11 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/admin/route-limits", "/admin/route-limits/**").hasAnyRole("SUPER_ADMIN", "READ_ONLY_ADMIN")
                         .requestMatchers(HttpMethod.GET, "/admin/abuse-alerts", "/admin/abuse-alerts/**").hasAnyRole("SUPER_ADMIN", "READ_ONLY_ADMIN")
                         .requestMatchers(HttpMethod.GET, "/admin/users", "/admin/users/**").hasAnyRole("SUPER_ADMIN", "READ_ONLY_ADMIN")
+                        .requestMatchers(HttpMethod.GET, "/admin/provisioning-tokens", "/admin/provisioning-tokens/**").hasAnyRole("SUPER_ADMIN", "READ_ONLY_ADMIN")
 
                         .requestMatchers("/admin/clients/**").hasRole("SUPER_ADMIN")
                         .requestMatchers("/admin/users/**").hasRole("SUPER_ADMIN")
+                        .requestMatchers("/admin/provisioning-tokens", "/admin/provisioning-tokens/**").hasRole("SUPER_ADMIN")
 
                         .requestMatchers("/admin/**").authenticated()
                         .anyRequest().permitAll()
@@ -78,7 +80,7 @@ public class SecurityConfig {
                 "http://127.0.0.1:5173"
         ));
         configuration.setAllowedMethods(List.of("GET", "POST", "PATCH", "DELETE", "OPTIONS"));
-        configuration.setAllowedHeaders(List.of("Authorization", "Content-Type", "X-API-Key"));
+        configuration.setAllowedHeaders(List.of("Authorization", "Content-Type", "X-API-Key", "X-Provisioning-Token"));
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);
