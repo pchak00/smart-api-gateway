@@ -39,7 +39,10 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.CONFLICT).body(response);
     }
 
-    @ExceptionHandler({InvalidPlanException.class, InvalidClientException.class, InvalidProvisioningRequestException.class})
+    @ExceptionHandler({InvalidPlanException.class,
+                      InvalidClientException.class,
+                      InvalidProvisioningRequestException.class,
+                      InvalidGatewaySettingsException.class})
     public ResponseEntity<ExceptionResponse> handleBadRequest(
             RuntimeException e, HttpServletRequest request
     ) {

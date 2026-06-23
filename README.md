@@ -136,6 +136,7 @@ PostgreSQL stores persistent platform data such as:
 - clients and API keys
 - plans and quota rules
 - route-specific limits
+- gateway settings
 - usage logs
 - abuse alerts
 - admin users and roles
@@ -181,6 +182,14 @@ This allows multiple gateway instances to share rate limit state consistently an
 Traffic policies are enforced at the gateway layer before requests reach backend services.
 
 This allows authentication, quota enforcement, and traffic control to remain centralized rather than being duplicated across individual backend applications.
+
+#### Runtime Gateway Settings
+
+Gateway settings are stored in PostgreSQL and exposed through the admin API at `GET /admin/settings/gateway` and `PUT /admin/settings/gateway`.
+
+These settings currently include the intended upstream base URL, health-check path, and request timeout. They are runtime product configuration for admins to view and update without editing source code or environment variables.
+
+The current gateway forwarding behavior still uses the existing deployment configuration. Dynamic upstream routing from database settings is planned as a future milestone.
 
 ### Authentication & Authorization
 
@@ -738,7 +747,7 @@ Planned improvements include:
 ### Platform Hardening and Configuration
 
 Planned incremental improvements include:
-- gateway settings UI/API for runtime upstream configuration
+- gateway settings UI for runtime upstream configuration
 - dynamic upstream routing from database settings with an environment-variable fallback
 - alert lifecycle statuses such as Open, Acknowledged, and Resolved
 - API key hashing and rotation support

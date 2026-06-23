@@ -48,6 +48,17 @@ VALUES (
         default_plan_name = EXCLUDED.default_plan_name,
         active = EXCLUDED.active;
 
+INSERT INTO gateway_settings (id, upstream_base_url, health_check_path, timeout_ms, updated_at, updated_by)
+VALUES (
+           1,
+           'http://backend-service:8081',
+           '/health',
+           5000,
+           CURRENT_TIMESTAMP,
+           'system'
+       )
+    ON CONFLICT (id) DO NOTHING;
+
 INSERT INTO client (name, api_key, plan_id, active)
 SELECT
     'Demo Free Client',
