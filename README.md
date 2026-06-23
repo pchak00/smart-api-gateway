@@ -260,6 +260,10 @@ When abuse thresholds are exceeded, the gateway creates or updates abuse alerts 
 
 A cooldown mechanism is used to avoid repeatedly generating duplicate alerts for the same abusive activity window.
 
+Abuse alerts use lifecycle states: `OPEN`, `ACKNOWLEDGED`, and `RESOLVED`. Dashboard `openAlertCount` counts only `OPEN` alerts, so resolved historical alerts no longer inflate the operational alert count.
+
+Owners can move alerts forward with `PATCH /admin/abuse-alerts/{id}/acknowledge` and `PATCH /admin/abuse-alerts/{id}/resolve`; viewers can continue to read alert lists.
+
 ## Infrastructure & Deployment
 
 ### Dockerized Multi-Service Architecture

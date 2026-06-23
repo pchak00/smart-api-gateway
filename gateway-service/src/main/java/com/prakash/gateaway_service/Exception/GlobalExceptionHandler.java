@@ -21,7 +21,8 @@ public class GlobalExceptionHandler {
     @ExceptionHandler({ClientNotFoundException.class,
                       PlanNotFoundException.class,
                       AdminNotFoundException.class,
-                      ProvisioningTokenNotFoundException.class})
+                      ProvisioningTokenNotFoundException.class,
+                      AbuseAlertNotFoundException.class})
     public ResponseEntity<ExceptionResponse> handleNotFound(
             RuntimeException e, HttpServletRequest request
     ) {
@@ -30,7 +31,7 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
     }
 
-    @ExceptionHandler({DuplicatePlanException.class, DuplicateClientException.class, PlanInUseException.class, RouteLimitExistException.class, DuplicateAdminException.class, LastSuperAdminException.class, DuplicateProvisioningTokenException.class})
+    @ExceptionHandler({DuplicatePlanException.class, DuplicateClientException.class, PlanInUseException.class, RouteLimitExistException.class, DuplicateAdminException.class, LastSuperAdminException.class, DuplicateProvisioningTokenException.class, InvalidAbuseAlertTransitionException.class})
     public ResponseEntity<ExceptionResponse> handleConflict(
             RuntimeException e, HttpServletRequest request
     ) {
@@ -43,7 +44,8 @@ public class GlobalExceptionHandler {
                       InvalidClientException.class,
                       InvalidProvisioningRequestException.class,
                       InvalidGatewaySettingsException.class,
-                      InvalidRouteLimitException.class})
+                      InvalidRouteLimitException.class,
+                      InvalidAbuseAlertStatusException.class})
     public ResponseEntity<ExceptionResponse> handleBadRequest(
             RuntimeException e, HttpServletRequest request
     ) {

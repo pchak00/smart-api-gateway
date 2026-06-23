@@ -9,9 +9,13 @@ import com.prakash.gateaway_service.Service.AdminService;
 import com.prakash.gateaway_service.Service.PlanService;
 import com.prakash.gateaway_service.Service.RouteLimitService;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.security.Principal;
 import java.util.List;
 
 @RestController
@@ -46,8 +50,18 @@ public class AdminReadController {
     }
 
     @GetMapping("/abuse-alerts")
-    public List<AbuseAlertResponseDto> findAllAbuseAlerts() {
-        return abuseDetectionService.findAllAbuseAlerts();
+    public List<AbuseAlertResponseDto> findAllAbuseAlerts(@RequestParam(required = false) String status) {
+        return abuseDetectionService.findAllAbuseAlerts(status);
+    }
+
+    @PatchMapping("/abuse-alerts/{id}/acknowledge")
+    public AbuseAlertResponseDto acknowledgeAbuseAlert(@PathVariable Long id, Principal principal) {
+        return abuseDetectionService.acknowledgeAlert(id, principal == null ? null : principal.getName());
+    }
+
+    @PatchMapping("/abuse-alerts/{id}/resolve")
+    public AbuseAlertResponseDto resolveAbuseAlert(@PathVariable Long id, Principal principal) {
+        return abuseDetectionService.resolveAlert(id, principal == null ? null : principal.getName());
     }
 
     @GetMapping("/users")

@@ -86,8 +86,7 @@ public class AnalyticsService {
     }
 
     private long countOpenAlerts() {
-        // AbuseAlert does not have a status/resolution field yet, so every persisted alert is treated as open.
-        return abuseAlertRepository.count();
+        return abuseAlertRepository.countOpenIncludingLegacy();
     }
 
     private long toLong(Object value) {

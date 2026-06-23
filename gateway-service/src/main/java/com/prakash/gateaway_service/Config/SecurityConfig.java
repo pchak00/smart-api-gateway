@@ -57,6 +57,7 @@ public class SecurityConfig {
                         .requestMatchers("/admin/users/**").hasRole("SUPER_ADMIN")
                         .requestMatchers("/admin/provisioning-tokens", "/admin/provisioning-tokens/**").hasRole("SUPER_ADMIN")
                         .requestMatchers("/admin/settings/gateway").hasRole("SUPER_ADMIN")
+                        .requestMatchers(HttpMethod.PATCH, "/admin/abuse-alerts/**").hasRole("SUPER_ADMIN")
 
                         .requestMatchers("/admin/**").authenticated()
                         .anyRequest().permitAll()

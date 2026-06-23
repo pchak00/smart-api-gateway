@@ -25,7 +25,31 @@ public class AbuseAlert {
 
     private LocalDateTime createdAt;
 
-    // getters and setters
+    @Enumerated(EnumType.STRING)
+    private AbuseAlertStatus status;
+
+    private LocalDateTime acknowledgedAt;
+
+    private String acknowledgedBy;
+
+    private LocalDateTime resolvedAt;
+
+    private String resolvedBy;
+
+    private LocalDateTime lastStatusChangedAt;
+
+    @PrePersist
+    void initializeLifecycle() {
+        if (status == null) {
+            status = AbuseAlertStatus.OPEN;
+        }
+        if (createdAt == null) {
+            createdAt = LocalDateTime.now();
+        }
+        if (lastStatusChangedAt == null) {
+            lastStatusChangedAt = createdAt;
+        }
+    }
 
 
     public Client getClient() {
@@ -82,6 +106,54 @@ public class AbuseAlert {
 
     public void setCreatedAt(LocalDateTime createdAt) {
         this.createdAt = createdAt;
+    }
+
+    public AbuseAlertStatus getStatus() {
+        return status;
+    }
+
+    public void setStatus(AbuseAlertStatus status) {
+        this.status = status;
+    }
+
+    public LocalDateTime getAcknowledgedAt() {
+        return acknowledgedAt;
+    }
+
+    public void setAcknowledgedAt(LocalDateTime acknowledgedAt) {
+        this.acknowledgedAt = acknowledgedAt;
+    }
+
+    public String getAcknowledgedBy() {
+        return acknowledgedBy;
+    }
+
+    public void setAcknowledgedBy(String acknowledgedBy) {
+        this.acknowledgedBy = acknowledgedBy;
+    }
+
+    public LocalDateTime getResolvedAt() {
+        return resolvedAt;
+    }
+
+    public void setResolvedAt(LocalDateTime resolvedAt) {
+        this.resolvedAt = resolvedAt;
+    }
+
+    public String getResolvedBy() {
+        return resolvedBy;
+    }
+
+    public void setResolvedBy(String resolvedBy) {
+        this.resolvedBy = resolvedBy;
+    }
+
+    public LocalDateTime getLastStatusChangedAt() {
+        return lastStatusChangedAt;
+    }
+
+    public void setLastStatusChangedAt(LocalDateTime lastStatusChangedAt) {
+        this.lastStatusChangedAt = lastStatusChangedAt;
     }
 
 }
