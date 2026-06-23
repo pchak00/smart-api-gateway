@@ -101,6 +101,21 @@ export interface CreateProvisioningTokenResponse extends ProvisioningTokenDto {
   token: string;
 }
 
+// Gateway settings
+export interface GatewaySettingsDto {
+  upstreamBaseUrl: string;
+  healthCheckPath: string;
+  timeoutMs: number;
+  updatedAt?: string | null;
+  updatedBy?: string | null;
+}
+
+export interface UpdateGatewaySettingsRequest {
+  upstreamBaseUrl: string;
+  healthCheckPath: string;
+  timeoutMs: number;
+}
+
 // Usage Logs
 export interface UsageLogDto {
   id: number;

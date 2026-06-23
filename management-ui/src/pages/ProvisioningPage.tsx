@@ -6,6 +6,7 @@ import { useToast } from '../hooks/useToast';
 import { EmptyState, PageHeader } from '../components/PageShell';
 import { PrimaryButton, SecondaryButton } from '../components/Button';
 import { RowActions } from '../components/RowActions';
+import { SettingsTabs } from '../components/SettingsTabs';
 import { PlanDto, ProvisioningTokenDto } from '../types';
 import { formatDateTime, getPlanLabel } from '../utils/display';
 import { getApiErrorMessage } from '../utils/apiError';
@@ -149,6 +150,8 @@ export const ProvisioningPage: React.FC = () => {
 
   return (
     <div>
+      <SettingsTabs />
+
       <PageHeader
         title="Provisioning"
         description="Manage trusted server-to-server tokens that let external backends create API clients during signup."

@@ -11,6 +11,7 @@ import {
   LucideIcon,
   Route,
   ShieldAlert,
+  SlidersHorizontal,
   UserCog,
   Users
 } from 'lucide-react';
@@ -32,8 +33,12 @@ const MENU_ITEMS: SidebarItem[] = [
   { label: 'Route Limits', path: '/route-limits', icon: Route },
   { label: 'Analytics', path: '/analytics', icon: BarChart3 },
   { label: 'Abuse Alerts', path: '/abuse-alerts', icon: ShieldAlert },
-  { label: 'Provisioning', path: '/provisioning', icon: KeyRound },
   { label: 'Admin Users', path: '/admin-users', icon: UserCog, requiresSuperAdmin: true }
+];
+
+const SETTINGS_ITEMS: SidebarItem[] = [
+  { label: 'Gateway settings', path: '/settings/gateway', icon: SlidersHorizontal },
+  { label: 'Provisioning', path: '/settings/provisioning', icon: KeyRound }
 ];
 
 interface SidebarProps {
@@ -128,6 +133,31 @@ export const Sidebar: React.FC<SidebarProps> = ({ isSuperAdmin }) => {
               </button>
             );
           }
+
+          return (
+            <Link
+              key={item.path}
+              to={item.path}
+              className={`mb-1 flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition-colors ${
+                isActive
+                  ? 'bg-slate-900/65 text-slate-100'
+                  : 'text-slate-500 hover:bg-slate-900/45 hover:text-slate-300'
+              }`}
+            >
+              <Icon size={17} aria-hidden="true" />
+              <span>{item.label}</span>
+            </Link>
+          );
+        })}
+
+        <div className="mt-5 px-3 pb-2 text-xs font-medium uppercase tracking-wide text-slate-700">
+          Settings
+        </div>
+        {SETTINGS_ITEMS.map((item) => {
+          const Icon = item.icon;
+          const isActive =
+            location.pathname === item.path ||
+            (item.path !== '/' && location.pathname.startsWith(`${item.path}/`));
 
           return (
             <Link

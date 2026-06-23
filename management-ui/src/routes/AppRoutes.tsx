@@ -1,5 +1,5 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { LoginPage } from '../pages/LoginPage';
 import { DashboardPage } from '../pages/DashboardPage';
 import { ClientsListPage } from '../pages/ClientsListPage';
@@ -10,6 +10,7 @@ import { AnalyticsPage } from '../pages/AnalyticsPage';
 import { AbuseAlertsPage } from '../pages/AbuseAlertsPage';
 import { AdminUsersPage } from '../pages/AdminUsersPage';
 import { ProvisioningPage } from '../pages/ProvisioningPage';
+import { GatewaySettingsPage } from '../pages/GatewaySettingsPage';
 import { NotFoundPage } from '../pages/NotFoundPage';
 import { AppLayout as MainLayout } from '../layout/AppLayout';
 import { ProtectedRoute } from './ProtectedRoute';
@@ -48,7 +49,10 @@ export const AppRoutes: React.FC = () => {
           <Route path="route-limits" element={<RouteLimitsPage />} />
           <Route path="analytics" element={<AnalyticsPage />} />
           <Route path="abuse-alerts" element={<AbuseAlertsPage />} />
-          <Route path="provisioning" element={<ProvisioningPage />} />
+          <Route path="settings" element={<Navigate to="/settings/gateway" replace />} />
+          <Route path="settings/gateway" element={<GatewaySettingsPage />} />
+          <Route path="settings/provisioning" element={<ProvisioningPage />} />
+          <Route path="provisioning" element={<Navigate to="/settings/provisioning" replace />} />
           <Route
             path="admin-users"
             element={

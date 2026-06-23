@@ -20,7 +20,9 @@ import {
   TrafficAnalyticsDto,
   ProvisioningTokenDto,
   CreateProvisioningTokenRequest,
-  CreateProvisioningTokenResponse
+  CreateProvisioningTokenResponse,
+  GatewaySettingsDto,
+  UpdateGatewaySettingsRequest
 } from '../types';
 
 const baseURL = (import.meta.env.VITE_API_BASE_URL as string | undefined) || '/';
@@ -132,6 +134,17 @@ class ApiClient {
     const response = await this.axiosInstance.patch<ProvisioningTokenDto>(
       `/admin/provisioning-tokens/${id}/disable`
     );
+    return response.data;
+  }
+
+  // Gateway settings endpoints
+  async getGatewaySettings(): Promise<GatewaySettingsDto> {
+    const response = await this.axiosInstance.get<GatewaySettingsDto>('/admin/settings/gateway');
+    return response.data;
+  }
+
+  async updateGatewaySettings(payload: UpdateGatewaySettingsRequest): Promise<GatewaySettingsDto> {
+    const response = await this.axiosInstance.put<GatewaySettingsDto>('/admin/settings/gateway', payload);
     return response.data;
   }
 
