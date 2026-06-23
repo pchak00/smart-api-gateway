@@ -535,6 +535,8 @@ curl -X DELETE http://localhost:8080/admin/clients/1 \
 
 ### Route Limit Management
 
+Route limits support exact paths and simple wildcard patterns. Use `*` for one path segment and `**` at the end of a pattern to match nested routes, such as `/api/users/*` or `/api/reports/**`. Exact paths still match only that path.
+
 #### Create Route Limit
 
 ```bash
@@ -547,6 +549,12 @@ curl -X POST http://localhost:8080/admin/clients/routeLimits \
   "requestsPerMinute":2
 }'
 ```
+
+Pattern examples:
+
+- `/api/products` matches only `/api/products`
+- `/api/users/*` matches `/api/users/123`
+- `/api/reports/**` matches `/api/reports`, `/api/reports/daily`, and deeper nested paths
 
 #### Update Route Limit
 

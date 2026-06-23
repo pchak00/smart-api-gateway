@@ -42,7 +42,8 @@ public class GlobalExceptionHandler {
     @ExceptionHandler({InvalidPlanException.class,
                       InvalidClientException.class,
                       InvalidProvisioningRequestException.class,
-                      InvalidGatewaySettingsException.class})
+                      InvalidGatewaySettingsException.class,
+                      InvalidRouteLimitException.class})
     public ResponseEntity<ExceptionResponse> handleBadRequest(
             RuntimeException e, HttpServletRequest request
     ) {
