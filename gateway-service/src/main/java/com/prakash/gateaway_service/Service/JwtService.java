@@ -23,6 +23,10 @@ public class JwtService {
         this.expirationMs = expirationMs;
     }
 
+    public long getExpirationMs() {
+        return expirationMs;
+    }
+
     public String generateToken(AdminUser adminUser) {
 
         return Jwts.builder()

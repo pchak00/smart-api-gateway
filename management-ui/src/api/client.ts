@@ -1,7 +1,8 @@
-import axios, { AxiosInstance } from 'axios';
+import axios, { AxiosError, AxiosInstance, InternalAxiosRequestConfig } from 'axios';
 import {
   LoginRequest,
   LoginResponse,
+  RefreshTokenRequest,
   ClientDto,
   CreateClientRequest,
   PlanDto,
@@ -28,9 +29,22 @@ import {
 } from '../types';
 
 const baseURL = (import.meta.env.VITE_API_BASE_URL as string | undefined) || '/';
+export const ACCESS_TOKEN_KEY = 'smart-gateway:token';
+export const REFRESH_TOKEN_KEY = 'smart-gateway:refresh-token';
+
+interface RetriableRequestConfig extends InternalAxiosRequestConfig {
+  _retry?: boolean;
+}
+
+interface AuthCallbacks {
+  onSessionRefreshed?: (response: LoginResponse) => void;
+  onSessionExpired?: () => void;
+}
 
 class ApiClient {
   private axiosInstance: AxiosInstance;
+  private refreshPromise: Promise<LoginResponse> | null = null;
+  private authCallbacks: AuthCallbacks = {};
 
   constructor() {
     this.axiosInstance = axios.create({
@@ -42,18 +56,100 @@ class ApiClient {
 
     // Add request interceptor to include auth token
     this.axiosInstance.interceptors.request.use((config) => {
-      const token = localStorage.getItem('smart-gateway:token');
+      const token = localStorage.getItem(ACCESS_TOKEN_KEY);
       if (token && config.headers) {
         config.headers.Authorization = `Bearer ${token}`;
       }
       return config;
     });
+
+    this.axiosInstance.interceptors.response.use(
+      (response) => response,
+      async (error: AxiosError) => {
+        const originalRequest = error.config as RetriableRequestConfig | undefined;
+        const status = error.response?.status;
+        const url = originalRequest?.url ?? '';
+        const isAuthEndpoint = url.includes('/auth/login') ||
+          url.includes('/auth/refresh') ||
+          url.includes('/auth/logout');
+
+        if (status !== 401 || !originalRequest || originalRequest._retry || isAuthEndpoint) {
+          return Promise.reject(error);
+        }
+
+        originalRequest._retry = true;
+
+        try {
+          const session = await this.refreshAccessToken();
+          originalRequest.headers.Authorization = `Bearer ${session.token}`;
+          return this.axiosInstance(originalRequest);
+        } catch (refreshError) {
+          this.clearStoredSession();
+          this.authCallbacks.onSessionExpired?.();
+          return Promise.reject(refreshError);
+        }
+      }
+    );
+  }
+
+  setAuthCallbacks(callbacks: AuthCallbacks) {
+    this.authCallbacks = callbacks;
   }
 
   // Auth endpoints
   async login(credentials: LoginRequest): Promise<LoginResponse> {
     const response = await this.axiosInstance.post<LoginResponse>('/auth/login', credentials);
     return response.data;
+  }
+
+  async refreshAccessToken(): Promise<LoginResponse> {
+    const refreshToken = localStorage.getItem(REFRESH_TOKEN_KEY);
+    if (!refreshToken) {
+      throw new Error('Missing refresh token');
+    }
+
+    if (!this.refreshPromise) {
+      const payload: RefreshTokenRequest = { refreshToken };
+      this.refreshPromise = axios
+        .post<LoginResponse>('/auth/refresh', payload, {
+          baseURL,
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        })
+        .then((response) => {
+          this.storeSession(response.data);
+          this.authCallbacks.onSessionRefreshed?.(response.data);
+          return response.data;
+        })
+        .finally(() => {
+          this.refreshPromise = null;
+        });
+    }
+
+    return this.refreshPromise;
+  }
+
+  async logout(): Promise<void> {
+    const refreshToken = localStorage.getItem(REFRESH_TOKEN_KEY);
+    if (refreshToken) {
+      await axios.post('/auth/logout', { refreshToken }, {
+        baseURL,
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+    }
+  }
+
+  storeSession(session: LoginResponse) {
+    localStorage.setItem(ACCESS_TOKEN_KEY, session.token);
+    localStorage.setItem(REFRESH_TOKEN_KEY, session.refreshToken);
+  }
+
+  clearStoredSession() {
+    localStorage.removeItem(ACCESS_TOKEN_KEY);
+    localStorage.removeItem(REFRESH_TOKEN_KEY);
   }
 
   // Client endpoints

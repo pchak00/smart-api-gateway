@@ -8,6 +8,14 @@ export interface LoginRequest {
 
 export interface LoginResponse {
   token: string;
+  refreshToken: string;
+  username: string;
+  role: AdminRole;
+  expiresInMs: number;
+}
+
+export interface RefreshTokenRequest {
+  refreshToken: string;
 }
 
 export interface AdminUserDto {

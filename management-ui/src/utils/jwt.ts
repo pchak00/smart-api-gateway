@@ -28,6 +28,11 @@ export const isTokenExpired = (token: string): boolean => {
   return decoded.exp < now;
 };
 
+export const getTokenExpiryMs = (token: string): number | null => {
+  const decoded = decodeToken(token);
+  return decoded ? decoded.exp * 1000 : null;
+};
+
 export const getTokenRole = (token: string): AdminRole | null => {
   const decoded = decodeToken(token);
   return isAdminRole(decoded?.role) ? decoded.role : null;

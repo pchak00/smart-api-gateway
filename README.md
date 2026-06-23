@@ -417,7 +417,7 @@ The local seed includes `demo-provisioning-token`, restricted to the `FREE` plan
 
 ### Authentication
 
-Obtain a JWT token before accessing administrative endpoints.
+Obtain a short-lived JWT access token before accessing administrative endpoints. Login also returns a longer-lived refresh token for active admin sessions. The refresh token is only accepted by `/auth/refresh`; it does not authorize `/admin/**` requests directly.
 
 #### Login
 
@@ -434,7 +434,11 @@ curl -X POST http://localhost:8080/auth/login \
 
 ```json
 {
-  "token":"eyJhbGciOiJIUzI1NiJ9..."
+  "token":"eyJhbGciOiJIUzI1NiJ9...",
+  "refreshToken":"admref_...",
+  "username":"super admin",
+  "role":"SUPER_ADMIN",
+  "expiresInMs":3600000
 }
 ```
 
@@ -443,6 +447,24 @@ Use the token for all admin endpoints:
 ```http
 Authorization: Bearer <token>
 ```
+
+Refresh an active admin session:
+
+```bash
+curl -X POST http://localhost:8080/auth/refresh \
+-H "Content-Type: application/json" \
+-d '{"refreshToken":"admref_..."}'
+```
+
+Logout revokes the refresh token:
+
+```bash
+curl -X POST http://localhost:8080/auth/logout \
+-H "Content-Type: application/json" \
+-d '{"refreshToken":"admref_..."}'
+```
+
+Token lifetimes are configured with `JWT_EXPIRATION_MS` for access tokens and `ADMIN_REFRESH_TOKEN_EXPIRATION_MS` for refresh sessions.
 
 ---
 

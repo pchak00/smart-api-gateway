@@ -202,6 +202,9 @@ export const RouteLimitsPage: React.FC = () => {
               className="mt-2 w-full rounded-md border border-slate-800 bg-slate-950 px-3 py-2 font-mono text-sm text-slate-100 outline-none focus:border-slate-600"
               required
             />
+            <span className="mt-2 block text-xs leading-5 text-slate-600">
+              Use exact paths or wildcards: /api/products, /api/users/* for one segment, /api/users/** for nested routes.
+            </span>
           </label>
           <label className="block text-sm text-slate-500">
             Requests/min
