@@ -189,7 +189,7 @@ Gateway settings are stored in PostgreSQL and exposed through the admin API at `
 
 These settings currently include the intended upstream base URL, health-check path, and request timeout. They are runtime product configuration for admins to view and update without editing source code or environment variables.
 
-The current gateway forwarding behavior still uses the existing deployment configuration. Dynamic upstream routing from database settings is planned as a future milestone.
+Gateway forwarding uses the database upstream base URL when a valid settings row is available. If the settings row is missing, invalid, or temporarily unavailable, the gateway falls back to the existing deployment configuration such as `BACKEND_SERVICE_URL`.
 
 ### Authentication & Authorization
 
@@ -748,7 +748,8 @@ Planned improvements include:
 
 Planned incremental improvements include:
 - gateway settings UI for runtime upstream configuration
-- dynamic upstream routing from database settings with an environment-variable fallback
+- upstream health-check and test-connection tools
+- multi-upstream route mapping for more advanced deployments
 - alert lifecycle statuses such as Open, Acknowledged, and Resolved
 - API key hashing and rotation support
 - an isolated test profile or Testcontainers so Spring context tests do not require a local PostgreSQL instance

@@ -4,10 +4,12 @@ package com.prakash.gateaway_service.Filter;
 import com.prakash.gateaway_service.Entity.Client;
 import com.prakash.gateaway_service.Repository.ClientRepository;
 import com.prakash.gateaway_service.Service.AbuseDetectionService;
+import com.prakash.gateaway_service.Service.GatewayUpstreamResolver;
 import com.prakash.gateaway_service.Service.RateLimitResolverService;
 import com.prakash.gateaway_service.Service.RateLimiterService;
 import com.prakash.gateaway_service.Service.UsageLogService;
 import org.jspecify.annotations.NonNull;
+import org.springframework.cloud.gateway.server.mvc.common.MvcUtils;
 import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.function.HandlerFilterFunction;
 import org.springframework.web.servlet.function.HandlerFunction;
@@ -24,13 +26,15 @@ public class ApiKeyFilter implements HandlerFilterFunction<ServerResponse, Serve
     private final UsageLogService usageLogService;
     private final RateLimitResolverService rateLimitResolverService;
     private final AbuseDetectionService abuseDetectionService;
+    private final GatewayUpstreamResolver gatewayUpstreamResolver;
 
-    public ApiKeyFilter(ClientRepository clientRepository, RateLimiterService rateLimiterService, UsageLogService usageLogService, RateLimitResolverService rateLimitResolverService, AbuseDetectionService abuseDetectionService) {
+    public ApiKeyFilter(ClientRepository clientRepository, RateLimiterService rateLimiterService, UsageLogService usageLogService, RateLimitResolverService rateLimitResolverService, AbuseDetectionService abuseDetectionService, GatewayUpstreamResolver gatewayUpstreamResolver) {
         this.clientRepository = clientRepository;
         this.rateLimiterService = rateLimiterService;
         this.usageLogService = usageLogService;
         this.rateLimitResolverService = rateLimitResolverService;
         this.abuseDetectionService = abuseDetectionService;
+        this.gatewayUpstreamResolver = gatewayUpstreamResolver;
     }
 
     @Override
@@ -78,6 +82,7 @@ public class ApiKeyFilter implements HandlerFilterFunction<ServerResponse, Serve
 
         // Continue request
         usageLogService.log(client, path, method, true, 200, "Client is allowed");
+        MvcUtils.setRequestUrl(request, gatewayUpstreamResolver.resolveUpstreamBaseUri());
         return next.handle(request);
     }
 }
