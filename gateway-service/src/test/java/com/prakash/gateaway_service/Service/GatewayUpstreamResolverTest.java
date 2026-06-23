@@ -107,6 +107,26 @@ class GatewayUpstreamResolverTest {
         assertEquals(URI.create("http://backend-service:8081"), normalized);
     }
 
+    @Test
+    void buildsHealthCheckUrlWithoutDuplicateSlashes() {
+        URI target = gatewayUpstreamResolver.buildHealthCheckUri(
+                URI.create("http://backend-service:8081"),
+                "/health"
+        );
+
+        assertEquals(URI.create("http://backend-service:8081/health"), target);
+    }
+
+    @Test
+    void buildsHealthCheckUrlWithBasePath() {
+        URI target = gatewayUpstreamResolver.buildHealthCheckUri(
+                URI.create("https://api.example.com/base"),
+                "/health"
+        );
+
+        assertEquals(URI.create("https://api.example.com/base/health"), target);
+    }
+
     private GatewaySettings settings(String upstreamBaseUrl) {
         GatewaySettings settings = new GatewaySettings();
         settings.setId(1L);

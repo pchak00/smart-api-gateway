@@ -191,6 +191,8 @@ These settings currently include the intended upstream base URL, health-check pa
 
 Gateway forwarding uses the database upstream base URL when a valid settings row is available. If the settings row is missing, invalid, or temporarily unavailable, the gateway falls back to the existing deployment configuration such as `BACKEND_SERVICE_URL`.
 
+Admins can test upstream reachability with `POST /admin/settings/gateway/test-connection`. The endpoint accepts draft `upstreamBaseUrl`, `healthCheckPath`, and `timeoutMs` values, or uses the currently saved settings when the request body is empty. It sends a simple GET request to the joined health-check URL and returns whether the upstream responded with a 2xx status.
+
 ### Authentication & Authorization
 
 #### API Key Authentication
@@ -747,8 +749,6 @@ Planned improvements include:
 ### Platform Hardening and Configuration
 
 Planned incremental improvements include:
-- gateway settings UI for runtime upstream configuration
-- upstream health-check and test-connection tools
 - multi-upstream route mapping for more advanced deployments
 - alert lifecycle statuses such as Open, Acknowledged, and Resolved
 - API key hashing and rotation support

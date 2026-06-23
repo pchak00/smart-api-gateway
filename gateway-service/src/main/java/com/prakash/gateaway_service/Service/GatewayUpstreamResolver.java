@@ -66,6 +66,22 @@ public class GatewayUpstreamResolver {
                 .toUri();
     }
 
+    public URI buildHealthCheckUri(URI upstreamBaseUri, String healthCheckPath) {
+        if (healthCheckPath == null || healthCheckPath.isBlank()) {
+            throw new IllegalArgumentException("Health check path is required");
+        }
+        if (!healthCheckPath.startsWith("/")) {
+            throw new IllegalArgumentException("Health check path must start with /");
+        }
+
+        return UriComponentsBuilder.fromUri(upstreamBaseUri)
+                .replacePath(joinPaths(upstreamBaseUri.getPath(), healthCheckPath))
+                .replaceQuery(null)
+                .fragment(null)
+                .build(true)
+                .toUri();
+    }
+
     URI normalizeHttpBaseUri(String upstreamBaseUrl) {
         if (upstreamBaseUrl == null || upstreamBaseUrl.isBlank()) {
             throw new IllegalArgumentException("Upstream base URL is required");
@@ -106,6 +122,18 @@ public class GatewayUpstreamResolver {
             normalized = normalized.substring(0, normalized.length() - 1);
         }
         return normalized;
+    }
+
+    private String joinPaths(String basePath, String path) {
+        if (basePath == null || basePath.isBlank() || "/".equals(basePath)) {
+            return path;
+        }
+
+        String normalizedBase = basePath;
+        while (normalizedBase.length() > 1 && normalizedBase.endsWith("/")) {
+            normalizedBase = normalizedBase.substring(0, normalizedBase.length() - 1);
+        }
+        return normalizedBase + path;
     }
 
     private void logFallbackOnce(AtomicBoolean warningFlag, String message) {

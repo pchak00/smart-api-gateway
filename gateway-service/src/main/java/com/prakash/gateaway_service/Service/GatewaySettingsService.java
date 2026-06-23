@@ -40,20 +40,29 @@ public class GatewaySettingsService {
 
     @Transactional
     public GatewaySettingsResponseDto updateGatewaySettings(UpdateGatewaySettingsRequestDto request) {
-        if (request == null) {
-            throw new InvalidGatewaySettingsException("Request body is required");
-        }
-
+        UpdateGatewaySettingsRequestDto validatedRequest = validateGatewaySettings(request);
         GatewaySettings settings = getOrCreateSettings();
-        settings.setUpstreamBaseUrl(validateUpstreamBaseUrl(request.upstreamBaseUrl()));
-        settings.setHealthCheckPath(validateHealthCheckPath(request.healthCheckPath()));
-        settings.setTimeoutMs(validateTimeoutMs(request.timeoutMs()));
+        settings.setUpstreamBaseUrl(validatedRequest.upstreamBaseUrl());
+        settings.setHealthCheckPath(validatedRequest.healthCheckPath());
+        settings.setTimeoutMs(validatedRequest.timeoutMs());
         settings.setUpdatedAt(LocalDateTime.now());
         settings.setUpdatedBy(resolveCurrentUsername());
 
         GatewaySettings savedSettings = gatewaySettingsRepository.save(settings);
 
         return GatewaySettingsResponseDto.from(savedSettings);
+    }
+
+    public UpdateGatewaySettingsRequestDto validateGatewaySettings(UpdateGatewaySettingsRequestDto request) {
+        if (request == null) {
+            throw new InvalidGatewaySettingsException("Request body is required");
+        }
+
+        return new UpdateGatewaySettingsRequestDto(
+                validateUpstreamBaseUrl(request.upstreamBaseUrl()),
+                validateHealthCheckPath(request.healthCheckPath()),
+                validateTimeoutMs(request.timeoutMs())
+        );
     }
 
     private GatewaySettings getOrCreateSettings() {

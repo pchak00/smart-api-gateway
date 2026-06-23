@@ -51,6 +51,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/admin/users", "/admin/users/**").hasAnyRole("SUPER_ADMIN", "READ_ONLY_ADMIN")
                         .requestMatchers(HttpMethod.GET, "/admin/provisioning-tokens", "/admin/provisioning-tokens/**").hasAnyRole("SUPER_ADMIN", "READ_ONLY_ADMIN")
                         .requestMatchers(HttpMethod.GET, "/admin/settings/gateway").hasAnyRole("SUPER_ADMIN", "READ_ONLY_ADMIN")
+                        .requestMatchers(HttpMethod.POST, "/admin/settings/gateway/test-connection").hasAnyRole("SUPER_ADMIN", "READ_ONLY_ADMIN")
 
                         .requestMatchers("/admin/clients/**").hasRole("SUPER_ADMIN")
                         .requestMatchers("/admin/users/**").hasRole("SUPER_ADMIN")
