@@ -82,6 +82,25 @@ export interface UpdateRouteLimitRequest {
   requestPerMinute: number;
 }
 
+// Provisioning tokens
+export interface ProvisioningTokenDto {
+  id: number;
+  name: string;
+  defaultPlanName: string;
+  active: boolean;
+  createdAt: string;
+  lastUsedAt?: string | null;
+}
+
+export interface CreateProvisioningTokenRequest {
+  name: string;
+  defaultPlanName: string;
+}
+
+export interface CreateProvisioningTokenResponse extends ProvisioningTokenDto {
+  token: string;
+}
+
 // Usage Logs
 export interface UsageLogDto {
   id: number;

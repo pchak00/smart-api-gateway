@@ -4,6 +4,7 @@ import {
   BarChart3,
   ChevronUp,
   CreditCard,
+  KeyRound,
   LayoutDashboard,
   LockKeyhole,
   LogOut,
@@ -31,6 +32,7 @@ const MENU_ITEMS: SidebarItem[] = [
   { label: 'Route Limits', path: '/route-limits', icon: Route },
   { label: 'Analytics', path: '/analytics', icon: BarChart3 },
   { label: 'Abuse Alerts', path: '/abuse-alerts', icon: ShieldAlert },
+  { label: 'Provisioning', path: '/provisioning', icon: KeyRound },
   { label: 'Admin Users', path: '/admin-users', icon: UserCog, requiresSuperAdmin: true }
 ];
 

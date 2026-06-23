@@ -9,6 +9,7 @@ import { RouteLimitsPage } from '../pages/RouteLimitsPage';
 import { AnalyticsPage } from '../pages/AnalyticsPage';
 import { AbuseAlertsPage } from '../pages/AbuseAlertsPage';
 import { AdminUsersPage } from '../pages/AdminUsersPage';
+import { ProvisioningPage } from '../pages/ProvisioningPage';
 import { NotFoundPage } from '../pages/NotFoundPage';
 import { AppLayout as MainLayout } from '../layout/AppLayout';
 import { ProtectedRoute } from './ProtectedRoute';
@@ -47,6 +48,7 @@ export const AppRoutes: React.FC = () => {
           <Route path="route-limits" element={<RouteLimitsPage />} />
           <Route path="analytics" element={<AnalyticsPage />} />
           <Route path="abuse-alerts" element={<AbuseAlertsPage />} />
+          <Route path="provisioning" element={<ProvisioningPage />} />
           <Route
             path="admin-users"
             element={

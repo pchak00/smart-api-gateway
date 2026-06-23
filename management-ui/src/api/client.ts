@@ -17,7 +17,10 @@ import {
   DashboardSummaryDto,
   RouteAnalyticsDto,
   ClientAnalyticsDto,
-  TrafficAnalyticsDto
+  TrafficAnalyticsDto,
+  ProvisioningTokenDto,
+  CreateProvisioningTokenRequest,
+  CreateProvisioningTokenResponse
 } from '../types';
 
 const baseURL = (import.meta.env.VITE_API_BASE_URL as string | undefined) || '/';
@@ -107,6 +110,29 @@ class ApiClient {
 
   async deleteRouteLimit(id: number): Promise<void> {
     await this.axiosInstance.delete(`/admin/clients/route-limits/${id}`);
+  }
+
+  // Provisioning token endpoints
+  async getProvisioningTokens(): Promise<ProvisioningTokenDto[]> {
+    const response = await this.axiosInstance.get<ProvisioningTokenDto[]>('/admin/provisioning-tokens');
+    return response.data;
+  }
+
+  async createProvisioningToken(
+    payload: CreateProvisioningTokenRequest
+  ): Promise<CreateProvisioningTokenResponse> {
+    const response = await this.axiosInstance.post<CreateProvisioningTokenResponse>(
+      '/admin/provisioning-tokens',
+      payload
+    );
+    return response.data;
+  }
+
+  async disableProvisioningToken(id: number): Promise<ProvisioningTokenDto> {
+    const response = await this.axiosInstance.patch<ProvisioningTokenDto>(
+      `/admin/provisioning-tokens/${id}/disable`
+    );
+    return response.data;
   }
 
   // Usage log endpoints
