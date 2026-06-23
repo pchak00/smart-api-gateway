@@ -1,16 +1,16 @@
 import React, { FormEvent, useEffect, useState } from 'react';
-import { AlertCircle, RefreshCcw, Save, SlidersHorizontal } from 'lucide-react';
+import { Activity, AlertCircle, CheckCircle2, RefreshCcw, Save, SlidersHorizontal, XCircle } from 'lucide-react';
 import { api } from '../api/client';
 import { PrimaryButton, SecondaryButton } from '../components/Button';
 import { EmptyState, PageHeader } from '../components/PageShell';
 import { SettingsTabs } from '../components/SettingsTabs';
 import { useAuth } from '../hooks/useAuth';
 import { useToast } from '../hooks/useToast';
-import { GatewaySettingsDto } from '../types';
+import { GatewaySettingsDto, TestGatewayConnectionResponse } from '../types';
 import { getApiErrorMessage } from '../utils/apiError';
 import { formatDateTime } from '../utils/display';
 
-const permissionMessage = 'You need SUPER_ADMIN access to perform this action.';
+const permissionMessage = 'You need Owner access to perform this action.';
 
 interface GatewaySettingsForm {
   upstreamBaseUrl: string;
@@ -35,9 +35,12 @@ export const GatewaySettingsPage: React.FC = () => {
   });
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [isTestingConnection, setIsTestingConnection] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [saveError, setSaveError] = useState<string | null>(null);
-  const writeTooltip = !canMutate ? 'SUPER_ADMIN required' : undefined;
+  const [testError, setTestError] = useState<string | null>(null);
+  const [testResult, setTestResult] = useState<TestGatewayConnectionResponse | null>(null);
+  const writeTooltip = !canMutate ? 'Owner required' : undefined;
 
   const loadSettings = async () => {
     setIsLoading(true);
@@ -47,6 +50,8 @@ export const GatewaySettingsPage: React.FC = () => {
       setFormState(toFormState(data));
       setLoadError(null);
       setSaveError(null);
+      setTestError(null);
+      setTestResult(null);
     } catch (error) {
       console.error('Failed to load gateway settings:', error);
       setLoadError(getApiErrorMessage(error, 'Gateway settings are unavailable right now.'));
@@ -64,6 +69,31 @@ export const GatewaySettingsPage: React.FC = () => {
       ...current,
       [field]: value
     }));
+    setTestError(null);
+    setTestResult(null);
+  };
+
+  const buildConnectionTestPayload = () => {
+    const timeoutMs = Number(formState.timeoutMs);
+
+    if (!formState.upstreamBaseUrl.trim()) {
+      throw new Error('Upstream base URL is required');
+    }
+    if (!formState.healthCheckPath.trim().startsWith('/')) {
+      throw new Error('Health check path must start with /');
+    }
+    if (!Number.isFinite(timeoutMs) || timeoutMs <= 0) {
+      throw new Error('Timeout must be greater than zero');
+    }
+    if (timeoutMs > 60000) {
+      throw new Error('Timeout must be 60000 ms or fewer');
+    }
+
+    return {
+      upstreamBaseUrl: formState.upstreamBaseUrl.trim(),
+      healthCheckPath: formState.healthCheckPath.trim(),
+      timeoutMs
+    };
   };
 
   const handleSubmit = async (event: FormEvent) => {
@@ -100,6 +130,29 @@ export const GatewaySettingsPage: React.FC = () => {
     if (!settings) return;
     setFormState(toFormState(settings));
     setSaveError(null);
+    setTestError(null);
+    setTestResult(null);
+  };
+
+  const handleTestConnection = async () => {
+    setIsTestingConnection(true);
+    setTestError(null);
+    setTestResult(null);
+
+    try {
+      const result = await api.testGatewayConnection(buildConnectionTestPayload());
+      setTestResult(result);
+      showToast({
+        message: result.reachable ? 'Upstream is reachable.' : 'Upstream is unreachable.',
+        type: result.reachable ? 'success' : 'warning'
+      });
+    } catch (error) {
+      const message = getApiErrorMessage(error, 'Could not test gateway connection.');
+      setTestError(message);
+      showToast({ message, type: 'error' });
+    } finally {
+      setIsTestingConnection(false);
+    }
   };
 
   return (
@@ -141,7 +194,7 @@ export const GatewaySettingsPage: React.FC = () => {
                 onChange={(event) => updateField('upstreamBaseUrl', event.target.value)}
                 className="mt-2 w-full rounded-md border border-slate-800 bg-slate-950 px-3 py-2 text-sm text-slate-100 outline-none transition-colors focus:border-slate-600 disabled:cursor-not-allowed disabled:text-slate-500"
                 placeholder="http://backend-service:8081"
-                disabled={!canMutate || isSaving}
+                disabled={!canMutate || isSaving || isTestingConnection}
                 required
               />
             </label>
@@ -153,7 +206,7 @@ export const GatewaySettingsPage: React.FC = () => {
                 onChange={(event) => updateField('healthCheckPath', event.target.value)}
                 className="mt-2 w-full rounded-md border border-slate-800 bg-slate-950 px-3 py-2 text-sm text-slate-100 outline-none transition-colors focus:border-slate-600 disabled:cursor-not-allowed disabled:text-slate-500"
                 placeholder="/health"
-                disabled={!canMutate || isSaving}
+                disabled={!canMutate || isSaving || isTestingConnection}
                 required
               />
             </label>
@@ -167,11 +220,60 @@ export const GatewaySettingsPage: React.FC = () => {
                 value={formState.timeoutMs}
                 onChange={(event) => updateField('timeoutMs', event.target.value)}
                 className="mt-2 w-full rounded-md border border-slate-800 bg-slate-950 px-3 py-2 text-sm text-slate-100 outline-none transition-colors focus:border-slate-600 disabled:cursor-not-allowed disabled:text-slate-500"
-                disabled={!canMutate || isSaving}
+                disabled={!canMutate || isSaving || isTestingConnection}
                 required
               />
             </label>
           </div>
+
+          <section className="border-b border-slate-800/40 py-5">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <p className="text-sm font-medium text-slate-300">Connection test</p>
+                <p className="mt-1 text-sm text-slate-500">Tests the current form values without saving them.</p>
+              </div>
+              <SecondaryButton
+                type="button"
+                onClick={handleTestConnection}
+                disabled={isTestingConnection || isSaving}
+              >
+                <Activity size={16} aria-hidden="true" />
+                {isTestingConnection ? 'Testing...' : 'Test connection'}
+              </SecondaryButton>
+            </div>
+
+            {(testResult || testError) && (
+              <div className={`mt-4 flex items-start gap-3 border-y py-4 text-sm ${
+                testResult?.reachable
+                  ? 'border-emerald-950/30 text-emerald-200/90'
+                  : 'border-red-950/35 text-red-300/90'
+              }`}>
+                {testResult?.reachable ? (
+                  <CheckCircle2 size={16} aria-hidden="true" className="mt-0.5 shrink-0" />
+                ) : (
+                  <XCircle size={16} aria-hidden="true" className="mt-0.5 shrink-0" />
+                )}
+                <div className="min-w-0">
+                  <p className="font-medium">
+                    {testResult?.reachable ? 'Connected' : 'Unreachable'}
+                  </p>
+                  {testResult ? (
+                    <p className="mt-1 break-words text-slate-400">
+                      {testResult.reachable
+                        ? `${testResult.checkedUrl} responded with ${testResult.statusCode} in ${testResult.responseTimeMs}ms`
+                        : [
+                            testResult.message,
+                            testResult.checkedUrl ? `Checked ${testResult.checkedUrl}` : null,
+                            testResult.statusCode ? `Status ${testResult.statusCode}` : null
+                          ].filter(Boolean).join(' · ')}
+                    </p>
+                  ) : (
+                    <p className="mt-1 break-words text-slate-400">{testError}</p>
+                  )}
+                </div>
+              </div>
+            )}
+          </section>
 
           <dl className="grid gap-4 border-b border-slate-800/40 py-5 sm:grid-cols-2">
             <div>
@@ -191,7 +293,7 @@ export const GatewaySettingsPage: React.FC = () => {
                   <Save size={16} aria-hidden="true" />
                   {isSaving ? 'Saving...' : 'Save settings'}
                 </PrimaryButton>
-                <SecondaryButton type="button" onClick={handleReset} disabled={isSaving}>
+                <SecondaryButton type="button" onClick={handleReset} disabled={isSaving || isTestingConnection}>
                   <RefreshCcw size={16} aria-hidden="true" />
                   Reset
                 </SecondaryButton>

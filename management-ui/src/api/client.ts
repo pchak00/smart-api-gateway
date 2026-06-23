@@ -22,7 +22,9 @@ import {
   CreateProvisioningTokenRequest,
   CreateProvisioningTokenResponse,
   GatewaySettingsDto,
-  UpdateGatewaySettingsRequest
+  UpdateGatewaySettingsRequest,
+  TestGatewayConnectionRequest,
+  TestGatewayConnectionResponse
 } from '../types';
 
 const baseURL = (import.meta.env.VITE_API_BASE_URL as string | undefined) || '/';
@@ -145,6 +147,16 @@ class ApiClient {
 
   async updateGatewaySettings(payload: UpdateGatewaySettingsRequest): Promise<GatewaySettingsDto> {
     const response = await this.axiosInstance.put<GatewaySettingsDto>('/admin/settings/gateway', payload);
+    return response.data;
+  }
+
+  async testGatewayConnection(
+    payload: TestGatewayConnectionRequest
+  ): Promise<TestGatewayConnectionResponse> {
+    const response = await this.axiosInstance.post<TestGatewayConnectionResponse>(
+      '/admin/settings/gateway/test-connection',
+      payload
+    );
     return response.data;
   }
 

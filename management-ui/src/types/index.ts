@@ -116,6 +116,20 @@ export interface UpdateGatewaySettingsRequest {
   timeoutMs: number;
 }
 
+export interface TestGatewayConnectionRequest {
+  upstreamBaseUrl: string;
+  healthCheckPath: string;
+  timeoutMs: number;
+}
+
+export interface TestGatewayConnectionResponse {
+  reachable: boolean;
+  statusCode: number | null;
+  checkedUrl: string;
+  responseTimeMs: number;
+  message: string;
+}
+
 // Usage Logs
 export interface UsageLogDto {
   id: number;
