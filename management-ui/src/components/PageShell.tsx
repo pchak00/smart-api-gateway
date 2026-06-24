@@ -4,7 +4,7 @@ import { LucideIcon } from 'lucide-react';
 interface PageHeaderProps {
   eyebrow?: string;
   title: string;
-  description: string;
+  description?: string;
   actions?: React.ReactNode;
   meta?: React.ReactNode;
 }
@@ -39,7 +39,7 @@ export const PageHeader: React.FC<PageHeaderProps> = ({
         </p>
       )}
       <h1 className="text-2xl font-semibold text-slate-100">{title}</h1>
-      <p className="mt-2 text-sm leading-6 text-slate-500">{description}</p>
+      {description && <p className="mt-2 text-sm leading-6 text-slate-500">{description}</p>}
       {meta && <div className="mt-3">{meta}</div>}
     </div>
     {actions && <div className="flex shrink-0 items-center gap-2">{actions}</div>}

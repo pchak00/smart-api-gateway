@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import { useToast } from '../hooks/useToast';
 import { useAuth } from '../hooks/useAuth';
+import { getRoleLabel } from '../utils/roles';
 import pacificLogo from '../assets/pacific-logo.png';
 
 interface SidebarItem {
@@ -48,7 +49,7 @@ interface SidebarProps {
 export const Sidebar: React.FC<SidebarProps> = ({ isSuperAdmin }) => {
   const location = useLocation();
   const { showToast } = useToast();
-  const { logout, username } = useAuth();
+  const { logout, role, username } = useAuth();
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const profileRef = useRef<HTMLDivElement | null>(null);
 
@@ -77,6 +78,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isSuperAdmin }) => {
   }, [isProfileOpen]);
 
   const displayUsername = username || 'admin';
+  const roleLabel = getRoleLabel(role);
 
   const handleRestrictedClick = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -183,7 +185,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isSuperAdmin }) => {
             className="absolute bottom-16 left-3 right-3 rounded-lg bg-slate-900/95 p-1 shadow-xl shadow-black/20 ring-1 ring-slate-800/60 backdrop-blur"
           >
             <div className="px-3 py-2 text-xs text-slate-500">
-              Signed in as <span className="text-slate-300">{displayUsername}</span>
+              Signed in as <span className="text-slate-300">{roleLabel}</span>
             </div>
             <button
               type="button"
