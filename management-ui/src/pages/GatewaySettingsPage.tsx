@@ -161,12 +161,7 @@ export const GatewaySettingsPage: React.FC = () => {
 
       <PageHeader
         title="Gateway settings"
-        description="Configure runtime gateway settings for the upstream API, health checks, and request timeout."
-        meta={
-          <p className="max-w-3xl text-sm leading-6 text-slate-500">
-            Dynamic upstream routing will be wired in a future milestone. These settings are stored in the database and are ready for runtime configuration.
-          </p>
-        }
+        meta={loadError ? <span className="text-xs text-slate-500">{loadError}</span> : undefined}
       />
 
       {isLoading ? (
@@ -230,7 +225,6 @@ export const GatewaySettingsPage: React.FC = () => {
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <p className="text-sm font-medium text-slate-300">Connection test</p>
-                <p className="mt-1 text-sm text-slate-500">Tests the current form values without saving them.</p>
               </div>
               <SecondaryButton
                 type="button"

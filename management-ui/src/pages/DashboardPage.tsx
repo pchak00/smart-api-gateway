@@ -6,6 +6,7 @@ import { AbuseAlertDto, DashboardSummaryDto, GatewaySettingsDto, RouteAnalyticsD
 import { PageHeader } from '../components/PageShell';
 import { formatDateTime, formatNumber, getStatusLabel } from '../utils/display';
 import { useAuth } from '../hooks/useAuth';
+import pacificLogo from '../assets/pacific-logo.png';
 
 interface MetricCardProps {
   label: string;
@@ -60,8 +61,6 @@ const valueOrLoading = (value: number | null | undefined, isLoading: boolean) =>
 
   return formatNumber(value);
 };
-
-const percentLabel = (value: number) => `${value.toFixed(value >= 10 || value === 0 ? 0 : 1)}%`;
 
 const topRoutes = (routes: RouteAnalyticsDto[]) => (
   [...routes]
@@ -154,9 +153,6 @@ export const DashboardPage: React.FC = () => {
   const allowedRequests = safeCount(summary?.allowedRequests);
   const blockedRequests = safeCount(summary?.blockedRequests);
   const trafficProcessed = safeCount(summary?.totalRequests) || allowedRequests + blockedRequests;
-  const qualityTotal = allowedRequests + blockedRequests;
-  const blockedPercent = qualityTotal > 0 ? (blockedRequests / qualityTotal) * 100 : 0;
-  const allowedPercent = qualityTotal > 0 ? (allowedRequests / qualityTotal) * 100 : 0;
   const mostActiveRoute = visibleRoutes[0]?.route;
 
   return (
@@ -201,74 +197,84 @@ export const DashboardPage: React.FC = () => {
 
       <div className="mt-5 grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1.35fr)_minmax(22rem,0.65fr)]">
         <DashboardSection
-          title="Gateway health"
+          title="Gateway flow"
           action={
             <Link to="/settings/gateway" className="text-xs font-medium text-slate-500 transition-colors hover:text-slate-300">
               Settings
             </Link>
           }
         >
-          <div className="grid gap-5 md:grid-cols-[minmax(0,1fr)_14rem]">
-            <div>
-              <div className="grid gap-4 sm:grid-cols-2">
-                <div>
-                  <p className="text-xs font-medium text-slate-500">Configured upstream</p>
-                  <p className="mt-2 truncate font-mono text-sm text-slate-200" title={gatewaySettings?.upstreamBaseUrl}>
-                    {isOperationalLoading
-                      ? '...'
-                      : settingsError ?? gatewaySettings?.upstreamBaseUrl ?? 'Not configured'}
-                  </p>
+          <div className="relative overflow-hidden rounded-lg bg-slate-950/25 p-4">
+            <div className="grid gap-4 lg:grid-cols-[minmax(9rem,0.75fr)_minmax(11rem,1fr)_minmax(9rem,0.85fr)] lg:items-center">
+              <div className="rounded-lg bg-slate-900/45 p-4">
+                <p className="text-xs font-medium text-slate-500">API clients</p>
+                <p className="mt-4 text-3xl font-semibold leading-none text-slate-50">
+                  {valueOrLoading(summary?.clientCount, isLoading)}
+                </p>
+              </div>
+
+              <div className="grid gap-3">
+                <div className="flex items-center gap-3">
+                  <div className="h-px flex-1 bg-slate-800" aria-hidden="true" />
+                  <ArrowRight className="shrink-0 text-slate-700" size={15} aria-hidden="true" />
+                  <span className="shrink-0 rounded-full bg-slate-900/80 px-3 py-1 text-xs font-medium text-slate-400">
+                    {isLoading ? '...' : `${formatNumber(trafficProcessed)} requests`}
+                  </span>
+                  <ArrowRight className="shrink-0 text-slate-700" size={15} aria-hidden="true" />
+                  <div className="h-px flex-1 bg-slate-800" aria-hidden="true" />
                 </div>
-                <div>
-                  <p className="text-xs font-medium text-slate-500">Most active route</p>
-                  <p className="mt-2 truncate font-mono text-sm text-slate-200" title={mostActiveRoute}>
-                    {isOperationalLoading ? '...' : mostActiveRoute ?? 'No route activity yet'}
-                  </p>
+
+                <div className="rounded-lg bg-slate-900/55 p-5 text-center ring-1 ring-slate-800/45">
+                  <img
+                    src={pacificLogo}
+                    alt=""
+                    className="mx-auto h-10 w-10 rounded-md object-cover opacity-85"
+                    aria-hidden="true"
+                  />
+                  <p className="mt-3 text-sm font-semibold text-slate-100">Pacific gateway</p>
+                  <p className="mt-1 text-xs text-slate-500">Policy enforcement</p>
                 </div>
-                <div>
-                  <p className="text-xs font-medium text-slate-500">Traffic processed</p>
-                  <p className="mt-2 text-2xl font-semibold text-slate-50">
-                    {isLoading ? '...' : formatNumber(trafficProcessed)}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-xs font-medium text-slate-500">Open alerts</p>
-                  <p className="mt-2 text-2xl font-semibold text-slate-50">
-                    {valueOrLoading(summary?.openAlertCount, isLoading)}
-                  </p>
+
+                <div className="grid grid-cols-[1fr_auto_1fr] items-start gap-3">
+                  <div />
+                  <div className="flex flex-col items-center gap-2">
+                    <div className="h-8 w-px bg-slate-800" aria-hidden="true" />
+                    <div className="rounded-lg bg-slate-950/70 px-4 py-3 text-center">
+                      <p className="text-xs font-medium text-slate-500">Blocked by policy</p>
+                      <p className="mt-1 text-lg font-semibold text-slate-100">
+                        {isLoading ? '...' : formatNumber(blockedRequests)}
+                      </p>
+                    </div>
+                  </div>
+                  <div />
                 </div>
               </div>
 
-              <div className="mt-6">
-                <div className="mb-2 flex items-center justify-between text-xs text-slate-500">
-                  <span>Allowed / blocked</span>
-                  <span>{isLoading ? '...' : `${formatNumber(allowedRequests)} / ${formatNumber(blockedRequests)}`}</span>
-                </div>
-                <div className="flex h-2 overflow-hidden rounded-full bg-slate-950">
-                  <span
-                    className="bg-slate-500/70"
-                    style={{ width: `${allowedPercent}%` }}
-                    aria-hidden="true"
-                  />
-                  <span
-                    className="bg-slate-700"
-                    style={{ width: `${blockedPercent}%` }}
-                    aria-hidden="true"
-                  />
-                </div>
+              <div className="rounded-lg bg-slate-900/45 p-4">
+                <p className="text-xs font-medium text-slate-500">Upstream API</p>
+                <p className="mt-4 text-3xl font-semibold leading-none text-slate-50">
+                  {isLoading ? '...' : formatNumber(allowedRequests)}
+                </p>
+                <p className="mt-2 text-xs text-slate-500">allowed</p>
+                <p className="mt-4 truncate font-mono text-xs text-slate-400" title={gatewaySettings?.upstreamBaseUrl}>
+                  {isOperationalLoading
+                    ? '...'
+                    : settingsError ?? gatewaySettings?.upstreamBaseUrl ?? 'Not configured'}
+                </p>
               </div>
             </div>
 
-            <div className="flex min-h-40 flex-col justify-between rounded-lg bg-slate-950/35 p-4">
-              <p className="text-xs font-medium text-slate-500">Block rate</p>
-              <p className="text-4xl font-semibold leading-none text-slate-50">
-                {isLoading ? '...' : percentLabel(blockedPercent)}
-              </p>
-              <p className="text-xs leading-5 text-slate-500">
-                {qualityTotal === 0 && !isLoading
-                  ? 'No traffic recorded yet.'
-                  : 'Calculated from allowed and blocked requests.'}
-              </p>
+            <div className="mt-5 grid gap-3 border-t border-slate-800/35 pt-4 text-xs sm:grid-cols-2">
+              <div className="min-w-0">
+                <span className="text-slate-600">Most active route</span>
+                <p className="mt-1 truncate font-mono text-slate-300" title={mostActiveRoute}>
+                  {isOperationalLoading ? '...' : mostActiveRoute ?? 'No route activity yet'}
+                </p>
+              </div>
+              <div>
+                <span className="text-slate-600">Open alerts</span>
+                <p className="mt-1 text-slate-300">{valueOrLoading(summary?.openAlertCount, isLoading)}</p>
+              </div>
             </div>
           </div>
         </DashboardSection>
@@ -286,7 +292,13 @@ export const DashboardPage: React.FC = () => {
           ) : alertError ? (
             <StateMessage>{alertError}</StateMessage>
           ) : visibleAlerts.length === 0 ? (
-            <StateMessage>No open alerts. Blocked traffic that crosses abuse thresholds will appear here.</StateMessage>
+            <StateMessage>
+              <span>
+                No open alerts.
+                <br />
+                You're all caught up.
+              </span>
+            </StateMessage>
           ) : (
             <div className="divide-y divide-slate-800/35">
               {visibleAlerts.map((alert) => (

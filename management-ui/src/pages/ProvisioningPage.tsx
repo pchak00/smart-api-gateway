@@ -154,7 +154,7 @@ export const ProvisioningPage: React.FC = () => {
 
       <PageHeader
         title="Provisioning"
-        description="Manage trusted server-to-server tokens that let external backends create API clients during signup."
+        description="Trusted tokens for server-to-server client onboarding."
         meta={errorMessage ? <span className="text-xs text-slate-500">{errorMessage}</span> : undefined}
         actions={
           <PrimaryButton
@@ -241,9 +241,7 @@ export const ProvisioningPage: React.FC = () => {
 
       <section className="mb-7 border-y border-slate-800/35 py-4">
         <p className="max-w-3xl text-sm leading-6 text-slate-500">
-          Use provisioning tokens from a trusted backend, never from browser code. Call{' '}
-          <span className="font-mono text-slate-400">POST /provisioning/clients</span> with{' '}
-          <span className="font-mono text-slate-400">X-Provisioning-Token</span> to create API clients during signup.
+          Tokens are shown only once when created.
         </p>
       </section>
 
