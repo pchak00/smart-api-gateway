@@ -1,24 +1,11 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Activity, ArrowRight, CreditCard, KeyRound, Route, ShieldAlert, ShieldCheck, SlidersHorizontal, Users } from 'lucide-react';
-import {
-  Area,
-  AreaChart,
-  CartesianGrid,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis
-} from 'recharts';
 import { api } from '../api/client';
-import { AbuseAlertDto, DashboardSummaryDto, RouteAnalyticsDto, TrafficAnalyticsDto } from '../types';
+import { AbuseAlertDto, DashboardSummaryDto, GatewaySettingsDto, RouteAnalyticsDto } from '../types';
 import { PageHeader } from '../components/PageShell';
-import { formatBucket, formatDateTime, formatNumber, getStatusLabel } from '../utils/display';
+import { formatDateTime, formatNumber, getStatusLabel } from '../utils/display';
 import { useAuth } from '../hooks/useAuth';
-
-type TrafficChartPoint = TrafficAnalyticsDto & {
-  bucketLabel: string;
-};
 
 interface MetricCardProps {
   label: string;
@@ -74,6 +61,8 @@ const valueOrLoading = (value: number | null | undefined, isLoading: boolean) =>
   return formatNumber(value);
 };
 
+const percentLabel = (value: number) => `${value.toFixed(value >= 10 || value === 0 ? 0 : 1)}%`;
+
 const topRoutes = (routes: RouteAnalyticsDto[]) => (
   [...routes]
     .sort((first, second) => safeCount(second.totalRequests) - safeCount(first.totalRequests))
@@ -83,15 +72,15 @@ const topRoutes = (routes: RouteAnalyticsDto[]) => (
 export const DashboardPage: React.FC = () => {
   const { canMutate } = useAuth();
   const [summary, setSummary] = useState<DashboardSummaryDto | null>(null);
-  const [trafficAnalytics, setTrafficAnalytics] = useState<TrafficAnalyticsDto[]>([]);
   const [routeAnalytics, setRouteAnalytics] = useState<RouteAnalyticsDto[]>([]);
   const [openAlerts, setOpenAlerts] = useState<AbuseAlertDto[]>([]);
+  const [gatewaySettings, setGatewaySettings] = useState<GatewaySettingsDto | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isOperationalLoading, setIsOperationalLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [trafficError, setTrafficError] = useState<string | null>(null);
   const [routeError, setRouteError] = useState<string | null>(null);
   const [alertError, setAlertError] = useState<string | null>(null);
+  const [settingsError, setSettingsError] = useState<string | null>(null);
 
   useEffect(() => {
     const loadStats = async () => {
@@ -115,19 +104,19 @@ export const DashboardPage: React.FC = () => {
     const loadOperationalSections = async () => {
       setIsOperationalLoading(true);
 
-      const [trafficResult, routeResult, alertResult] = await Promise.allSettled([
-        api.getTrafficAnalytics(),
+      const [settingsResult, routeResult, alertResult] = await Promise.allSettled([
+        api.getGatewaySettings(),
         api.getRouteAnalytics(),
         api.getAbuseAlerts({ status: 'OPEN' })
       ]);
 
-      if (trafficResult.status === 'fulfilled') {
-        setTrafficAnalytics(Array.isArray(trafficResult.value) ? trafficResult.value : []);
-        setTrafficError(null);
+      if (settingsResult.status === 'fulfilled') {
+        setGatewaySettings(settingsResult.value);
+        setSettingsError(null);
       } else {
-        console.error('Failed to load traffic analytics:', trafficResult.reason);
-        setTrafficAnalytics([]);
-        setTrafficError('Traffic analytics are unavailable right now.');
+        console.error('Failed to load gateway settings:', settingsResult.reason);
+        setGatewaySettings(null);
+        setSettingsError('Gateway settings are unavailable right now.');
       }
 
       if (routeResult.status === 'fulfilled') {
@@ -154,31 +143,21 @@ export const DashboardPage: React.FC = () => {
     loadOperationalSections();
   }, []);
 
-  const chartData = useMemo<TrafficChartPoint[]>(() => (
-    trafficAnalytics.map((point) => ({
-      bucket: point.bucket,
-      bucketLabel: formatBucket(point.bucket),
-      totalRequests: safeCount(point.totalRequests),
-      allowedRequests: safeCount(point.allowedRequests),
-      blockedRequests: safeCount(point.blockedRequests)
-    }))
-  ), [trafficAnalytics]);
-
   const visibleRoutes = useMemo(() => topRoutes(routeAnalytics), [routeAnalytics]);
   const visibleAlerts = openAlerts.slice(0, 3);
-  const quickLinks = canMutate
-    ? [
-        { label: 'Manage clients', to: '/clients', icon: Users },
-        { label: 'Route limits', to: '/route-limits', icon: Route },
-        { label: 'Gateway settings', to: '/settings/gateway', icon: SlidersHorizontal },
-        { label: 'Provisioning', to: '/settings/provisioning', icon: KeyRound }
-      ]
-    : [
-        { label: 'View clients', to: '/clients', icon: Users },
-        { label: 'View analytics', to: '/analytics', icon: Activity },
-        { label: 'View abuse alerts', to: '/abuse-alerts', icon: ShieldAlert },
-        { label: 'Gateway settings', to: '/settings/gateway', icon: SlidersHorizontal }
-      ];
+  const quickLinks = [
+    { label: 'Create API client', to: '/clients', icon: Users },
+    { label: 'Create route limit', to: '/route-limits', icon: Route },
+    { label: 'Create provisioning token', to: '/settings/provisioning', icon: KeyRound },
+    { label: 'Open gateway settings', to: '/settings/gateway', icon: SlidersHorizontal }
+  ];
+  const allowedRequests = safeCount(summary?.allowedRequests);
+  const blockedRequests = safeCount(summary?.blockedRequests);
+  const trafficProcessed = safeCount(summary?.totalRequests) || allowedRequests + blockedRequests;
+  const qualityTotal = allowedRequests + blockedRequests;
+  const blockedPercent = qualityTotal > 0 ? (blockedRequests / qualityTotal) * 100 : 0;
+  const allowedPercent = qualityTotal > 0 ? (allowedRequests / qualityTotal) * 100 : 0;
+  const mostActiveRoute = visibleRoutes[0]?.route;
 
   return (
     <div>
@@ -221,44 +200,77 @@ export const DashboardPage: React.FC = () => {
       </div>
 
       <div className="mt-5 grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1.35fr)_minmax(22rem,0.65fr)]">
-        <DashboardSection title="Traffic overview">
-          {isOperationalLoading ? (
-            <StateMessage>Loading traffic analytics...</StateMessage>
-          ) : trafficError ? (
-            <StateMessage>{trafficError}</StateMessage>
-          ) : chartData.length === 0 ? (
-            <StateMessage>No traffic recorded yet. Send requests through the gateway to populate analytics.</StateMessage>
-          ) : (
-            <div className="h-64">
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={chartData} margin={{ top: 8, right: 8, left: -16, bottom: 0 }}>
-                  <defs>
-                    <linearGradient id="dashboardTotalRequests" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#64748b" stopOpacity={0.24} />
-                      <stop offset="95%" stopColor="#64748b" stopOpacity={0.02} />
-                    </linearGradient>
-                    <linearGradient id="dashboardBlockedRequests" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#475569" stopOpacity={0.18} />
-                      <stop offset="95%" stopColor="#475569" stopOpacity={0.02} />
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid stroke="#1e293b" strokeOpacity={0.42} vertical={false} />
-                  <XAxis dataKey="bucketLabel" tick={{ fill: '#64748b', fontSize: 12 }} tickLine={false} axisLine={false} />
-                  <YAxis tick={{ fill: '#64748b', fontSize: 12 }} tickLine={false} axisLine={false} />
-                  <Tooltip
-                    contentStyle={{
-                      background: '#020617',
-                      border: '1px solid #1e293b',
-                      borderRadius: 8,
-                      color: '#e2e8f0'
-                    }}
+        <DashboardSection
+          title="Gateway health"
+          action={
+            <Link to="/settings/gateway" className="text-xs font-medium text-slate-500 transition-colors hover:text-slate-300">
+              Settings
+            </Link>
+          }
+        >
+          <div className="grid gap-5 md:grid-cols-[minmax(0,1fr)_14rem]">
+            <div>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div>
+                  <p className="text-xs font-medium text-slate-500">Configured upstream</p>
+                  <p className="mt-2 truncate font-mono text-sm text-slate-200" title={gatewaySettings?.upstreamBaseUrl}>
+                    {isOperationalLoading
+                      ? '...'
+                      : settingsError ?? gatewaySettings?.upstreamBaseUrl ?? 'Not configured'}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs font-medium text-slate-500">Most active route</p>
+                  <p className="mt-2 truncate font-mono text-sm text-slate-200" title={mostActiveRoute}>
+                    {isOperationalLoading ? '...' : mostActiveRoute ?? 'No route activity yet'}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs font-medium text-slate-500">Traffic processed</p>
+                  <p className="mt-2 text-2xl font-semibold text-slate-50">
+                    {isLoading ? '...' : formatNumber(trafficProcessed)}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs font-medium text-slate-500">Open alerts</p>
+                  <p className="mt-2 text-2xl font-semibold text-slate-50">
+                    {valueOrLoading(summary?.openAlertCount, isLoading)}
+                  </p>
+                </div>
+              </div>
+
+              <div className="mt-6">
+                <div className="mb-2 flex items-center justify-between text-xs text-slate-500">
+                  <span>Allowed / blocked</span>
+                  <span>{isLoading ? '...' : `${formatNumber(allowedRequests)} / ${formatNumber(blockedRequests)}`}</span>
+                </div>
+                <div className="flex h-2 overflow-hidden rounded-full bg-slate-950">
+                  <span
+                    className="bg-slate-500/70"
+                    style={{ width: `${allowedPercent}%` }}
+                    aria-hidden="true"
                   />
-                  <Area type="monotone" dataKey="totalRequests" name="Total" stroke="#94a3b8" fill="url(#dashboardTotalRequests)" strokeWidth={2} />
-                  <Area type="monotone" dataKey="blockedRequests" name="Blocked" stroke="#64748b" fill="url(#dashboardBlockedRequests)" strokeWidth={2} />
-                </AreaChart>
-              </ResponsiveContainer>
+                  <span
+                    className="bg-slate-700"
+                    style={{ width: `${blockedPercent}%` }}
+                    aria-hidden="true"
+                  />
+                </div>
+              </div>
             </div>
-          )}
+
+            <div className="flex min-h-40 flex-col justify-between rounded-lg bg-slate-950/35 p-4">
+              <p className="text-xs font-medium text-slate-500">Block rate</p>
+              <p className="text-4xl font-semibold leading-none text-slate-50">
+                {isLoading ? '...' : percentLabel(blockedPercent)}
+              </p>
+              <p className="text-xs leading-5 text-slate-500">
+                {qualityTotal === 0 && !isLoading
+                  ? 'No traffic recorded yet.'
+                  : 'Calculated from allowed and blocked requests.'}
+              </p>
+            </div>
+          </div>
         </DashboardSection>
 
         <DashboardSection
@@ -300,7 +312,7 @@ export const DashboardPage: React.FC = () => {
         </DashboardSection>
       </div>
 
-      <div className="mt-4 grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(22rem,0.75fr)]">
+      <div className={`mt-4 grid grid-cols-1 gap-4 ${canMutate ? 'xl:grid-cols-[minmax(0,1fr)_minmax(22rem,0.75fr)]' : ''}`}>
         <DashboardSection title="Top routes">
           {isOperationalLoading ? (
             <StateMessage>Loading route analytics...</StateMessage>
@@ -332,27 +344,29 @@ export const DashboardPage: React.FC = () => {
           )}
         </DashboardSection>
 
-        <DashboardSection title={canMutate ? 'Quick actions' : 'Quick links'}>
-          <div className="grid gap-2">
-            {quickLinks.map((link) => {
-              const Icon = link.icon;
+        {canMutate && (
+          <DashboardSection title="Quick actions">
+            <div className="grid gap-2">
+              {quickLinks.map((link) => {
+                const Icon = link.icon;
 
-              return (
-                <Link
-                  key={link.to}
-                  to={link.to}
-                  className="flex items-center justify-between rounded-md px-3 py-2.5 text-sm text-slate-400 transition-colors hover:bg-slate-900/45 hover:text-slate-100"
-                >
-                  <span className="flex items-center gap-3">
-                    <Icon className="text-slate-600" size={16} aria-hidden="true" />
-                    {link.label}
-                  </span>
-                  <ArrowRight className="text-slate-700" size={15} aria-hidden="true" />
-                </Link>
-              );
-            })}
-          </div>
-        </DashboardSection>
+                return (
+                  <Link
+                    key={link.to}
+                    to={link.to}
+                    className="flex items-center justify-between rounded-md px-3 py-2.5 text-sm text-slate-400 transition-colors hover:bg-slate-900/45 hover:text-slate-100"
+                  >
+                    <span className="flex items-center gap-3">
+                      <Icon className="text-slate-600" size={16} aria-hidden="true" />
+                      {link.label}
+                    </span>
+                    <ArrowRight className="text-slate-700" size={15} aria-hidden="true" />
+                  </Link>
+                );
+              })}
+            </div>
+          </DashboardSection>
+        )}
       </div>
     </div>
   );

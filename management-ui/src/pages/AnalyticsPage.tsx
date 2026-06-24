@@ -11,7 +11,7 @@ import {
 } from 'recharts';
 import { api } from '../api/client';
 import { ClientAnalyticsDto, RouteAnalyticsDto, TrafficAnalyticsDto } from '../types';
-import { DemoBadge, EmptyState, PageHeader, Panel } from '../components/PageShell';
+import { EmptyState, PageHeader, Panel } from '../components/PageShell';
 import { formatBucket, formatNumber } from '../utils/display';
 
 type TrafficChartPoint = TrafficAnalyticsDto & {
@@ -74,17 +74,7 @@ export const AnalyticsPage: React.FC = () => {
     <div>
       <PageHeader
         title="Analytics"
-        description="Request trends, route usage, and client traffic from persisted gateway usage logs."
-        meta={
-          <div className="flex flex-wrap items-center gap-3">
-            <DemoBadge>{errorMessage ? 'Analytics unavailable' : 'Live analytics'}</DemoBadge>
-            <span className="text-xs text-slate-500">
-              {isLoading
-                ? 'Loading gateway analytics...'
-                : errorMessage ?? 'Route, client, and traffic sections use backend analytics endpoints.'}
-            </span>
-          </div>
-        }
+        meta={errorMessage ? <span className="text-xs text-slate-500">{errorMessage}</span> : undefined}
       />
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1fr_16rem]">

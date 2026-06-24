@@ -169,69 +169,71 @@ export const RouteLimitsPage: React.FC = () => {
       {(isCreateOpen || editingLimit) && (
         <form
           onSubmit={editingLimit ? handleUpdateRouteLimit : handleCreateRouteLimit}
-          className="mb-8 grid gap-4 border-y border-slate-800/40 py-5 md:grid-cols-[12rem_minmax(0,1fr)_10rem_auto] md:items-end"
+          className="mb-8 border-y border-slate-800/40 py-5"
         >
-          {!editingLimit && (
+          <div className="grid gap-4 md:grid-cols-[12rem_minmax(0,1fr)_10rem_auto] md:items-end">
+            {!editingLimit && (
+              <label className="block text-sm text-slate-500">
+                Plan
+                <select
+                  value={planId}
+                  onChange={(event) => setPlanId(event.target.value)}
+                  className="mt-2 w-full rounded-md border border-slate-800 bg-slate-950 px-3 py-2 text-sm text-slate-100 outline-none focus:border-slate-600"
+                  required
+                >
+                  {plans.map((plan) => (
+                    <option key={plan.id} value={plan.id}>{getPlanLabel(plan.planName)}</option>
+                  ))}
+                </select>
+              </label>
+            )}
+            {editingLimit && (
+              <div className="text-sm">
+                <p className="text-slate-500">Plan</p>
+                <p className="mt-2 rounded-md border border-slate-800 bg-slate-950 px-3 py-2 text-slate-300">
+                  {getPlanLabel(editingLimit.planName ?? 'Unknown')}
+                </p>
+              </div>
+            )}
             <label className="block text-sm text-slate-500">
-              Plan
-              <select
-                value={planId}
-                onChange={(event) => setPlanId(event.target.value)}
+              Route pattern
+              <input
+                value={routePattern}
+                onChange={(event) => setRoutePattern(event.target.value)}
+                className="mt-2 w-full rounded-md border border-slate-800 bg-slate-950 px-3 py-2 font-mono text-sm text-slate-100 outline-none focus:border-slate-600"
+                required
+              />
+            </label>
+            <label className="block text-sm text-slate-500">
+              Requests/min
+              <input
+                type="number"
+                min="1"
+                value={requestsPerMinute}
+                onChange={(event) => setRequestsPerMinute(event.target.value)}
                 className="mt-2 w-full rounded-md border border-slate-800 bg-slate-950 px-3 py-2 text-sm text-slate-100 outline-none focus:border-slate-600"
                 required
-              >
-                {plans.map((plan) => (
-                  <option key={plan.id} value={plan.id}>{getPlanLabel(plan.planName)}</option>
-                ))}
-              </select>
+              />
             </label>
-          )}
-          {editingLimit && (
-            <div className="text-sm">
-              <p className="text-slate-500">Plan</p>
-              <p className="mt-2 rounded-md border border-slate-800 bg-slate-950 px-3 py-2 text-slate-300">
-                {getPlanLabel(editingLimit.planName ?? 'Unknown')}
-              </p>
+            <div className="flex gap-2">
+              <PrimaryButton type="submit" disabled={isSubmitting || (!editingLimit && plans.length === 0)}>
+                {editingLimit ? 'Save' : 'Create'}
+              </PrimaryButton>
+              <SecondaryButton
+                type="button"
+                onClick={() => {
+                  setIsCreateOpen(false);
+                  setEditingLimit(null);
+                  resetForm();
+                }}
+              >
+                Cancel
+              </SecondaryButton>
             </div>
-          )}
-          <label className="block text-sm text-slate-500">
-            Route pattern
-            <input
-              value={routePattern}
-              onChange={(event) => setRoutePattern(event.target.value)}
-              className="mt-2 w-full rounded-md border border-slate-800 bg-slate-950 px-3 py-2 font-mono text-sm text-slate-100 outline-none focus:border-slate-600"
-              required
-            />
-            <span className="mt-2 block text-xs leading-5 text-slate-600">
-              Use exact paths or wildcards: /api/products, /api/users/* for one segment, /api/users/** for nested routes.
-            </span>
-          </label>
-          <label className="block text-sm text-slate-500">
-            Requests/min
-            <input
-              type="number"
-              min="1"
-              value={requestsPerMinute}
-              onChange={(event) => setRequestsPerMinute(event.target.value)}
-              className="mt-2 w-full rounded-md border border-slate-800 bg-slate-950 px-3 py-2 text-sm text-slate-100 outline-none focus:border-slate-600"
-              required
-            />
-          </label>
-          <div className="flex gap-2">
-            <PrimaryButton type="submit" disabled={isSubmitting || (!editingLimit && plans.length === 0)}>
-              {editingLimit ? 'Save' : 'Create'}
-            </PrimaryButton>
-            <SecondaryButton
-              type="button"
-              onClick={() => {
-                setIsCreateOpen(false);
-                setEditingLimit(null);
-                resetForm();
-              }}
-            >
-              Cancel
-            </SecondaryButton>
           </div>
+          <p className="mt-3 text-xs leading-5 text-slate-600">
+            Examples: /api/products exact, /api/users/* one segment, /api/users/** nested routes.
+          </p>
         </form>
       )}
 
