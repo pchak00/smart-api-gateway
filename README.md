@@ -6,10 +6,10 @@ Features include:
 - distributed Redis-backed rate limiting
 - plan-based quotas
 - route-specific throttling
-- JWT authentication
-- role-based authorization
+- JWT admin authentication with refresh sessions
+- role-based admin authorization
 - usage analytics
-- abuse detection
+- abuse detection with alert lifecycle
 
 Designed as a developer-first, SaaS-oriented gateway platform for small-to-mid sized teams.
 
@@ -38,6 +38,19 @@ a developer-first, self-hostable API management platform that combines infrastru
 
 The goal is not to compete with low-level high-performance proxies,
 but to provide a more accessible and product-oriented gateway experience for developers, startups, and small-to-mid sized teams.
+
+## Current Capabilities
+
+- API key authentication for protected gateway routes.
+- Redis-backed rate limiting with plan quotas and route-specific wildcard overrides.
+- Usage logging, dashboard metrics, route analytics, client analytics, and traffic analytics.
+- Abuse detection with `OPEN`, `ACKNOWLEDGED`, and `RESOLVED` alert states.
+- JWT admin login, refresh sessions, logout, and role-based access control.
+- Manual client provisioning from the Pacific management UI or admin API.
+- Server-to-server client provisioning with provisioning token management.
+- DB-backed gateway settings for upstream URL, health check path, and timeout.
+- Dynamic upstream routing with environment/default fallback and test connection support.
+- Dockerized Pacific management UI for operating the gateway locally.
 
 ## Architecture Overview
 
@@ -171,6 +184,8 @@ For example, expensive endpoints such as AI inference, image generation, or repo
 
 When a route-specific policy exists, it overrides the default plan quota for that endpoint.
 
+Patterns can be exact paths such as `/api/products`, one-segment wildcards such as `/api/users/*`, or nested wildcards such as `/api/users/**`.
+
 #### Distributed Redis-Backed Rate Limiting
 
 Rate limiting uses Redis-based shared counters instead of local in-memory tracking.
@@ -191,7 +206,7 @@ These settings currently include the intended upstream base URL, health-check pa
 
 Gateway forwarding uses the database upstream base URL when a valid settings row is available. If the settings row is missing, invalid, or temporarily unavailable, the gateway falls back to the existing deployment configuration such as `BACKEND_SERVICE_URL`.
 
-Admins can test upstream reachability with `POST /admin/settings/gateway/test-connection`. The endpoint accepts draft `upstreamBaseUrl`, `healthCheckPath`, and `timeoutMs` values, or uses the currently saved settings when the request body is empty. It sends a simple GET request to the joined health-check URL and returns whether the upstream responded with a 2xx status.
+Admins can test upstream reachability from the UI or with `POST /admin/settings/gateway/test-connection`. The endpoint accepts draft `upstreamBaseUrl`, `healthCheckPath`, and `timeoutMs` values, or uses the currently saved settings when the request body is empty. It sends a simple GET request to the joined health-check URL and returns whether the upstream responded with a 2xx status.
 
 ### Authentication & Authorization
 
@@ -215,6 +230,8 @@ Current roles include:
 
 - `READ_ONLY_ADMIN` — can access monitoring and observability endpoints such as analytics, usage statistics, and abuse alerts
 - `SUPER_ADMIN` — has full access to management operations including clients, plans, route policies, and administrative configuration
+
+The Pacific UI presents these roles with customer-facing labels where appropriate, but API payloads and JWT claims continue to use the backend enum values.
 
 This separation allows sensitive platform operations to remain protected while still supporting restricted operational visibility for lower-privileged administrators.
 
@@ -256,13 +273,13 @@ When clients repeatedly exceed configured rate limits within a defined time wind
 
 #### Alerting System
 
-When abuse thresholds are exceeded, the gateway creates or updates abuse alerts associated with the affected client.
+When blocked requests cross the abuse threshold, the gateway creates or updates abuse alerts associated with the affected client.
 
 A cooldown mechanism is used to avoid repeatedly generating duplicate alerts for the same abusive activity window.
 
 Abuse alerts use lifecycle states: `OPEN`, `ACKNOWLEDGED`, and `RESOLVED`. Dashboard `openAlertCount` counts only `OPEN` alerts, so resolved historical alerts no longer inflate the operational alert count.
 
-Owners can move alerts forward with `PATCH /admin/abuse-alerts/{id}/acknowledge` and `PATCH /admin/abuse-alerts/{id}/resolve`; viewers can continue to read alert lists.
+Super admins can move alerts forward with `PATCH /admin/abuse-alerts/{id}/acknowledge` and `PATCH /admin/abuse-alerts/{id}/resolve`; read-only viewers can inspect alert lists only.
 
 ## Infrastructure & Deployment
 
@@ -305,14 +322,14 @@ into independent services that can be scaled, replaced, or deployed separately.
 
 ### Prerequisites
 
-Before running the project, ensure Docker is installed and running and for convenience use an api tester like Insomnia or Postman.
+Before running the project, ensure Docker is installed and running. An API tester such as Insomnia or Postman is optional but useful.
 
 ---
 
 ### Clone the Repository
 
 ```bash
-git clone https://github.com/pchak00/gateway-api.git
+git clone https://github.com/pchak00/smart-api-gateway.git
 cd smart-api-gateway
 ```
 
@@ -349,6 +366,65 @@ http://localhost:8080
 ```
 
 The browser-based frontend calls `http://localhost:8080`. The Docker hostname `gateway-service` is only for container-to-container networking and is not used by browser code.
+
+---
+
+### Quick Demo
+
+1. Start the full stack:
+
+```bash
+docker compose up --build
+```
+
+2. Open the Pacific management UI:
+
+```text
+http://localhost:3000
+```
+
+3. Log in as a seeded super admin:
+
+```text
+username: super admin
+password: admin123
+```
+
+4. Inspect the dashboard and analytics pages. They use real backend usage logs and aggregate data from gateway traffic.
+
+5. Create or inspect an API client in the Clients page. For a clean local database, the seeded free client has this API key:
+
+```text
+free-demo-api-key
+```
+
+6. Call a protected route through the gateway:
+
+```bash
+curl -i http://localhost:8080/api/products \
+  -H "X-API-Key: free-demo-api-key"
+```
+
+7. Trigger rate limiting on the seeded FREE `/api/products` route limit, which allows 5 requests per minute:
+
+```bash
+for i in {1..15}; do
+  curl -i http://localhost:8080/api/products \
+    -H "X-API-Key: free-demo-api-key"
+  echo
+done
+```
+
+8. Return to the UI and confirm dashboard and analytics values update, blocked requests appear, and an abuse alert appears once the blocked-request threshold is crossed. As `super admin`, acknowledge or resolve the alert from Abuse Alerts.
+
+9. Log out and sign in as the seeded viewer:
+
+```text
+username: viewer
+password: admin123
+```
+
+The viewer can inspect allowed data but cannot mutate resources. The Admin Users area is blocked, and mutation controls are disabled or guarded.
 
 ---
 
@@ -409,16 +485,6 @@ The local seed includes `demo-provisioning-token`, restricted to the `FREE` plan
 
 ---
 
-### Demo Walkthrough
-
-1. Run `docker compose up --build`, then open `http://localhost:3000`.
-2. Log in as `super admin` with password `admin123`, then create or inspect an API client and note its API key and assigned plan.
-3. Call a protected seeded route with `curl http://localhost:8080/api/reports -H "X-API-Key: <client-api-key>"` and repeat the request until the gateway returns `429 Too Many Requests`.
-4. Return to the UI to inspect dashboard, analytics, and abuse-alert behavior.
-5. Log out and sign in as `viewer` with password `admin123` to confirm view-only access.
-
----
-
 ### Authentication
 
 Obtain a short-lived JWT access token before accessing administrative endpoints. Login also returns a longer-lived refresh token for active admin sessions. The refresh token is only accepted by `/auth/refresh`; it does not authorize `/admin/**` requests directly.
@@ -472,6 +538,68 @@ Token lifetimes are configured with `JWT_EXPIRATION_MS` for access tokens and `A
 
 ---
 
+### Dashboard, Analytics, Settings, and Alerts
+
+Useful read endpoints for the demo:
+
+```bash
+curl http://localhost:8080/admin/dashboard/summary \
+  -H "Authorization: Bearer <token>"
+
+curl http://localhost:8080/admin/analytics/traffic \
+  -H "Authorization: Bearer <token>"
+
+curl http://localhost:8080/admin/analytics/routes \
+  -H "Authorization: Bearer <token>"
+
+curl http://localhost:8080/admin/analytics/clients \
+  -H "Authorization: Bearer <token>"
+
+curl http://localhost:8080/admin/settings/gateway \
+  -H "Authorization: Bearer <token>"
+
+curl "http://localhost:8080/admin/abuse-alerts?status=OPEN" \
+  -H "Authorization: Bearer <token>"
+```
+
+Gateway settings can be updated by a super admin:
+
+```bash
+curl -X PUT http://localhost:8080/admin/settings/gateway \
+  -H "Authorization: Bearer <token>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "upstreamBaseUrl":"http://backend-service:8081",
+    "healthCheckPath":"/health",
+    "timeoutMs":5000
+  }'
+```
+
+Test a saved or draft upstream setting:
+
+```bash
+curl -X POST http://localhost:8080/admin/settings/gateway/test-connection \
+  -H "Authorization: Bearer <token>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "upstreamBaseUrl":"http://backend-service:8081",
+    "healthCheckPath":"/health",
+    "timeoutMs":5000
+  }'
+```
+
+Abuse alerts support lifecycle actions for super admins:
+
+```bash
+curl -X PATCH http://localhost:8080/admin/abuse-alerts/<alert-id>/acknowledge \
+  -H "Authorization: Bearer <token>"
+
+curl -X PATCH http://localhost:8080/admin/abuse-alerts/<alert-id>/resolve \
+  -H "Authorization: Bearer <token>"
+```
+
+---
+
 ### Plan Management
 
 #### Create Plan
@@ -518,7 +646,9 @@ curl -X POST http://localhost:8080/admin/clients \
 
 #### Current Client Onboarding
 
-Manual admin provisioning remains available through the pacific management UI or admin API. Trusted external backends can also create clients during signup through the server-to-server provisioning API, without using a full admin JWT.
+Manual admin provisioning remains available through the Pacific management UI or admin API. Trusted external backends can also create clients during signup through the server-to-server provisioning API, without using a full admin JWT.
+
+Provisioning tokens are server-to-server secrets. They must stay in trusted backend systems and must never be used from browser code. A public developer self-service portal is future work and is not implemented in the current UI.
 
 For server-to-server client onboarding, see [Client Provisioning](docs/CLIENT_PROVISIONING.md).
 
@@ -613,7 +743,7 @@ curl -X POST http://localhost:8080/admin/users \
 -H "Content-Type: application/json" \
 -d '{
   "username":"newadmin",
-  "password":"password",
+  "password":"<new-admin-password>",
   "role":"READ_ONLY_ADMIN"
 }'
 ```
@@ -696,13 +826,15 @@ Example:
 ```text
 FREE Plan
 ├── Default: 10 requests/minute
+├── /api/products: 5 requests/minute
 └── /api/reports: 2 requests/minute
 ```
 
 In this case:
 
-- Requests to `/api/products` use the FREE plan limit (10 RPM).
+- Requests to `/api/products` use the route-specific limit (5 RPM).
 - Requests to `/api/reports` use the route-specific limit (2 RPM).
+- Requests to `/api/orders` use the FREE plan limit (10 RPM).
 
 ---
 
@@ -716,10 +848,8 @@ HTTP 429 Too Many Requests
 
 Example:
 
-```json
-{
-  "message":"Rate limit exceeded"
-}
+```text
+Rate limit exceeded
 ```
 
 The gateway:
@@ -742,7 +872,7 @@ The gateway:
 
 This separation allows operational users to monitor the platform while restricting configuration changes to SUPER_ADMIN accounts.
 
-The UI presents these roles with the customer-facing labels Owner and Viewer, while API payloads and JWT authorization continue to use `SUPER_ADMIN` and `READ_ONLY_ADMIN`.
+The UI presents these roles with customer-facing labels such as Admin and Viewer, while API payloads and JWT authorization continue to use `SUPER_ADMIN` and `READ_ONLY_ADMIN`.
 
 ## Upcoming Updates
 
@@ -771,36 +901,15 @@ The abuse detection system may be extended with webhook notifications for operat
 - suspicious traffic activity
 - quota exhaustion events
 
-### Enhanced Analytics & Observability
-
-Planned improvements include:
-- real-time traffic dashboards
-- request trend visualization
-- client-level usage insights
-- route-level analytics
-- operational monitoring improvements
-
 ### Platform Hardening and Configuration
 
 Planned incremental improvements include:
 - multi-upstream route mapping for more advanced deployments
-- alert lifecycle statuses such as Open, Acknowledged, and Resolved
 - API key hashing and rotation support
+- a public developer self-service portal
+- richer alert notifications and webhook delivery
+- pagination and filtering improvements for large admin datasets
 - an isolated test profile or Testcontainers so Spring context tests do not require a local PostgreSQL instance
-
-### Management UI
-
-The current management UI provides a web-based dashboard for operating the gateway without manually calling admin APIs.
-
-Current UI capabilities include:
-
-- admin login page
-- client creation and API key management
-- plan assignment and quota updates
-- route-specific rate limit configuration
-- analytics and usage dashboards
-- abuse alert review
-- admin user management
 
 ## Feedback & Contributions
 

@@ -113,6 +113,7 @@ curl -i http://localhost:8080/api/products \
 ## Admin Token Management
 
 Admins can manage provisioning tokens through the admin API without editing seed data.
+The Pacific management UI also exposes provisioning token management under Settings.
 
 | Endpoint | Roles | Description |
 |---|---|---|
@@ -160,12 +161,10 @@ The create response includes a `token` field. Store it immediately in the truste
 
 - Local development still includes one seeded provisioning token.
 - Each token can assign only its configured default plan.
-- No frontend UI exists for provisioning token management.
 - A public developer self-service portal is future work.
 
 ## Future Improvements
 
-- Admin UI support to create and revoke provisioning tokens.
 - Token re-enable workflows.
 - Per-token allowed-plan lists.
 - Token expiration and rotation.
