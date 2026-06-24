@@ -38,6 +38,7 @@ export const getStatusLabel = (status: string | null | undefined) => {
   const normalized = status.trim();
   const labels: Record<string, string> = {
     OPEN: 'Open',
+    ACKNOWLEDGED: 'Acknowledged',
     ACTIVE: 'Active',
     RESOLVED: 'Resolved',
     CLOSED: 'Closed'

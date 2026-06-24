@@ -11,6 +11,7 @@ import {
   CreateRouteLimitRequest,
   UsageLogDto,
   AbuseAlertDto,
+  AbuseAlertQueryParams,
   UpdateClientPlanRequest,
   UpdateRouteLimitRequest,
   AdminUserDto,
@@ -263,13 +264,23 @@ class ApiClient {
   }
 
   // Abuse alert endpoints
-  async getAbuseAlerts(clientId: number): Promise<AbuseAlertDto[]> {
+  async getClientAbuseAlerts(clientId: number): Promise<AbuseAlertDto[]> {
     const response = await this.axiosInstance.get<AbuseAlertDto[]>(`/admin/clients/${clientId}/abuse`);
     return response.data;
   }
 
-  async getGlobalAbuseAlerts(): Promise<AbuseAlertDto[]> {
-    const response = await this.axiosInstance.get<AbuseAlertDto[]>('/admin/abuse-alerts');
+  async getAbuseAlerts(params?: AbuseAlertQueryParams): Promise<AbuseAlertDto[]> {
+    const response = await this.axiosInstance.get<AbuseAlertDto[]>('/admin/abuse-alerts', { params });
+    return response.data;
+  }
+
+  async acknowledgeAbuseAlert(id: number): Promise<AbuseAlertDto> {
+    const response = await this.axiosInstance.patch<AbuseAlertDto>(`/admin/abuse-alerts/${id}/acknowledge`);
+    return response.data;
+  }
+
+  async resolveAbuseAlert(id: number): Promise<AbuseAlertDto> {
+    const response = await this.axiosInstance.patch<AbuseAlertDto>(`/admin/abuse-alerts/${id}/resolve`);
     return response.data;
   }
 

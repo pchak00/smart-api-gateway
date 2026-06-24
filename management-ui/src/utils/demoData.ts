@@ -84,7 +84,19 @@ export const demoAbuseAlerts: AbuseAlertDto[] = [
   {
     id: 1,
     clientId: 2,
+    clientName: 'Demo Pro Client',
+    blockedCount: 5,
     blockedRequestCount: 5,
+    severity: 'HIGH',
+    message: 'Client exceeded blocked request threshold',
+    status: 'OPEN',
+    windowStart: new Date(Date.now() - 3 * 60 * 60 * 1000).toISOString(),
+    createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
+    acknowledgedAt: null,
+    acknowledgedBy: null,
+    resolvedAt: null,
+    resolvedBy: null,
+    lastStatusChangedAt: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
     alertedAt: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
     lastUpdatedAt: new Date(Date.now() - 1 * 60 * 60 * 1000).toISOString()
   }

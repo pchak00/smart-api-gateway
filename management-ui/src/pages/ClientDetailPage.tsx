@@ -36,7 +36,7 @@ export const ClientDetailPage: React.FC = () => {
         api.getClients(),
         api.getClientStats(clientId),
         api.getUsageLogs(clientId),
-        api.getAbuseAlerts(clientId)
+        api.getClientAbuseAlerts(clientId)
       ]);
 
       if (clientsResult.status === 'fulfilled') {

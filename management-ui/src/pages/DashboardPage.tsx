@@ -79,7 +79,7 @@ export const DashboardPage: React.FC = () => {
             <span className="text-xs text-slate-500">
               {isLoading
                 ? 'Loading dashboard summary...'
-                : errorMessage ?? 'Cards use backend usage logs, clients, plans, route limits, and persisted abuse alerts.'}
+                : errorMessage ?? 'Cards use backend usage logs, clients, plans, route limits, and open abuse alerts.'}
             </span>
           </div>
         )}
@@ -126,9 +126,9 @@ export const DashboardPage: React.FC = () => {
           source={cardSource}
         />
         <MetricCard
-          label="Alerts"
+          label="Open alerts"
           value={valueOrLoading(summary?.openAlertCount, isLoading)}
-          helper="Persisted abuse alerts; alert lifecycle status is not tracked yet."
+          helper="Abuse alerts still needing review."
           icon={ShieldAlert}
           source={cardSource}
         />

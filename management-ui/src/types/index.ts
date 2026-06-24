@@ -153,19 +153,30 @@ export interface UsageLogDto {
 }
 
 // Abuse Alerts
+export type AbuseAlertStatus = 'OPEN' | 'ACKNOWLEDGED' | 'RESOLVED';
+
+export interface AbuseAlertQueryParams {
+  status?: AbuseAlertStatus;
+}
+
 export interface AbuseAlertDto {
-  id?: number;
-  clientId?: number;
-  clientName?: string;
+  id: number;
+  clientId: number;
+  clientName: string;
+  blockedCount: number;
+  severity: string;
+  message: string;
+  status: AbuseAlertStatus;
+  windowStart: string;
+  createdAt: string;
+  acknowledgedAt: string | null;
+  acknowledgedBy: string | null;
+  resolvedAt: string | null;
+  resolvedBy: string | null;
+  lastStatusChangedAt: string | null;
   blockedRequestCount?: number;
-  blockedCount?: number;
-  severity?: string;
-  status?: string;
-  message?: string;
   alertedAt?: string;
   lastUpdatedAt?: string;
-  windowStart?: string;
-  createdAt?: string;
 }
 
 // Analytics
