@@ -18,6 +18,7 @@ export const PlansPage: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [editingPlan, setEditingPlan] = useState<PlanDto | null>(null);
   const [planName, setPlanName] = useState('');
   const [requestsPerMinute, setRequestsPerMinute] = useState('100');
   const [price, setPrice] = useState('0');
@@ -49,6 +50,20 @@ export const PlansPage: React.FC = () => {
     setPrice('0');
   };
 
+  const startCreate = () => {
+    setEditingPlan(null);
+    resetForm();
+    setIsCreateOpen((open) => !open);
+  };
+
+  const startEdit = (plan: PlanDto) => {
+    setIsCreateOpen(false);
+    setEditingPlan(plan);
+    setPlanName(plan.planName ?? '');
+    setRequestsPerMinute(String(plan.requestsPerMinute ?? 100));
+    setPrice(String(plan.price ?? 0));
+  };
+
   const handleCreatePlan = async (event: FormEvent) => {
     event.preventDefault();
     if (!canMutate) return;
@@ -67,6 +82,31 @@ export const PlansPage: React.FC = () => {
     } catch (error) {
       showToast({
         message: getApiErrorMessage(error, 'Could not create plan.'),
+        type: 'error'
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleUpdatePlan = async (event: FormEvent) => {
+    event.preventDefault();
+    if (!canMutate || !editingPlan?.id) return;
+
+    setIsSubmitting(true);
+    try {
+      await api.updatePlan(editingPlan.id, {
+        planName: planName.trim(),
+        requestsPerMinute: Number(requestsPerMinute),
+        price: Number(price)
+      });
+      showToast({ message: 'Plan updated.', type: 'success' });
+      resetForm();
+      setEditingPlan(null);
+      await loadPlans();
+    } catch (error) {
+      showToast({
+        message: getApiErrorMessage(error, 'Could not update plan.'),
         type: 'error'
       });
     } finally {
@@ -104,7 +144,7 @@ export const PlansPage: React.FC = () => {
             type="button"
             disabled={!canMutate}
             tooltip={writeTooltip}
-            onClick={() => setIsCreateOpen((open) => !open)}
+            onClick={startCreate}
           >
             <Plus size={16} aria-hidden="true" />
             Create Plan
@@ -112,8 +152,11 @@ export const PlansPage: React.FC = () => {
         }
       />
 
-      {isCreateOpen && (
-        <form onSubmit={handleCreatePlan} className="mb-8 grid gap-4 border-y border-slate-800/40 py-5 md:grid-cols-[minmax(0,1fr)_10rem_8rem_auto] md:items-end">
+      {(isCreateOpen || editingPlan) && (
+        <form
+          onSubmit={editingPlan ? handleUpdatePlan : handleCreatePlan}
+          className="mb-8 grid gap-4 border-y border-slate-800/40 py-5 md:grid-cols-[minmax(0,1fr)_10rem_8rem_auto] md:items-end"
+        >
           <label className="block text-sm text-slate-500">
             Plan name
             <input
@@ -148,9 +191,16 @@ export const PlansPage: React.FC = () => {
           </label>
           <div className="flex gap-2">
             <PrimaryButton type="submit" disabled={isSubmitting}>
-              Create
+              {editingPlan ? 'Save' : 'Create'}
             </PrimaryButton>
-            <SecondaryButton type="button" onClick={() => setIsCreateOpen(false)}>
+            <SecondaryButton
+              type="button"
+              onClick={() => {
+                setIsCreateOpen(false);
+                setEditingPlan(null);
+                resetForm();
+              }}
+            >
               Cancel
             </SecondaryButton>
           </div>
@@ -206,6 +256,12 @@ export const PlansPage: React.FC = () => {
                       {plan.id !== undefined && (
                         <RowActions
                           actions={[
+                            {
+                              label: 'Edit',
+                              disabled: !canMutate,
+                              title: writeTooltip,
+                              onClick: () => startEdit(plan)
+                            },
                             {
                               label: 'Delete',
                               tone: 'danger',

@@ -73,6 +73,15 @@ public class GatewayController {
         return planService.createPlan(planDto);
     }
 
+    @PatchMapping("/plans/{id}")
+    public ResponseEntity<PlanResponseDto> updatePlan(
+            @PathVariable Long id,
+            @RequestBody PlanDto planDto
+    ) {
+        PlanResponseDto response = planService.updatePlan(id, planDto);
+        return ResponseEntity.ok(response);
+    }
+
     @DeleteMapping("/plans/{id}")
     public ResponseEntity<Void> deletePlan(@PathVariable Long id) {
         planService.deletePlan(id);

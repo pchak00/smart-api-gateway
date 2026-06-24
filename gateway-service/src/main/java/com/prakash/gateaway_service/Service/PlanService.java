@@ -57,6 +57,29 @@ public class PlanService {
     }
 
     @Transactional
+    public PlanResponseDto updatePlan(Long planId, PlanDto request) {
+        Plan plan = planRepository.findById(planId)
+                .orElseThrow(() ->
+                        new PlanNotFoundException("Plan not found with id: " + planId));
+
+        String planName = validatePlanName(request.planName());
+        validateRequestsPerMinute(request.requestsPerMinute());
+        validatePrice(request.price());
+
+        planRepository.findPlanByName(planName)
+                .filter(existingPlan -> !existingPlan.getId().equals(planId))
+                .ifPresent(existingPlan -> {
+                    throw new DuplicatePlanException("Plan already exists: " + planName);
+                });
+
+        plan.setName(planName);
+        plan.setRequestsPerMinute(request.requestsPerMinute());
+        plan.setPrice(request.price());
+
+        return PlanResponseDto.from(planRepository.save(plan));
+    }
+
+    @Transactional
     public void deletePlan(Long planId) {
 
         Plan plan = planRepository.findById(planId)

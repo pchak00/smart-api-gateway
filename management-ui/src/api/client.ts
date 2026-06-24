@@ -7,6 +7,7 @@ import {
   CreateClientRequest,
   PlanDto,
   CreatePlanRequest,
+  UpdatePlanRequest,
   RouteLimitDto,
   CreateRouteLimitRequest,
   UsageLogDto,
@@ -186,6 +187,11 @@ class ApiClient {
 
   async createPlan(payload: CreatePlanRequest): Promise<PlanDto> {
     const response = await this.axiosInstance.post<PlanDto>('/admin/clients/plans', payload);
+    return response.data;
+  }
+
+  async updatePlan(id: number, payload: UpdatePlanRequest): Promise<PlanDto> {
+    const response = await this.axiosInstance.patch<PlanDto>(`/admin/clients/plans/${id}`, payload);
     return response.data;
   }
 

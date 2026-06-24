@@ -38,6 +38,12 @@ export interface CreatePlanRequest {
   price?: number;
 }
 
+export interface UpdatePlanRequest {
+  planName: string;
+  requestsPerMinute: number;
+  price?: number;
+}
+
 // Clients
 export interface ClientDto {
   id?: number;
