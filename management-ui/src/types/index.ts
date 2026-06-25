@@ -209,6 +209,14 @@ export interface RouteAnalyticsDto {
   blockedRequests?: number;
 }
 
+export interface RouteTrafficAnalyticsDto {
+  bucket?: string;
+  route?: string;
+  totalRequests?: number;
+  allowedRequests?: number;
+  blockedRequests?: number;
+}
+
 export interface ClientAnalyticsDto {
   clientId?: number;
   clientName?: string | null;

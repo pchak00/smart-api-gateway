@@ -1,50 +1,66 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Activity, BarChart3, Route, Users } from 'lucide-react';
 import {
-  Area,
-  AreaChart,
   CartesianGrid,
+  Line,
+  LineChart,
   ResponsiveContainer,
   Tooltip,
   XAxis,
   YAxis
 } from 'recharts';
 import { api } from '../api/client';
-import { ClientAnalyticsDto, RouteAnalyticsDto, TrafficAnalyticsDto } from '../types';
+import { ClientAnalyticsDto, RouteAnalyticsDto, RouteTrafficAnalyticsDto, TrafficAnalyticsDto } from '../types';
 import { EmptyState, PageHeader, Panel } from '../components/PageShell';
 import { formatBucket, formatNumber } from '../utils/display';
 
-type TrafficChartPoint = TrafficAnalyticsDto & {
+type RouteTrendMetric = 'totalRequests' | 'allowedRequests' | 'blockedRequests';
+
+type RouteTrendChartPoint = {
   bucketLabel: string;
+  [key: string]: string | number;
 };
 
 const safeCount = (value: number | null | undefined) => (
   typeof value === 'number' && !Number.isNaN(value) ? value : 0
 );
 
+const routeTrendMetricOptions: Array<{ key: RouteTrendMetric; label: string }> = [
+  { key: 'totalRequests', label: 'Total' },
+  { key: 'allowedRequests', label: 'Allowed' },
+  { key: 'blockedRequests', label: 'Blocked' }
+];
+
+const routeTrendColors = ['#94a3b8', '#67e8f9', '#60a5fa', '#5eead4', '#818cf8'];
+
 export const AnalyticsPage: React.FC = () => {
   const [routeAnalytics, setRouteAnalytics] = useState<RouteAnalyticsDto[]>([]);
+  const [routeTrafficAnalytics, setRouteTrafficAnalytics] = useState<RouteTrafficAnalyticsDto[]>([]);
   const [clientAnalytics, setClientAnalytics] = useState<ClientAnalyticsDto[]>([]);
   const [trafficAnalytics, setTrafficAnalytics] = useState<TrafficAnalyticsDto[]>([]);
+  const [selectedRouteMetric, setSelectedRouteMetric] = useState<RouteTrendMetric>('totalRequests');
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   useEffect(() => {
     const loadAnalytics = async () => {
       try {
-        const [routes, clients, traffic] = await Promise.all([
+        const [routes, routeTraffic, clients, traffic] = await Promise.all([
           api.getRouteAnalytics(),
+          api.getRouteTrafficAnalytics(),
           api.getClientAnalytics(),
           api.getTrafficAnalytics()
         ]);
 
         setRouteAnalytics(Array.isArray(routes) ? routes : []);
+        setRouteTrafficAnalytics(Array.isArray(routeTraffic) ? routeTraffic : []);
         setClientAnalytics(Array.isArray(clients) ? clients : []);
         setTrafficAnalytics(Array.isArray(traffic) ? traffic : []);
         setErrorMessage(null);
       } catch (error) {
         console.error('Failed to load analytics:', error);
         setRouteAnalytics([]);
+        setRouteTrafficAnalytics([]);
         setClientAnalytics([]);
         setTrafficAnalytics([]);
         setErrorMessage('Backend analytics are unavailable right now.');
@@ -56,15 +72,56 @@ export const AnalyticsPage: React.FC = () => {
     loadAnalytics();
   }, []);
 
-  const chartData = useMemo<TrafficChartPoint[]>(() => (
-    trafficAnalytics.map((point) => ({
-      bucket: point.bucket,
-      bucketLabel: formatBucket(point.bucket),
-      totalRequests: safeCount(point.totalRequests),
-      allowedRequests: safeCount(point.allowedRequests),
-      blockedRequests: safeCount(point.blockedRequests)
-    }))
-  ), [trafficAnalytics]);
+  const routeTrendRoutes = useMemo(() => {
+    const totals = new Map<string, number>();
+
+    routeTrafficAnalytics.forEach((point) => {
+      const route = point.route ?? 'Unknown route';
+      totals.set(route, (totals.get(route) ?? 0) + safeCount(point.totalRequests));
+    });
+
+    return [...totals.entries()]
+      .sort((first, second) => second[1] - first[1])
+      .slice(0, 5)
+      .map(([route], index) => ({
+        key: `route_${index}`,
+        route,
+        color: routeTrendColors[index % routeTrendColors.length]
+      }));
+  }, [routeTrafficAnalytics]);
+
+  const routeTrendData = useMemo<RouteTrendChartPoint[]>(() => {
+    const buckets = new Map<string, RouteTrendChartPoint>();
+    const routeKeyByName = new Map(routeTrendRoutes.map((route) => [route.route, route.key]));
+
+    routeTrafficAnalytics.forEach((point) => {
+      const bucket = point.bucket ?? 'Unknown date';
+      const route = point.route ?? 'Unknown route';
+      const routeKey = routeKeyByName.get(route);
+
+      if (!routeKey) return;
+
+      const existing = buckets.get(bucket) ?? {
+        bucket,
+        bucketLabel: formatBucket(bucket)
+      };
+
+      existing[routeKey] = safeCount(point[selectedRouteMetric]);
+      buckets.set(bucket, existing);
+    });
+
+    return [...buckets.entries()]
+      .sort(([first], [second]) => first.localeCompare(second))
+      .map(([, point]) => {
+        routeTrendRoutes.forEach((route) => {
+          if (typeof point[route.key] !== 'number') {
+            point[route.key] = 0;
+          }
+        });
+
+        return point;
+      });
+  }, [routeTrafficAnalytics, routeTrendRoutes, selectedRouteMetric]);
 
   const totalRequests = trafficAnalytics.reduce((sum, point) => sum + safeCount(point.totalRequests), 0);
   const totalAllowed = trafficAnalytics.reduce((sum, point) => sum + safeCount(point.allowedRequests), 0);
@@ -81,46 +138,50 @@ export const AnalyticsPage: React.FC = () => {
         <Panel className="p-5">
           <div className="mb-5 flex items-center justify-between">
             <div>
-              <h2 className="text-sm font-semibold text-slate-100">Request trend</h2>
-              <p className="mt-1 text-sm text-slate-500">Daily totals from persisted usage logs.</p>
+              <h2 className="text-sm font-semibold text-slate-100">Route trends</h2>
+              <p className="mt-1 text-sm text-slate-500">Traffic over time by gateway route.</p>
             </div>
-            <BarChart3 className="text-slate-600" size={20} aria-hidden="true" />
+            <div className="flex items-center gap-3">
+              <div className="flex rounded-md border border-slate-800/70 bg-slate-950/40 p-1">
+                {routeTrendMetricOptions.map((option) => (
+                  <button
+                    key={option.key}
+                    type="button"
+                    onClick={() => setSelectedRouteMetric(option.key)}
+                    className={`rounded px-2.5 py-1 text-xs font-medium transition-colors ${
+                      selectedRouteMetric === option.key
+                        ? 'bg-slate-800/80 text-slate-100'
+                        : 'text-slate-500 hover:bg-slate-900/60 hover:text-slate-300'
+                    }`}
+                  >
+                    {option.label}
+                  </button>
+                ))}
+              </div>
+              <BarChart3 className="text-slate-600" size={20} aria-hidden="true" />
+            </div>
           </div>
 
           {isLoading ? (
             <div className="flex h-72 items-center justify-center text-sm text-slate-500">
-              Loading traffic analytics...
+              Loading route trends...
             </div>
           ) : errorMessage ? (
             <EmptyState
-              icon={Activity}
-              title="Traffic unavailable"
+              icon={Route}
+              title="Route trends unavailable"
               description={errorMessage}
             />
-          ) : chartData.length === 0 ? (
+          ) : routeTrendData.length === 0 || routeTrendRoutes.length === 0 ? (
             <EmptyState
-              icon={Activity}
-              title="No traffic recorded yet"
-              description="Send requests through the gateway to populate analytics."
+              icon={Route}
+              title="No route trend data yet"
+              description="Send requests through the gateway to populate this chart."
             />
           ) : (
             <div className="h-72">
               <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={chartData} margin={{ top: 8, right: 8, left: -16, bottom: 0 }}>
-                  <defs>
-                    <linearGradient id="totalRequests" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#64748b" stopOpacity={0.28} />
-                      <stop offset="95%" stopColor="#64748b" stopOpacity={0.02} />
-                    </linearGradient>
-                    <linearGradient id="allowedRequests" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#475569" stopOpacity={0.24} />
-                      <stop offset="95%" stopColor="#475569" stopOpacity={0.02} />
-                    </linearGradient>
-                    <linearGradient id="blockedRequests" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#334155" stopOpacity={0.22} />
-                      <stop offset="95%" stopColor="#334155" stopOpacity={0.02} />
-                    </linearGradient>
-                  </defs>
+                <LineChart data={routeTrendData} margin={{ top: 8, right: 8, left: -16, bottom: 0 }}>
                   <CartesianGrid stroke="#1e293b" strokeOpacity={0.55} vertical={false} />
                   <XAxis dataKey="bucketLabel" tick={{ fill: '#64748b', fontSize: 12 }} tickLine={false} axisLine={false} />
                   <YAxis tick={{ fill: '#64748b', fontSize: 12 }} tickLine={false} axisLine={false} />
@@ -131,12 +192,36 @@ export const AnalyticsPage: React.FC = () => {
                       borderRadius: 8,
                       color: '#e2e8f0'
                     }}
+                    formatter={(value, name) => [
+                      formatNumber(typeof value === 'number' ? value : Number(value)),
+                      routeTrendRoutes.find((route) => route.key === name)?.route ?? name
+                    ]}
                   />
-                  <Area type="monotone" dataKey="totalRequests" name="Total" stroke="#94a3b8" fill="url(#totalRequests)" strokeWidth={2} />
-                  <Area type="monotone" dataKey="allowedRequests" name="Allowed" stroke="#64748b" fill="url(#allowedRequests)" strokeWidth={2} />
-                  <Area type="monotone" dataKey="blockedRequests" name="Blocked" stroke="#475569" fill="url(#blockedRequests)" strokeWidth={2} />
-                </AreaChart>
+                  {routeTrendRoutes.map((route) => (
+                    <Line
+                      key={route.key}
+                      type="monotone"
+                      dataKey={route.key}
+                      name={route.key}
+                      stroke={route.color}
+                      strokeWidth={2}
+                      dot={false}
+                      activeDot={{ r: 4 }}
+                    />
+                  ))}
+                </LineChart>
               </ResponsiveContainer>
+            </div>
+          )}
+
+          {!isLoading && !errorMessage && routeTrendRoutes.length > 0 && (
+            <div className="mt-4 flex flex-wrap gap-x-4 gap-y-2">
+              {routeTrendRoutes.map((route) => (
+                <div key={route.key} className="flex min-w-0 items-center gap-2 text-xs text-slate-500">
+                  <span className="h-1.5 w-3 shrink-0 rounded-full" style={{ backgroundColor: route.color }} />
+                  <span className="max-w-48 truncate font-mono" title={route.route}>{route.route}</span>
+                </div>
+              ))}
             </div>
           )}
         </Panel>

@@ -3,6 +3,7 @@ package com.prakash.gateaway_service.Service;
 import com.prakash.gateaway_service.DTO.ClientAnalyticsResponseDto;
 import com.prakash.gateaway_service.DTO.DashboardSummaryResponseDto;
 import com.prakash.gateaway_service.DTO.RouteAnalyticsResponseDto;
+import com.prakash.gateaway_service.DTO.RouteTrafficAnalyticsResponseDto;
 import com.prakash.gateaway_service.DTO.TrafficAnalyticsResponseDto;
 import com.prakash.gateaway_service.Repository.AbuseAlertRepository;
 import com.prakash.gateaway_service.Repository.ClientRepository;
@@ -81,6 +82,19 @@ public class AnalyticsService {
                         toLong(row[1]),
                         toLong(row[2]),
                         toLong(row[3])
+                ))
+                .toList();
+    }
+
+    public List<RouteTrafficAnalyticsResponseDto> getRouteTrafficAnalytics() {
+        return usageLogRepository.findDailyRouteTrafficAnalytics()
+                .stream()
+                .map(row -> new RouteTrafficAnalyticsResponseDto(
+                        row[0].toString(),
+                        (String) row[1],
+                        toLong(row[2]),
+                        toLong(row[3]),
+                        toLong(row[4])
                 ))
                 .toList();
     }

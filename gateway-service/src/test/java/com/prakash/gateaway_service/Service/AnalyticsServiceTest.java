@@ -1,6 +1,7 @@
 package com.prakash.gateaway_service.Service;
 
 import com.prakash.gateaway_service.DTO.DashboardSummaryResponseDto;
+import com.prakash.gateaway_service.DTO.RouteTrafficAnalyticsResponseDto;
 import com.prakash.gateaway_service.Repository.AbuseAlertRepository;
 import com.prakash.gateaway_service.Repository.ClientRepository;
 import com.prakash.gateaway_service.Repository.PlanRepository;
@@ -8,6 +9,9 @@ import com.prakash.gateaway_service.Repository.RouteLimitRepository;
 import com.prakash.gateaway_service.Repository.UsageLogRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+
+import java.time.LocalDate;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.mock;
@@ -51,5 +55,29 @@ class AnalyticsServiceTest {
         DashboardSummaryResponseDto summary = analyticsService.getDashboardSummary();
 
         assertEquals(1, summary.openAlertCount());
+    }
+
+    @Test
+    void routeTrafficAnalyticsMapsDailyRouteRows() {
+        when(usageLogRepository.findDailyRouteTrafficAnalytics()).thenReturn(List.of(
+                new Object[] { LocalDate.of(2026, 6, 18), "/api/products", 12L, 8L, 4L },
+                new Object[] { LocalDate.of(2026, 6, 18), "/api/reports", 5L, 3L, 2L }
+        ));
+
+        List<RouteTrafficAnalyticsResponseDto> trends = analyticsService.getRouteTrafficAnalytics();
+
+        assertEquals(2, trends.size());
+        assertEquals("2026-06-18", trends.get(0).bucket());
+        assertEquals("/api/products", trends.get(0).route());
+        assertEquals(12, trends.get(0).totalRequests());
+        assertEquals(8, trends.get(0).allowedRequests());
+        assertEquals(4, trends.get(0).blockedRequests());
+    }
+
+    @Test
+    void routeTrafficAnalyticsHandlesEmptyRows() {
+        when(usageLogRepository.findDailyRouteTrafficAnalytics()).thenReturn(List.of());
+
+        assertEquals(0, analyticsService.getRouteTrafficAnalytics().size());
     }
 }

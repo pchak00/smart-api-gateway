@@ -19,6 +19,7 @@ import {
   ClientStatsDto,
   DashboardSummaryDto,
   RouteAnalyticsDto,
+  RouteTrafficAnalyticsDto,
   ClientAnalyticsDto,
   TrafficAnalyticsDto,
   ProvisioningTokenDto,
@@ -318,6 +319,11 @@ class ApiClient {
 
   async getRouteAnalytics(): Promise<RouteAnalyticsDto[]> {
     const response = await this.axiosInstance.get<RouteAnalyticsDto[]>('/admin/analytics/routes');
+    return response.data;
+  }
+
+  async getRouteTrafficAnalytics(): Promise<RouteTrafficAnalyticsDto[]> {
+    const response = await this.axiosInstance.get<RouteTrafficAnalyticsDto[]>('/admin/analytics/route-traffic');
     return response.data;
   }
 

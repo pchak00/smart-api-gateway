@@ -58,4 +58,25 @@ public interface UsageLogRepository extends JpaRepository<UsageLog, Long> {
             ORDER BY CAST(u.timestamp AS date)
             """, nativeQuery = true)
     List<Object[]> findDailyTrafficAnalytics();
+
+    @Query(value = """
+            WITH top_routes AS (
+                SELECT u.path
+                FROM usage_log u
+                GROUP BY u.path
+                ORDER BY COUNT(u.id) DESC
+                LIMIT 5
+            )
+            SELECT
+                CAST(u.timestamp AS date) AS bucket,
+                u.path AS route,
+                COUNT(u.id) AS total_requests,
+                SUM(CASE WHEN u.allowed = true THEN 1 ELSE 0 END) AS allowed_requests,
+                SUM(CASE WHEN u.allowed = false THEN 1 ELSE 0 END) AS blocked_requests
+            FROM usage_log u
+            JOIN top_routes tr ON tr.path = u.path
+            GROUP BY CAST(u.timestamp AS date), u.path
+            ORDER BY CAST(u.timestamp AS date), u.path
+            """, nativeQuery = true)
+    List<Object[]> findDailyRouteTrafficAnalytics();
 }
