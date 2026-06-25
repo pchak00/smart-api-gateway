@@ -15,15 +15,30 @@ import { EmptyState, PageHeader, Panel } from '../components/PageShell';
 import { formatBucket, formatNumber } from '../utils/display';
 
 type RouteTrendMetric = 'totalRequests' | 'allowedRequests' | 'blockedRequests';
+type RouteTrendLimit = 5 | 10;
 
 type RouteTrendChartPoint = {
   bucketLabel: string;
   [key: string]: string | number;
 };
 
+type RouteTrendRoute = {
+  key: string;
+  route: string;
+  color: string;
+  strokeDasharray?: string;
+  strokeWidth: number;
+  opacity: number;
+};
+
 const safeCount = (value: number | null | undefined) => (
   typeof value === 'number' && !Number.isNaN(value) ? value : 0
 );
+
+const getRouteName = (route: string | null | undefined) => {
+  const routeName = route?.trim();
+  return routeName || 'Unknown route';
+};
 
 const routeTrendMetricOptions: Array<{ key: RouteTrendMetric; label: string }> = [
   { key: 'totalRequests', label: 'Total' },
@@ -31,7 +46,35 @@ const routeTrendMetricOptions: Array<{ key: RouteTrendMetric; label: string }> =
   { key: 'blockedRequests', label: 'Blocked' }
 ];
 
-const routeTrendColors = ['#94a3b8', '#67e8f9', '#60a5fa', '#5eead4', '#818cf8'];
+const routeTrendLimitOptions: RouteTrendLimit[] = [5, 10];
+
+const routeTrendColors = [
+  '#93c5fd',
+  '#67e8f9',
+  '#5eead4',
+  '#818cf8',
+  '#94a3b8',
+  '#38bdf8',
+  '#2dd4bf',
+  '#60a5fa',
+  '#a5b4fc',
+  '#cbd5e1'
+];
+
+const routeTrendLineStyles: Array<Pick<RouteTrendRoute, 'strokeDasharray' | 'strokeWidth' | 'opacity'>> = [
+  { strokeWidth: 2.6, opacity: 1 },
+  { strokeWidth: 2.1, opacity: 0.95 },
+  { strokeWidth: 2, strokeDasharray: '6 4', opacity: 0.9 },
+  { strokeWidth: 2, strokeDasharray: '2 4', opacity: 0.88 },
+  { strokeWidth: 2, opacity: 0.72 },
+  { strokeWidth: 1.8, strokeDasharray: '10 5', opacity: 0.78 },
+  { strokeWidth: 1.8, strokeDasharray: '4 5', opacity: 0.76 },
+  { strokeWidth: 1.8, strokeDasharray: '1 5', opacity: 0.74 },
+  { strokeWidth: 1.7, opacity: 0.7 },
+  { strokeWidth: 1.7, strokeDasharray: '7 6', opacity: 0.68 }
+];
+
+const getRouteTrendStyle = (index: number) => routeTrendLineStyles[index % routeTrendLineStyles.length];
 
 export const AnalyticsPage: React.FC = () => {
   const [routeAnalytics, setRouteAnalytics] = useState<RouteAnalyticsDto[]>([]);
@@ -39,6 +82,7 @@ export const AnalyticsPage: React.FC = () => {
   const [clientAnalytics, setClientAnalytics] = useState<ClientAnalyticsDto[]>([]);
   const [trafficAnalytics, setTrafficAnalytics] = useState<TrafficAnalyticsDto[]>([]);
   const [selectedRouteMetric, setSelectedRouteMetric] = useState<RouteTrendMetric>('totalRequests');
+  const [routeTrendLimit, setRouteTrendLimit] = useState<RouteTrendLimit>(5);
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
@@ -72,23 +116,41 @@ export const AnalyticsPage: React.FC = () => {
     loadAnalytics();
   }, []);
 
-  const routeTrendRoutes = useMemo(() => {
-    const totals = new Map<string, number>();
+  const routeTrendRoutes = useMemo<RouteTrendRoute[]>(() => {
+    const totals = new Map<string, { selected: number; total: number }>();
 
     routeTrafficAnalytics.forEach((point) => {
-      const route = point.route ?? 'Unknown route';
-      totals.set(route, (totals.get(route) ?? 0) + safeCount(point.totalRequests));
+      const route = getRouteName(point.route);
+      const current = totals.get(route) ?? { selected: 0, total: 0 };
+
+      totals.set(route, {
+        selected: current.selected + safeCount(point[selectedRouteMetric]),
+        total: current.total + safeCount(point.totalRequests)
+      });
     });
 
     return [...totals.entries()]
-      .sort((first, second) => second[1] - first[1])
-      .slice(0, 5)
+      .sort(([firstRoute, first], [secondRoute, second]) => {
+        const selectedDifference = second.selected - first.selected;
+        if (selectedDifference !== 0) return selectedDifference;
+
+        const totalDifference = second.total - first.total;
+        if (totalDifference !== 0) return totalDifference;
+
+        return firstRoute.localeCompare(secondRoute);
+      })
+      .slice(0, routeTrendLimit)
       .map(([route], index) => ({
         key: `route_${index}`,
         route,
-        color: routeTrendColors[index % routeTrendColors.length]
+        color: routeTrendColors[index % routeTrendColors.length],
+        ...getRouteTrendStyle(index)
       }));
-  }, [routeTrafficAnalytics]);
+  }, [routeTrafficAnalytics, routeTrendLimit, selectedRouteMetric]);
+
+  const routeTrendRouteCount = useMemo(() => (
+    new Set(routeTrafficAnalytics.map((point) => getRouteName(point.route))).size
+  ), [routeTrafficAnalytics]);
 
   const routeTrendData = useMemo<RouteTrendChartPoint[]>(() => {
     const buckets = new Map<string, RouteTrendChartPoint>();
@@ -96,7 +158,7 @@ export const AnalyticsPage: React.FC = () => {
 
     routeTrafficAnalytics.forEach((point) => {
       const bucket = point.bucket ?? 'Unknown date';
-      const route = point.route ?? 'Unknown route';
+      const route = getRouteName(point.route);
       const routeKey = routeKeyByName.get(route);
 
       if (!routeKey) return;
@@ -106,7 +168,8 @@ export const AnalyticsPage: React.FC = () => {
         bucketLabel: formatBucket(bucket)
       };
 
-      existing[routeKey] = safeCount(point[selectedRouteMetric]);
+      existing[routeKey] = safeCount(typeof existing[routeKey] === 'number' ? existing[routeKey] : undefined) +
+        safeCount(point[selectedRouteMetric]);
       buckets.set(bucket, existing);
     });
 
@@ -136,12 +199,12 @@ export const AnalyticsPage: React.FC = () => {
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1fr_16rem]">
         <Panel className="p-5">
-          <div className="mb-5 flex items-center justify-between">
-            <div>
+          <div className="mb-5 flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+            <div className="min-w-0">
               <h2 className="text-sm font-semibold text-slate-100">Route trends</h2>
               <p className="mt-1 text-sm text-slate-500">Traffic over time by gateway route.</p>
             </div>
-            <div className="flex items-center gap-3">
+            <div className="flex flex-wrap items-center gap-3">
               <div className="flex rounded-md border border-slate-800/70 bg-slate-950/40 p-1">
                 {routeTrendMetricOptions.map((option) => (
                   <button
@@ -155,6 +218,22 @@ export const AnalyticsPage: React.FC = () => {
                     }`}
                   >
                     {option.label}
+                  </button>
+                ))}
+              </div>
+              <div className="flex rounded-md border border-slate-800/70 bg-slate-950/40 p-1">
+                {routeTrendLimitOptions.map((option) => (
+                  <button
+                    key={option}
+                    type="button"
+                    onClick={() => setRouteTrendLimit(option)}
+                    className={`rounded px-2.5 py-1 text-xs font-medium transition-colors ${
+                      routeTrendLimit === option
+                        ? 'bg-slate-800/80 text-slate-100'
+                        : 'text-slate-500 hover:bg-slate-900/60 hover:text-slate-300'
+                    }`}
+                  >
+                    Top {option}
                   </button>
                 ))}
               </div>
@@ -190,11 +269,15 @@ export const AnalyticsPage: React.FC = () => {
                       background: '#020617',
                       border: '1px solid #1e293b',
                       borderRadius: 8,
+                      boxShadow: '0 18px 45px rgba(2, 6, 23, 0.32)',
                       color: '#e2e8f0'
                     }}
+                    itemStyle={{ color: '#cbd5e1', fontSize: 12 }}
+                    labelStyle={{ color: '#94a3b8', fontSize: 12, marginBottom: 6 }}
+                    labelFormatter={(label) => `Bucket: ${String(label)}`}
                     formatter={(value, name) => [
                       formatNumber(typeof value === 'number' ? value : Number(value)),
-                      routeTrendRoutes.find((route) => route.key === name)?.route ?? name
+                      routeTrendRoutes.find((route) => route.route === name)?.route ?? String(name)
                     ]}
                   />
                   {routeTrendRoutes.map((route) => (
@@ -202,9 +285,11 @@ export const AnalyticsPage: React.FC = () => {
                       key={route.key}
                       type="monotone"
                       dataKey={route.key}
-                      name={route.key}
+                      name={route.route}
                       stroke={route.color}
-                      strokeWidth={2}
+                      strokeDasharray={route.strokeDasharray}
+                      strokeOpacity={route.opacity}
+                      strokeWidth={route.strokeWidth}
                       dot={false}
                       activeDot={{ r: 4 }}
                     />
@@ -215,13 +300,30 @@ export const AnalyticsPage: React.FC = () => {
           )}
 
           {!isLoading && !errorMessage && routeTrendRoutes.length > 0 && (
-            <div className="mt-4 flex flex-wrap gap-x-4 gap-y-2">
-              {routeTrendRoutes.map((route) => (
-                <div key={route.key} className="flex min-w-0 items-center gap-2 text-xs text-slate-500">
-                  <span className="h-1.5 w-3 shrink-0 rounded-full" style={{ backgroundColor: route.color }} />
-                  <span className="max-w-48 truncate font-mono" title={route.route}>{route.route}</span>
-                </div>
-              ))}
+            <div className="mt-4 flex flex-col gap-3">
+              <p className="text-xs text-slate-600">
+                Showing top {Math.min(routeTrendLimit, routeTrendRoutes.length)}{routeTrendRouteCount > routeTrendRoutes.length ? ` of ${routeTrendRouteCount}` : ''} routes
+              </p>
+              <div className="grid gap-x-4 gap-y-2 sm:grid-cols-2 xl:grid-cols-3">
+                {routeTrendRoutes.map((route) => (
+                  <div key={route.key} className="flex min-w-0 items-center gap-2 text-xs text-slate-500">
+                    <svg className="h-2 w-5 shrink-0 overflow-visible" viewBox="0 0 20 8" aria-hidden="true">
+                      <line
+                        x1="1"
+                        y1="4"
+                        x2="19"
+                        y2="4"
+                        stroke={route.color}
+                        strokeDasharray={route.strokeDasharray}
+                        strokeLinecap="round"
+                        strokeOpacity={route.opacity}
+                        strokeWidth={route.strokeWidth}
+                      />
+                    </svg>
+                    <span className="min-w-0 truncate font-mono" title={route.route}>{route.route}</span>
+                  </div>
+                ))}
+              </div>
             </div>
           )}
         </Panel>
