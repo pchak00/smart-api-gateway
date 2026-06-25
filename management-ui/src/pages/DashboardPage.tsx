@@ -225,7 +225,7 @@ const TopRoutesPanel: React.FC<TopRoutesPanelProps> = ({ routes }) => {
                 )}
                 {blockedWidth > 0 && (
                   <div
-                    className="h-full bg-rose-400/55"
+                    className="h-full bg-cyan-500/45"
                     style={{ width: `${blockedWidth}%` }}
                   />
                 )}
@@ -431,7 +431,7 @@ export const DashboardPage: React.FC = () => {
                   Allowed
                 </span>
                 <span className="inline-flex items-center gap-1.5">
-                  <span className="h-1.5 w-3 rounded-full bg-rose-400/55" />
+                  <span className="h-1.5 w-3 rounded-full bg-cyan-500/45" />
                   Blocked
                 </span>
               </div>
