@@ -64,6 +64,8 @@ const safeCount = (value: number | null | undefined) => (
   typeof value === 'number' && !Number.isNaN(value) ? value : 0
 );
 
+const safePositiveCount = (value: number | null | undefined) => Math.max(safeCount(value), 0);
+
 const valueOrLoading = (value: number | null | undefined, isLoading: boolean) => {
   if (isLoading) return '...';
   if (typeof value !== 'number' || Number.isNaN(value)) return 'Unavailable';
@@ -91,6 +93,8 @@ const topRoutes = (routes: RouteAnalyticsDto[]) => (
     .sort((first, second) => safeCount(second.totalRequests) - safeCount(first.totalRequests))
     .slice(0, 5)
 );
+
+const clampPercent = (value: number) => Math.min(Math.max(value, 0), 100);
 
 interface GatewayHealthPanelProps {
   settings: GatewaySettingsDto | null;
@@ -182,9 +186,17 @@ const TopRoutesPanel: React.FC<TopRoutesPanelProps> = ({ routes }) => {
   return (
     <div className="space-y-3">
       {routes.map((route, index) => {
-        const totalRequests = safeCount(route.totalRequests);
-        const blockedRequests = safeCount(route.blockedRequests);
-        const totalWidth = Math.max((totalRequests / maxRequests) * 100, 4);
+        const totalRequests = safePositiveCount(route.totalRequests);
+        const blockedRequests = Math.min(safePositiveCount(route.blockedRequests), totalRequests);
+        const allowedRequests = Math.min(
+          typeof route.allowedRequests === 'number' && !Number.isNaN(route.allowedRequests)
+            ? safePositiveCount(route.allowedRequests)
+            : Math.max(totalRequests - blockedRequests, 0),
+          totalRequests - blockedRequests
+        );
+        const totalWidth = clampPercent(Math.max((totalRequests / maxRequests) * 100, 4));
+        const blockedWidth = totalRequests > 0 ? clampPercent((blockedRequests / totalRequests) * 100) : 0;
+        const allowedWidth = totalRequests > 0 ? clampPercent((allowedRequests / totalRequests) * 100) : 0;
         const routeLabel = route.route ?? 'Unknown route';
 
         return (
@@ -195,16 +207,29 @@ const TopRoutesPanel: React.FC<TopRoutesPanelProps> = ({ routes }) => {
               </p>
               <p className="shrink-0 text-xs text-slate-500">
                 <span className="text-slate-300">{formatNumber(totalRequests)}</span> total
-                <span className="px-1.5 text-slate-700">/</span>
+                <span className="px-1.5 text-slate-700">·</span>
                 <span>{formatNumber(blockedRequests)} blocked</span>
               </p>
             </div>
             <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-slate-950/70">
               <div
-                className="h-full rounded-full bg-slate-600/70"
+                className="flex h-full overflow-hidden rounded-full"
                 style={{ width: `${totalWidth}%` }}
                 aria-hidden="true"
-              />
+              >
+                {allowedWidth > 0 && (
+                  <div
+                    className="h-full bg-slate-500/70"
+                    style={{ width: `${allowedWidth}%` }}
+                  />
+                )}
+                {blockedWidth > 0 && (
+                  <div
+                    className="h-full bg-rose-400/55"
+                    style={{ width: `${blockedWidth}%` }}
+                  />
+                )}
+              </div>
             </div>
           </div>
         );
@@ -399,9 +424,21 @@ export const DashboardPage: React.FC = () => {
         <DashboardSection
           title="Top routes"
           action={
-            <Link to="/analytics" className="text-xs font-medium text-slate-500 transition-colors hover:text-slate-300">
-              View all routes
-            </Link>
+            <div className="flex items-center gap-4">
+              <div className="hidden items-center gap-3 text-xs text-slate-600 sm:flex" aria-hidden="true">
+                <span className="inline-flex items-center gap-1.5">
+                  <span className="h-1.5 w-3 rounded-full bg-slate-500/70" />
+                  Allowed
+                </span>
+                <span className="inline-flex items-center gap-1.5">
+                  <span className="h-1.5 w-3 rounded-full bg-rose-400/55" />
+                  Blocked
+                </span>
+              </div>
+              <Link to="/analytics" className="text-xs font-medium text-slate-500 transition-colors hover:text-slate-300">
+                View all routes
+              </Link>
+            </div>
           }
         >
           {isOperationalLoading ? (
