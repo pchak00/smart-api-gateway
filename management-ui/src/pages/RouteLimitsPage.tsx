@@ -1,14 +1,16 @@
-import React, { FormEvent, useEffect, useState } from 'react';
+import React, { FormEvent, useEffect, useMemo, useState } from 'react';
 import { Plus, Route } from 'lucide-react';
 import { api } from '../api/client';
 import { useAuth } from '../hooks/useAuth';
 import { useToast } from '../hooks/useToast';
 import { PlanDto, RouteLimitDto } from '../types';
 import { PrimaryButton, SecondaryButton } from '../components/Button';
+import { ListSearch } from '../components/ListSearch';
 import { EmptyState, PageHeader } from '../components/PageShell';
 import { RowActions } from '../components/RowActions';
 import { getPlanLabel } from '../utils/display';
 import { getApiErrorMessage } from '../utils/apiError';
+import { matchesSearch, normalizeSearch } from '../utils/search';
 
 export const RouteLimitsPage: React.FC = () => {
   const { canMutate } = useAuth();
@@ -23,6 +25,7 @@ export const RouteLimitsPage: React.FC = () => {
   const [planId, setPlanId] = useState('');
   const [routePattern, setRoutePattern] = useState('/api/');
   const [requestsPerMinute, setRequestsPerMinute] = useState('10');
+  const [searchQuery, setSearchQuery] = useState('');
   const writeTooltip = !canMutate
     ? 'Admin required'
     : undefined;
@@ -143,13 +146,41 @@ export const RouteLimitsPage: React.FC = () => {
     }
   };
 
+  const trimmedSearchQuery = normalizeSearch(searchQuery);
+  const filteredRouteLimits = useMemo(() => (
+    routeLimits.filter((limit) => {
+      const planName = limit.planName ?? '';
+      const routePath = limit.routePattern ?? limit.path ?? '';
+      const requestLimit = limit.requestsPerMinute ?? limit.requestPerMinute;
+
+      return matchesSearch([
+        routePath,
+        planName,
+        getPlanLabel(planName),
+        requestLimit
+      ], trimmedSearchQuery);
+    })
+  ), [routeLimits, trimmedSearchQuery]);
+  const routeLimitResultLabel = trimmedSearchQuery
+    ? `${filteredRouteLimits.length} ${filteredRouteLimits.length === 1 ? 'result' : 'results'}`
+    : `${routeLimits.length} ${routeLimits.length === 1 ? 'route limit' : 'route limits'}`;
+
   return (
     <div>
       <PageHeader
         title="Route Limits"
         description="Review route-level overrides for endpoints that need different request quotas than their plan default."
         meta={errorMessage ? <span className="text-xs text-slate-500">{errorMessage}</span> : undefined}
-        actions={
+      />
+
+      <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <ListSearch
+          value={searchQuery}
+          onChange={setSearchQuery}
+          placeholder="Search route limits..."
+          resultLabel={!isLoading && !errorMessage ? routeLimitResultLabel : undefined}
+        />
+        <div className="flex shrink-0">
           <PrimaryButton
             type="button"
             disabled={!canMutate}
@@ -163,8 +194,8 @@ export const RouteLimitsPage: React.FC = () => {
             <Plus size={16} aria-hidden="true" />
             Add Route Limit
           </PrimaryButton>
-        }
-      />
+        </div>
+      </div>
 
       {(isCreateOpen || editingLimit) && (
         <form
@@ -252,6 +283,12 @@ export const RouteLimitsPage: React.FC = () => {
             title="No route limits to show"
             description="Route-specific overrides will appear here once the gateway returns them."
           />
+        ) : filteredRouteLimits.length === 0 ? (
+          <EmptyState
+            icon={Route}
+            title="No route limits match this search."
+            description="Clear the search to show all route limits."
+          />
         ) : (
           <div className="overflow-x-auto pb-16">
             <table className="w-full min-w-[720px]">
@@ -266,7 +303,7 @@ export const RouteLimitsPage: React.FC = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-800/35">
-                {routeLimits.map((limit) => {
+                {filteredRouteLimits.map((limit) => {
                   const planName = limit.planName ?? 'Unknown';
                   const routePath = limit.routePattern ?? limit.path ?? 'Unknown route';
                   const requestLimit = limit.requestsPerMinute ?? limit.requestPerMinute;

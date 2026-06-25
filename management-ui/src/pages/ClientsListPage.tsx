@@ -1,14 +1,16 @@
-import React, { FormEvent, useEffect, useState } from 'react';
+import React, { FormEvent, useEffect, useMemo, useState } from 'react';
 import { Plus, Server, Users } from 'lucide-react';
 import { api } from '../api/client';
 import { ClientDto, PlanDto } from '../types';
 import { useAuth } from '../hooks/useAuth';
 import { useToast } from '../hooks/useToast';
 import { PrimaryButton, SecondaryButton } from '../components/Button';
+import { ListSearch } from '../components/ListSearch';
 import { EmptyState, PageHeader } from '../components/PageShell';
 import { RowActions } from '../components/RowActions';
 import { getPlanLabel } from '../utils/display';
 import { getApiErrorMessage } from '../utils/apiError';
+import { matchesSearch, normalizeSearch } from '../utils/search';
 
 export const ClientsListPage: React.FC = () => {
   const { canMutate } = useAuth();
@@ -24,6 +26,7 @@ export const ClientsListPage: React.FC = () => {
   const [newClientPlanId, setNewClientPlanId] = useState('');
   const [newClientActive, setNewClientActive] = useState(true);
   const [selectedPlanId, setSelectedPlanId] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
 
   const loadClients = async () => {
     try {
@@ -138,6 +141,24 @@ export const ClientsListPage: React.FC = () => {
   };
 
   const hasRowsWithoutIds = clients.some((client) => client.id === undefined);
+  const trimmedSearchQuery = normalizeSearch(searchQuery);
+  const filteredClients = useMemo(() => (
+    clients.filter((client) => {
+      const planName = client.plan?.planName ?? client.planName ?? '';
+      const statusLabel = client.active ? 'active' : 'inactive';
+
+      return matchesSearch([
+        client.clientName,
+        client.apiKey,
+        planName,
+        getPlanLabel(planName),
+        statusLabel
+      ], trimmedSearchQuery);
+    })
+  ), [clients, trimmedSearchQuery]);
+  const clientResultLabel = trimmedSearchQuery
+    ? `${filteredClients.length} ${filteredClients.length === 1 ? 'result' : 'results'}`
+    : `${clients.length} ${clients.length === 1 ? 'client' : 'clients'}`;
   const clientsMeta = hasRowsWithoutIds || errorMessage ? (
     <div className="flex flex-wrap items-center gap-3">
       {hasRowsWithoutIds && (
@@ -155,7 +176,16 @@ export const ClientsListPage: React.FC = () => {
         title="Clients"
         description="Review API consumers, their keys, assigned plans, and current activation state."
         meta={clientsMeta}
-        actions={
+      />
+
+      <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <ListSearch
+          value={searchQuery}
+          onChange={setSearchQuery}
+          placeholder="Search clients..."
+          resultLabel={!isLoading && !errorMessage ? clientResultLabel : undefined}
+        />
+        <div className="flex shrink-0">
           <PrimaryButton
             type="button"
             disabled={!canMutate}
@@ -169,8 +199,8 @@ export const ClientsListPage: React.FC = () => {
             <Plus size={16} aria-hidden="true" />
             Create Client
           </PrimaryButton>
-        }
-      />
+        </div>
+      </div>
 
       {isCreateOpen && (
         <form onSubmit={handleCreateClient} className="mb-8 grid gap-4 border-y border-slate-800/40 py-5 md:grid-cols-[minmax(0,1fr)_12rem_8rem_auto] md:items-end">
@@ -260,6 +290,12 @@ export const ClientsListPage: React.FC = () => {
             title="No clients to show"
             description="Client records will appear here once the gateway returns them."
           />
+        ) : filteredClients.length === 0 ? (
+          <EmptyState
+            icon={Users}
+            title="No clients match this search."
+            description="Clear the search to show all clients."
+          />
         ) : (
           <div className="overflow-x-auto pb-16">
             <table className="w-full min-w-[760px]">
@@ -275,7 +311,7 @@ export const ClientsListPage: React.FC = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-800/35">
-                {clients.map((client) => {
+                {filteredClients.map((client) => {
                   const hasBackendId = typeof client.id === 'number';
                   const planName = client.plan?.planName ?? client.planName ?? 'Unknown';
 

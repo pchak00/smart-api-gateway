@@ -1,14 +1,16 @@
-import React, { FormEvent, useEffect, useState } from 'react';
+import React, { FormEvent, useEffect, useMemo, useState } from 'react';
 import { CreditCard, Plus } from 'lucide-react';
 import { api } from '../api/client';
 import { useAuth } from '../hooks/useAuth';
 import { useToast } from '../hooks/useToast';
 import { PlanDto } from '../types';
 import { PrimaryButton, SecondaryButton } from '../components/Button';
+import { ListSearch } from '../components/ListSearch';
 import { EmptyState, PageHeader } from '../components/PageShell';
 import { RowActions } from '../components/RowActions';
 import { getPlanLabel } from '../utils/display';
 import { getApiErrorMessage } from '../utils/apiError';
+import { matchesSearch, normalizeSearch } from '../utils/search';
 
 export const PlansPage: React.FC = () => {
   const { canMutate } = useAuth();
@@ -22,6 +24,7 @@ export const PlansPage: React.FC = () => {
   const [planName, setPlanName] = useState('');
   const [requestsPerMinute, setRequestsPerMinute] = useState('100');
   const [price, setPrice] = useState('0');
+  const [searchQuery, setSearchQuery] = useState('');
   const writeTooltip = !canMutate
     ? 'Admin required'
     : undefined;
@@ -133,13 +136,44 @@ export const PlansPage: React.FC = () => {
     }
   };
 
+  const trimmedSearchQuery = normalizeSearch(searchQuery);
+  const filteredPlans = useMemo(() => (
+    plans.filter((plan) => {
+      const priceLabel = typeof plan.price === 'number'
+        ? plan.price === 0
+          ? 'Free'
+          : `$${plan.price.toFixed(2)}`
+        : 'Not returned';
+
+      return matchesSearch([
+        plan.planName,
+        getPlanLabel(plan.planName),
+        plan.requestsPerMinute,
+        plan.price,
+        priceLabel
+      ], trimmedSearchQuery);
+    })
+  ), [plans, trimmedSearchQuery]);
+  const planResultLabel = trimmedSearchQuery
+    ? `${filteredPlans.length} ${filteredPlans.length === 1 ? 'result' : 'results'}`
+    : `${plans.length} ${plans.length === 1 ? 'plan' : 'plans'}`;
+
   return (
     <div>
       <PageHeader
         title="Plans"
         description="Manage the plan tiers that define default request quotas for API consumers."
         meta={errorMessage ? <span className="text-xs text-slate-500">{errorMessage}</span> : undefined}
-        actions={
+      />
+
+      <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <ListSearch
+          value={searchQuery}
+          onChange={setSearchQuery}
+          placeholder="Search plans..."
+          resultLabel={!isLoading && !errorMessage ? planResultLabel : undefined}
+        />
+        <div className="flex shrink-0">
           <PrimaryButton
             type="button"
             disabled={!canMutate}
@@ -149,8 +183,8 @@ export const PlansPage: React.FC = () => {
             <Plus size={16} aria-hidden="true" />
             Create Plan
           </PrimaryButton>
-        }
-      />
+        </div>
+      </div>
 
       {(isCreateOpen || editingPlan) && (
         <form
@@ -222,6 +256,12 @@ export const PlansPage: React.FC = () => {
             title="No plans to show"
             description="Plan records will appear here once the gateway returns them."
           />
+        ) : filteredPlans.length === 0 ? (
+          <EmptyState
+            icon={CreditCard}
+            title="No plans match this search."
+            description="Clear the search to show all plans."
+          />
         ) : (
           <div className="overflow-x-auto pb-16">
             <table className="w-full min-w-[640px]">
@@ -236,7 +276,7 @@ export const PlansPage: React.FC = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-800/35">
-                {plans.map((plan) => (
+                {filteredPlans.map((plan) => (
                   <tr key={plan.id ?? plan.planName} className="transition-colors hover:bg-slate-900/35">
                     <td className="px-4 py-4">
                       <div className="flex items-center gap-3">
