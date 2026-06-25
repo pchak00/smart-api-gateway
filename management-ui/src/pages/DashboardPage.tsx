@@ -1,9 +1,20 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Activity, CreditCard, Route, ShieldAlert, ShieldCheck, Users } from 'lucide-react';
+import {
+  Activity,
+  CreditCard,
+  KeyRound,
+  Plus,
+  Route,
+  ShieldAlert,
+  ShieldCheck,
+  SlidersHorizontal,
+  Users
+} from 'lucide-react';
 import { api } from '../api/client';
-import { AbuseAlertDto, DashboardSummaryDto, RouteAnalyticsDto } from '../types';
+import { AbuseAlertDto, DashboardSummaryDto, GatewaySettingsDto, RouteAnalyticsDto } from '../types';
 import { PageHeader } from '../components/PageShell';
+import { useAuth } from '../hooks/useAuth';
 import { formatDateTime, formatNumber, getStatusLabel } from '../utils/display';
 
 interface MetricCardProps {
@@ -60,6 +71,20 @@ const valueOrLoading = (value: number | null | undefined, isLoading: boolean) =>
   return formatNumber(value);
 };
 
+const percentOrLoading = (summary: DashboardSummaryDto | null, isLoading: boolean) => {
+  if (isLoading) return '...';
+  if (!summary) return 'Unavailable';
+
+  const totalRequests = safeCount(summary.totalRequests);
+  const allowedRequests = safeCount(summary.allowedRequests);
+  const blockedRequests = safeCount(summary.blockedRequests);
+  const denominator = totalRequests > 0 ? totalRequests : allowedRequests + blockedRequests;
+
+  if (denominator === 0) return '0%';
+
+  return `${((blockedRequests / denominator) * 100).toFixed(1)}%`;
+};
+
 const topRoutes = (routes: RouteAnalyticsDto[]) => (
   [...routes]
     .filter((route) => safeCount(route.totalRequests) > 0)
@@ -67,48 +92,120 @@ const topRoutes = (routes: RouteAnalyticsDto[]) => (
     .slice(0, 5)
 );
 
-interface RouteActivityGraphProps {
+interface GatewayHealthPanelProps {
+  settings: GatewaySettingsDto | null;
+  summary: DashboardSummaryDto | null;
+  mostActiveRoute: RouteAnalyticsDto | null;
+  isSummaryLoading: boolean;
+  isOperationalLoading: boolean;
+  settingsError: string | null;
+}
+
+interface TopRoutesPanelProps {
   routes: RouteAnalyticsDto[];
 }
 
-const RouteActivityGraph: React.FC<RouteActivityGraphProps> = ({ routes }) => {
+interface QuickAction {
+  label: string;
+  to: string;
+  icon: React.ElementType;
+}
+
+const healthValueClass = 'mt-1 min-w-0 truncate text-sm font-medium text-slate-100';
+
+const GatewayHealthPanel: React.FC<GatewayHealthPanelProps> = ({
+  settings,
+  summary,
+  mostActiveRoute,
+  isSummaryLoading,
+  isOperationalLoading,
+  settingsError
+}) => {
+  const totalRequests = valueOrLoading(summary?.totalRequests, isSummaryLoading);
+  const allowedRequests = valueOrLoading(summary?.allowedRequests, isSummaryLoading);
+  const blockedRequests = valueOrLoading(summary?.blockedRequests, isSummaryLoading);
+  const upstreamValue = isOperationalLoading
+    ? '...'
+    : settingsError
+      ? 'Unavailable'
+      : settings?.upstreamBaseUrl || 'Not configured';
+  const mostActiveRouteLabel = isOperationalLoading
+    ? '...'
+    : mostActiveRoute?.route || 'No route traffic yet';
+
+  return (
+    <DashboardSection
+      title="Gateway health"
+      action={
+        <Link to="/settings/gateway" className="text-xs font-medium text-slate-500 transition-colors hover:text-slate-300">
+          Settings
+        </Link>
+      }
+    >
+      <dl className="grid gap-3 sm:grid-cols-2">
+        <div className="min-w-0 rounded-md bg-slate-950/30 px-4 py-3">
+          <dt className="text-xs font-medium text-slate-600">Configured upstream</dt>
+          <dd className={healthValueClass} title={upstreamValue}>{upstreamValue}</dd>
+        </div>
+        <div className="rounded-md bg-slate-950/30 px-4 py-3">
+          <dt className="text-xs font-medium text-slate-600">Traffic processed</dt>
+          <dd className={healthValueClass}>{totalRequests}</dd>
+        </div>
+        <div className="rounded-md bg-slate-950/30 px-4 py-3">
+          <dt className="text-xs font-medium text-slate-600">Allowed / blocked</dt>
+          <dd className={healthValueClass}>{allowedRequests} / {blockedRequests}</dd>
+        </div>
+        <div className="rounded-md bg-slate-950/30 px-4 py-3">
+          <dt className="text-xs font-medium text-slate-600">Block rate</dt>
+          <dd className={healthValueClass}>{percentOrLoading(summary, isSummaryLoading)}</dd>
+        </div>
+        <div className="min-w-0 rounded-md bg-slate-950/30 px-4 py-3">
+          <dt className="text-xs font-medium text-slate-600">Most active route</dt>
+          <dd className={healthValueClass} title={mostActiveRouteLabel}>{mostActiveRouteLabel}</dd>
+        </div>
+        <div className="rounded-md bg-slate-950/30 px-4 py-3">
+          <dt className="text-xs font-medium text-slate-600">Open alerts</dt>
+          <dd className={healthValueClass}>{valueOrLoading(summary?.openAlertCount, isSummaryLoading)}</dd>
+        </div>
+      </dl>
+
+      {settingsError && (
+        <p className="mt-4 text-xs text-slate-600">{settingsError}</p>
+      )}
+    </DashboardSection>
+  );
+};
+
+const TopRoutesPanel: React.FC<TopRoutesPanelProps> = ({ routes }) => {
   const maxRequests = Math.max(...routes.map((route) => safeCount(route.totalRequests)), 1);
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       {routes.map((route, index) => {
         const totalRequests = safeCount(route.totalRequests);
         const blockedRequests = safeCount(route.blockedRequests);
-        const totalWidth = Math.max((totalRequests / maxRequests) * 100, 3);
-        const blockedWidth = totalRequests > 0 ? Math.min((blockedRequests / totalRequests) * 100, 100) : 0;
+        const totalWidth = Math.max((totalRequests / maxRequests) * 100, 4);
         const routeLabel = route.route ?? 'Unknown route';
 
         return (
-          <div key={`${routeLabel}-${index}`} className="grid gap-2 lg:grid-cols-[minmax(9rem,14rem)_1fr_auto] lg:items-center">
-            <p className="truncate font-mono text-xs text-slate-300" title={routeLabel}>
-              {routeLabel}
-            </p>
-
-            <div className="h-3 overflow-hidden rounded-full bg-slate-950/70">
+          <div key={`${routeLabel}-${index}`} className="rounded-md bg-slate-950/25 px-4 py-3">
+            <div className="flex items-center justify-between gap-4">
+              <p className="min-w-0 truncate font-mono text-xs text-slate-300" title={routeLabel}>
+                {routeLabel}
+              </p>
+              <p className="shrink-0 text-xs text-slate-500">
+                <span className="text-slate-300">{formatNumber(totalRequests)}</span> total
+                <span className="px-1.5 text-slate-700">/</span>
+                <span>{formatNumber(blockedRequests)} blocked</span>
+              </p>
+            </div>
+            <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-slate-950/70">
               <div
-                className="relative h-full rounded-full bg-slate-600/70"
+                className="h-full rounded-full bg-slate-600/70"
                 style={{ width: `${totalWidth}%` }}
                 aria-hidden="true"
-              >
-                {blockedRequests > 0 && (
-                  <div
-                    className="absolute right-0 top-0 h-full rounded-full bg-slate-800/85"
-                    style={{ width: `${blockedWidth}%` }}
-                  />
-                )}
-              </div>
+              />
             </div>
-
-            <p className="whitespace-nowrap text-xs text-slate-500">
-              <span className="text-slate-300">{formatNumber(totalRequests)}</span> total
-              <span className="px-1.5 text-slate-700">/</span>
-              <span>{formatNumber(blockedRequests)} blocked</span>
-            </p>
           </div>
         );
       })}
@@ -116,14 +213,24 @@ const RouteActivityGraph: React.FC<RouteActivityGraphProps> = ({ routes }) => {
   );
 };
 
+const quickActions: QuickAction[] = [
+  { label: 'Create API client', to: '/clients', icon: Users },
+  { label: 'Create route limit', to: '/route-limits', icon: Plus },
+  { label: 'Create provisioning token', to: '/settings/provisioning', icon: KeyRound },
+  { label: 'Open gateway settings', to: '/settings/gateway', icon: SlidersHorizontal }
+];
+
 export const DashboardPage: React.FC = () => {
+  const { canMutate } = useAuth();
   const [summary, setSummary] = useState<DashboardSummaryDto | null>(null);
   const [routeAnalytics, setRouteAnalytics] = useState<RouteAnalyticsDto[]>([]);
+  const [gatewaySettings, setGatewaySettings] = useState<GatewaySettingsDto | null>(null);
   const [openAlerts, setOpenAlerts] = useState<AbuseAlertDto[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isOperationalLoading, setIsOperationalLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [routeError, setRouteError] = useState<string | null>(null);
+  const [settingsError, setSettingsError] = useState<string | null>(null);
   const [alertError, setAlertError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -148,9 +255,10 @@ export const DashboardPage: React.FC = () => {
     const loadOperationalSections = async () => {
       setIsOperationalLoading(true);
 
-      const [routeResult, alertResult] = await Promise.allSettled([
+      const [routeResult, alertResult, settingsResult] = await Promise.allSettled([
         api.getRouteAnalytics(),
-        api.getAbuseAlerts({ status: 'OPEN' })
+        api.getAbuseAlerts({ status: 'OPEN' }),
+        api.getGatewaySettings()
       ]);
 
       if (routeResult.status === 'fulfilled') {
@@ -171,6 +279,15 @@ export const DashboardPage: React.FC = () => {
         setAlertError('Open alerts are unavailable right now.');
       }
 
+      if (settingsResult.status === 'fulfilled') {
+        setGatewaySettings(settingsResult.value);
+        setSettingsError(null);
+      } else {
+        console.error('Failed to load gateway settings:', settingsResult.reason);
+        setGatewaySettings(null);
+        setSettingsError('Gateway settings are unavailable right now.');
+      }
+
       setIsOperationalLoading(false);
     };
 
@@ -178,8 +295,9 @@ export const DashboardPage: React.FC = () => {
   }, []);
 
   const visibleRoutes = useMemo(() => topRoutes(routeAnalytics), [routeAnalytics]);
+  const mostActiveRoute = visibleRoutes[0] ?? null;
   const visibleAlerts = openAlerts
-    .filter((alert) => !alert.status || alert.status === 'OPEN')
+    .filter((alert) => alert.status === 'OPEN')
     .slice(0, 3);
 
   return (
@@ -223,17 +341,14 @@ export const DashboardPage: React.FC = () => {
       </div>
 
       <div className="mt-5 grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1.35fr)_minmax(22rem,0.65fr)]">
-        <DashboardSection title="Route activity">
-          {isOperationalLoading ? (
-            <StateMessage>Loading route analytics...</StateMessage>
-          ) : routeError ? (
-            <StateMessage>{routeError}</StateMessage>
-          ) : visibleRoutes.length === 0 ? (
-            <StateMessage>No route activity yet. Send requests through the gateway to populate this view.</StateMessage>
-          ) : (
-            <RouteActivityGraph routes={visibleRoutes} />
-          )}
-        </DashboardSection>
+        <GatewayHealthPanel
+          settings={gatewaySettings}
+          summary={summary}
+          mostActiveRoute={mostActiveRoute}
+          isSummaryLoading={isLoading}
+          isOperationalLoading={isOperationalLoading}
+          settingsError={settingsError}
+        />
 
         <DashboardSection
           title="Alerts needing review"
@@ -278,6 +393,48 @@ export const DashboardPage: React.FC = () => {
             </div>
           )}
         </DashboardSection>
+      </div>
+
+      <div className={`mt-4 grid grid-cols-1 gap-4 ${canMutate ? 'xl:grid-cols-[minmax(0,1.35fr)_minmax(22rem,0.65fr)]' : ''}`}>
+        <DashboardSection
+          title="Top routes"
+          action={
+            <Link to="/analytics" className="text-xs font-medium text-slate-500 transition-colors hover:text-slate-300">
+              View all routes
+            </Link>
+          }
+        >
+          {isOperationalLoading ? (
+            <StateMessage>Loading route analytics...</StateMessage>
+          ) : routeError ? (
+            <StateMessage>{routeError}</StateMessage>
+          ) : visibleRoutes.length === 0 ? (
+            <StateMessage>No route traffic recorded yet.</StateMessage>
+          ) : (
+            <TopRoutesPanel routes={visibleRoutes} />
+          )}
+        </DashboardSection>
+
+        {canMutate && (
+          <DashboardSection title="Quick actions">
+            <div className="grid gap-2">
+              {quickActions.map((action) => {
+                const Icon = action.icon;
+
+                return (
+                  <Link
+                    key={action.to}
+                    to={action.to}
+                    className="flex items-center gap-3 rounded-md bg-slate-950/25 px-4 py-3 text-sm font-medium text-slate-300 transition-colors hover:bg-slate-950/45 hover:text-slate-100"
+                  >
+                    <Icon size={16} aria-hidden="true" className="shrink-0 text-slate-600" />
+                    <span>{action.label}</span>
+                  </Link>
+                );
+              })}
+            </div>
+          </DashboardSection>
+        )}
       </div>
     </div>
   );
