@@ -37,6 +37,24 @@ public class GatewayController {
         return ResponseEntity.noContent().build();
     }
 
+    @PostMapping("/{id}/rotate-api-key")
+    public ResponseEntity<ClientApiKeyRotationResponseDto> rotateApiKey(@PathVariable Long id) {
+        ClientApiKeyRotationResponseDto response = clientService.rotateApiKey(id);
+        return ResponseEntity.ok(response);
+    }
+
+    @PatchMapping("/{id}/disable")
+    public ResponseEntity<ClientMetadataResponseDto> disableClient(@PathVariable Long id) {
+        ClientMetadataResponseDto response = clientService.disableClient(id);
+        return ResponseEntity.ok(response);
+    }
+
+    @PatchMapping("/{id}/enable")
+    public ResponseEntity<ClientMetadataResponseDto> enableClient(@PathVariable Long id) {
+        ClientMetadataResponseDto response = clientService.enableClient(id);
+        return ResponseEntity.ok(response);
+    }
+
     @GetMapping
     public List<ClientResponseDto> showAllClient() {
         return clientService.showAllClients();

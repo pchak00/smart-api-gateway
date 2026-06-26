@@ -84,6 +84,47 @@ class ApiKeyFilterTest {
     }
 
     @Test
+    void oldApiKeyNoLongerAuthorizesAfterRotationAndNewApiKeyUsesRateLimit() throws Exception {
+        Client client = activeClient();
+        client.setApiKey("new-api-key");
+        ServerRequest oldKeyRequest = request("old-api-key");
+        ServerRequest newKeyRequest = request("new-api-key");
+        HandlerFunction<ServerResponse> next = mock(HandlerFunction.class);
+        URI upstreamUri = URI.create("http://dynamic-backend:9000");
+        when(clientRepository.findByApiKey("old-api-key")).thenReturn(Optional.empty());
+        when(clientRepository.findByApiKey("new-api-key")).thenReturn(Optional.of(client));
+        when(rateLimitResolverService.resolveLimit(client, "/api/products")).thenReturn(10);
+        when(rateLimiterService.isAllowed("new-api-key", "/api/products", 10)).thenReturn(true);
+        when(gatewayUpstreamResolver.resolveUpstreamBaseUri()).thenReturn(upstreamUri);
+        when(next.handle(newKeyRequest)).thenReturn(ServerResponse.ok().build());
+
+        ServerResponse oldKeyResponse = apiKeyFilter.filter(oldKeyRequest, next);
+        ServerResponse newKeyResponse = apiKeyFilter.filter(newKeyRequest, next);
+
+        assertEquals(401, oldKeyResponse.statusCode().value());
+        assertEquals(200, newKeyResponse.statusCode().value());
+        verify(rateLimiterService).isAllowed("new-api-key", "/api/products", 10);
+        verify(next, never()).handle(oldKeyRequest);
+        verify(next).handle(newKeyRequest);
+    }
+
+    @Test
+    void disabledClientCannotCallProtectedGatewayRoute() throws Exception {
+        Client client = activeClient();
+        client.setActive(false);
+        ServerRequest request = request("free-demo-api-key");
+        HandlerFunction<ServerResponse> next = mock(HandlerFunction.class);
+        when(clientRepository.findByApiKey("free-demo-api-key")).thenReturn(Optional.of(client));
+
+        ServerResponse response = apiKeyFilter.filter(request, next);
+
+        assertEquals(403, response.statusCode().value());
+        verify(usageLogService).log(client, "/api/products", "GET", false, 403, "Client inactive");
+        verify(rateLimiterService, never()).isAllowed("free-demo-api-key", "/api/products", 10);
+        verify(next, never()).handle(request);
+    }
+
+    @Test
     void resolvesUpstreamAndSetsGatewayRequestUrlForAllowedRequest() throws Exception {
         Client client = activeClient();
         ServerRequest request = request("free-demo-api-key");

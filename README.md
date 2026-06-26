@@ -647,6 +647,29 @@ curl -X POST http://localhost:8080/admin/clients \
 }'
 ```
 
+#### Rotate Client API Key
+
+Owners and Admins can rotate a client API key. Viewers cannot rotate keys. Rotation replaces the stored key immediately: the old key stops authorizing gateway requests, and the new raw key is returned only in the rotation response. Copy it at rotation time.
+
+```bash
+curl -X POST http://localhost:8080/admin/clients/<client-id>/rotate-api-key \
+-H "Authorization: Bearer <admin-token>"
+```
+
+#### Disable or Enable Client
+
+Owners and Admins can disable or enable a client without changing its current API key. Disabled clients receive `403 Forbidden` on protected gateway routes until enabled again.
+
+```bash
+curl -X PATCH http://localhost:8080/admin/clients/<client-id>/disable \
+-H "Authorization: Bearer <admin-token>"
+
+curl -X PATCH http://localhost:8080/admin/clients/<client-id>/enable \
+-H "Authorization: Bearer <admin-token>"
+```
+
+Future improvement: store client API keys as hashes with key-prefix lookup.
+
 #### Current Client Onboarding
 
 Manual admin provisioning remains available through the Pacific management UI or admin API. Trusted external backends can also create clients during signup through the server-to-server provisioning API, without using a full admin JWT.
@@ -909,7 +932,7 @@ The abuse detection system may be extended with webhook notifications for operat
 
 Planned incremental improvements include:
 - multi-upstream route mapping for more advanced deployments
-- API key hashing and rotation support
+- API key hashing with key-prefix lookup
 - a public developer self-service portal
 - richer alert notifications and webhook delivery
 - pagination and filtering improvements for large admin datasets
