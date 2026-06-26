@@ -24,7 +24,7 @@ interface SidebarItem {
   label: string;
   path: string;
   icon: LucideIcon;
-  requiresSuperAdmin?: boolean;
+  requiresAdminUsersAccess?: boolean;
 }
 
 const MENU_ITEMS: SidebarItem[] = [
@@ -34,7 +34,7 @@ const MENU_ITEMS: SidebarItem[] = [
   { label: 'Route Limits', path: '/route-limits', icon: Route },
   { label: 'Analytics', path: '/analytics', icon: BarChart3 },
   { label: 'Abuse Alerts', path: '/abuse-alerts', icon: ShieldAlert },
-  { label: 'Admin Users', path: '/admin-users', icon: UserCog, requiresSuperAdmin: true }
+  { label: 'Admin Users', path: '/admin-users', icon: UserCog, requiresAdminUsersAccess: true }
 ];
 
 const SETTINGS_ITEMS: SidebarItem[] = [
@@ -118,7 +118,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isSuperAdmin }) => {
           const isActive =
             location.pathname === item.path ||
             (item.path !== '/' && location.pathname.startsWith(`${item.path}/`));
-          const isRestricted = item.requiresSuperAdmin && !isSuperAdmin;
+          const isRestricted = item.requiresAdminUsersAccess && !isSuperAdmin;
 
           if (isRestricted) {
             return (

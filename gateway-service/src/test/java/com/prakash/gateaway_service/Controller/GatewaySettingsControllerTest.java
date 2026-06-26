@@ -102,6 +102,32 @@ class GatewaySettingsControllerTest {
     }
 
     @Test
+    @WithMockUser(roles = "OWNER", username = "owner")
+    void updateGatewaySettingsAsOwner() throws Exception {
+        when(gatewaySettingsService.updateGatewaySettings(any())).thenReturn(new GatewaySettingsResponseDto(
+                "https://api.example.com",
+                "/status",
+                8000,
+                LocalDateTime.of(2026, 6, 23, 10, 30),
+                "owner"
+        ));
+
+        mockMvc.perform(put("/admin/settings/gateway")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "upstreamBaseUrl": "https://api.example.com",
+                                  "healthCheckPath": "/status",
+                                  "timeoutMs": 8000
+                                }
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.updatedBy").value("owner"));
+
+        verify(gatewaySettingsService).updateGatewaySettings(any());
+    }
+
+    @Test
     @WithMockUser(roles = "READ_ONLY_ADMIN")
     void updateGatewaySettingsAsReadOnlyAdminDenied() throws Exception {
         mockMvc.perform(put("/admin/settings/gateway")

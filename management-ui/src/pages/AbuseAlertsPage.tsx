@@ -18,7 +18,7 @@ const statusFilters: Array<{ label: string; value: AlertFilter }> = [
   { label: 'Resolved', value: 'RESOLVED' }
 ];
 
-const permissionMessage = 'You need SUPER_ADMIN access to perform this action.';
+const permissionMessage = 'You need Admin access to perform this action.';
 
 const statusLabelClass = (status: AbuseAlertStatus | string | null | undefined) => {
   if (status === 'RESOLVED') return 'bg-slate-900/70 text-slate-400';

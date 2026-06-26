@@ -5,6 +5,10 @@ VALUES
     ('ENTERPRISE', 1000, 199.00)
     ON CONFLICT (name) DO NOTHING;
 
+ALTER TABLE admin_user DROP CONSTRAINT IF EXISTS admin_user_role_check;
+ALTER TABLE admin_user ADD CONSTRAINT admin_user_role_check
+    CHECK (role IN ('OWNER', 'SUPER_ADMIN', 'READ_ONLY_ADMIN'));
+
 INSERT INTO route_limit (plan_id, route_pattern, requests_per_minute)
 SELECT id, '/api/products', 5 FROM plan WHERE name = 'FREE'
     ON CONFLICT DO NOTHING;
@@ -12,6 +16,16 @@ SELECT id, '/api/products', 5 FROM plan WHERE name = 'FREE'
 INSERT INTO route_limit (plan_id, route_pattern, requests_per_minute)
 SELECT id, '/api/reports', 2 FROM plan WHERE name = 'FREE'
     ON CONFLICT DO NOTHING;
+
+INSERT INTO admin_user (username, password, role)
+VALUES (
+           'owner',
+           '$2a$10$VesL5BPpxoJCpR3IyPN58uSDxrCpElhhO0x0P38VrttzV2dk1js0i', -- admin123
+           'OWNER'
+       )
+    ON CONFLICT (username) DO UPDATE
+    SET password = EXCLUDED.password,
+        role = EXCLUDED.role;
 
 INSERT INTO admin_user (username, password, role)
 VALUES (

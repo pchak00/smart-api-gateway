@@ -75,6 +75,33 @@ class AuthControllerTest {
     }
 
     @Test
+    void ownerLoginWorks() throws Exception {
+        AdminUser owner = adminUser("owner", AdminRole.OWNER);
+        when(adminUserRepository.findByUsername("owner")).thenReturn(Optional.of(owner));
+        when(passwordEncoder.matches("admin123", "encoded-password")).thenReturn(true);
+        when(adminRefreshTokenService.createSession(owner))
+                .thenReturn(new LoginResponseDto(
+                        "owner-access-token",
+                        "owner-refresh-token",
+                        "owner",
+                        AdminRole.OWNER,
+                        60_000
+                ));
+
+        mockMvc.perform(post("/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "username": "owner",
+                                  "password": "admin123"
+                                }
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.username").value("owner"))
+                .andExpect(jsonPath("$.role").value("OWNER"));
+    }
+
+    @Test
     void refreshReturnsNewAccessToken() throws Exception {
         when(adminRefreshTokenService.refreshSession("refresh-token"))
                 .thenReturn(new LoginResponseDto(
@@ -97,6 +124,29 @@ class AuthControllerTest {
                 .andExpect(jsonPath("$.refreshToken").value("refresh-token"))
                 .andExpect(jsonPath("$.username").value("viewer"))
                 .andExpect(jsonPath("$.role").value("READ_ONLY_ADMIN"));
+    }
+
+    @Test
+    void refreshPreservesOwnerRole() throws Exception {
+        when(adminRefreshTokenService.refreshSession("owner-refresh-token"))
+                .thenReturn(new LoginResponseDto(
+                        "owner-access-token",
+                        "owner-refresh-token",
+                        "owner",
+                        AdminRole.OWNER,
+                        60_000
+                ));
+
+        mockMvc.perform(post("/auth/refresh")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "refreshToken": "owner-refresh-token"
+                                }
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.username").value("owner"))
+                .andExpect(jsonPath("$.role").value("OWNER"));
     }
 
     @Test

@@ -79,6 +79,20 @@ class AdminRefreshTokenServiceTest {
     }
 
     @Test
+    void refreshSessionPreservesOwnerRoleInResponseAndJwt() {
+        AdminUser owner = adminUser("owner", AdminRole.OWNER);
+        LoginResponseDto login = adminRefreshTokenService.createSession(owner);
+        when(adminRefreshTokenRepository.findByTokenHash(savedSession.getTokenHash()))
+                .thenReturn(Optional.of(savedSession));
+
+        LoginResponseDto refreshed = adminRefreshTokenService.refreshSession(login.refreshToken());
+
+        assertEquals("owner", refreshed.username());
+        assertEquals(AdminRole.OWNER, refreshed.role());
+        assertEquals("OWNER", tokenRole(refreshed.token()));
+    }
+
+    @Test
     void invalidRefreshTokenIsRejected() {
         when(adminRefreshTokenRepository.findByTokenHash(any())).thenReturn(Optional.empty());
 

@@ -63,10 +63,11 @@ Important backend behavior:
 - Rate limits are Redis-backed and per API-key/per-path.
 - Route-specific limits override plan limits.
 - Admin roles are backend enum values:
+  - `OWNER`
   - `SUPER_ADMIN`
   - `READ_ONLY_ADMIN`
-- Do not rename backend enum values or JWT claims.
 - Seeded admin logins from `gateway-service/src/main/resources/data.sql`:
+  - `owner` / `admin123` (`OWNER`)
   - `super admin` / `admin123` (`SUPER_ADMIN`)
   - `viewer` / `admin123` (`READ_ONLY_ADMIN`)
 - Server-to-server client provisioning is available at `POST /provisioning/clients` and documented in `docs/CLIENT_PROVISIONING.md`.
@@ -125,7 +126,8 @@ Auth:
 - JWT role claim is decoded client-side.
 - Authorization logic still uses backend enum values.
 - Visible UI labels are mapped through `management-ui/src/utils/roles.ts`:
-  - `SUPER_ADMIN` displays as `Owner`
+  - `OWNER` displays as `Owner`
+  - `SUPER_ADMIN` displays as `Admin`
   - `READ_ONLY_ADMIN` displays as `Viewer`
 
 Protected routes:
@@ -145,8 +147,7 @@ Role UX:
 
 - `READ_ONLY_ADMIN` can view allowed pages.
 - `Admin Users` remains blocked for `READ_ONLY_ADMIN`.
-- Restricted admin-user navigation shows: `You need Owner access to perform this action.`
-- Mutation controls remain disabled for non-owners.
+- Mutation controls remain disabled for viewers.
 
 Data behavior:
 
@@ -232,7 +233,7 @@ Key work:
 - Simplified the login page into a centered card.
 - Reduced neon/cyan usage, border noise, boxed icon containers, and heavy surfaces.
 - Removed sidebar footer marketing copy.
-- Replaced visible raw role labels with `Owner` and `Viewer`.
+- Replaced visible raw role labels with `Owner`, `Admin`, and `Viewer`.
 - Kept all backend/API/auth/routing behavior intact.
 
 Verification:
@@ -299,7 +300,7 @@ Manual smoke test:
 - `/plans`, `/route-limits`, `/analytics`, `/abuse-alerts`, `/admin-users` render polished shells.
 - Random route renders styled 404 page.
 - Owner can access Admin Users.
-- Viewer sees Admin Users locked and receives Owner-access toast.
+- Viewer sees Admin Users locked and receives a permission toast.
 - Viewer mutation controls remain disabled.
 
 Automated checks:
@@ -324,7 +325,7 @@ Recommended order:
 
 1. Merge current UI branch stack in order.
 2. Wire read-only real data for plans, route limits, abuse alerts, admin users, and client detail where backend supports it.
-3. Add forms/modals for Owner-only mutations.
+3. Add forms/modals for protected mutations.
 4. Add clearer API error and fallback handling.
 5. Consider code-splitting Recharts analytics to reduce the Vite chunk warning.
 6. Optional: optimize `pacific-logo.png`, currently about 888 KB.
@@ -349,4 +350,4 @@ Keep future UI work:
 - Low-noise tables.
 - Minimal borders.
 - Muted icons.
-- Owner/Viewer labels in UI, backend enums in logic only.
+- Owner/Admin/Viewer labels in UI, backend enums in logic only.

@@ -8,7 +8,7 @@
 
 1. **API Consumer Flow** — External clients use `X-API-Key` headers to access `/api/**` routes through the gateway. The `ApiKeyFilter` validates keys, resolves rate limits (from Redis), logs usage, and detects abuse before forwarding to the backend service.
 
-2. **Admin Platform Flow** — Administrators access management endpoints (`/admin/**`, `/auth/**`) using JWT-based authentication with role-based authorization (`SUPER_ADMIN` or `READ_ONLY_ADMIN`).
+2. **Admin Platform Flow** — Administrators access management endpoints (`/admin/**`, `/auth/**`) using JWT-based authentication with role-based authorization (`OWNER`, `SUPER_ADMIN`, or `READ_ONLY_ADMIN`).
 
 The gateway does NOT use Spring Cloud Gateway's routing rules; instead, it manually implements routing in `GatewayRoutesConfig` using functional router beans with explicit filter chains.
 
@@ -98,7 +98,7 @@ Services use Spring Boot Maven Plugin. Built JARs are in `target/` as `-SNAPSHOT
 PostgreSQL uses automatic schema creation (`spring.jpa.hibernate.ddl-auto=update`). Database initialization SQL is in `gateway-service/src/main/resources/data.sql` and runs on startup due to `spring.sql.init.mode=always`.
 
 Demo data includes:
-- Admin users: `super admin` (SUPER_ADMIN), `viewer` (READ_ONLY_ADMIN), password `admin123`
+- Admin users: `owner` (OWNER), `super admin` (SUPER_ADMIN), `viewer` (READ_ONLY_ADMIN), password `admin123`
 - Plans: FREE (10 RPM), PRO (100 RPM), ENTERPRISE (1000 RPM)
 - Clients: `Demo Free Client` (`free-demo-api-key`), `Demo Pro Client` (`pro-demo-api-key`)
 
@@ -108,7 +108,7 @@ Admin login to get JWT token:
 ```bash
 curl -X POST http://localhost:8080/auth/login \
   -H "Content-Type: application/json" \
-  -d '{"username":"super admin","password":"admin123"}'
+  -d '{"username":"owner","password":"admin123"}'
 ```
 
 Gateway request with API key:
@@ -139,7 +139,7 @@ curl -X GET http://localhost:8080/api/products \
 Custom exceptions are thrown for domain violations:
 - `PlanNotFoundException`, `ClientNotFoundException` (not found)
 - `PlanInUseException`, `RouteLimitExistException` (constraint violations)
-- `LastSuperAdminException` (safety rule: prevent deletion of last SUPER_ADMIN)
+- `LastOwnerException` (safety rule: prevent deletion or demotion of last OWNER)
 
 Callers must handle these gracefully; no global exception handler is visible in the codebase, so exceptions will return 500s unless caught explicitly.
 
@@ -148,10 +148,10 @@ Callers must handle these gracefully; no global exception handler is visible in 
 ### Admin Endpoints (JWT Protected)
 
 - `POST /auth/login` — Generate JWT token
-- `POST /admin/plans` — Create plan (SUPER_ADMIN only)
-- `POST /admin/clients` — Create client (SUPER_ADMIN only)
+- `POST /admin/plans` — Create plan (OWNER or SUPER_ADMIN only)
+- `POST /admin/clients` — Create client (OWNER or SUPER_ADMIN only)
 - `POST /admin/route-limits` — Create route limit
-- `PATCH /admin/clients/{id}/plan` — Update client plan (SUPER_ADMIN only)
+- `PATCH /admin/clients/{id}/plan` — Update client plan (OWNER or SUPER_ADMIN only)
 - `GET /admin/clients/{clientId}/usage` — View usage logs
 
 ### Consumer Endpoints (API Key Protected)
@@ -232,7 +232,7 @@ This keeps entity structure decoupled from API contracts.
 3. **AuthContext and JWT handling** — Store token at `localStorage` key `smart-gateway:token`, extract `role` claim.
 4. **API client layer** — Centralized `/api` wrapper with Axios, token header injection.
 5. **Layout (Sidebar + TopBar)** — Role-aware navigation, greyed items for restricted actions.
-6. **Toast system** — Top-right notifications, permission-denied preset: "You need SUPER_ADMIN access to perform this action."
+6. **Toast system** — Top-right notifications, permission-denied preset for protected mutation actions.
 7. **Page wiring and demo-data fallbacks** — Connect pages to API, disabled controls for `READ_ONLY_ADMIN`, demo data when API unavailable.
 8. **Dockerfile and docker-compose service** — Containerize UI, add `management-ui` service to compose with port 3000.
 
@@ -254,7 +254,7 @@ chore(docker): add management-ui Dockerfile and compose service
 - Lint/type checks pass.
 - Role behavior confirmed:
   - `READ_ONLY_ADMIN` sees mutation controls disabled (Create/Edit/Delete buttons disabled).
-  - `Admin Users` menu is greyed and clicking triggers permission toast: "You need SUPER_ADMIN access to perform this action."
+  - `Admin Users` menu is greyed for viewers and clicking triggers a permission toast.
 - Dockerized UI available at `http://localhost:3000` and calls `http://localhost:8080` for backend during demo usage.
 
 ### Technology Stack (Frontend)

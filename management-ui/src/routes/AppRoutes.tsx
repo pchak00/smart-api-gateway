@@ -56,7 +56,7 @@ export const AppRoutes: React.FC = () => {
           <Route
             path="admin-users"
             element={
-              <ProtectedRoute requiredRole="SUPER_ADMIN" blockUnauthorizedRoute={true}>
+              <ProtectedRoute requiredRole={['OWNER', 'SUPER_ADMIN']} blockUnauthorizedRoute={true}>
                 <AdminUsersPage />
               </ProtectedRoute>
             }

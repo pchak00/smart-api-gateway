@@ -94,10 +94,11 @@ flowchart TD
 
 Admin authentication is intentionally separated from API consumer authentication. API consumers access protected backend services using API keys, while platform administrators use JWT-based authentication to manage internal gateway resources and administrative features.
 
-The platform currently supports two administrative roles:
+The platform supports three administrative roles:
 
-- `READ_ONLY_ADMIN` — can access read-only administrative endpoints such as analytics, usage statistics,view clients, plans, route specific policies and abuse alerts
-- `SUPER_ADMIN` — has full administrative access, including managing clients, plans, route policies, and other gateway configuration resources
+- `OWNER` — owns the workspace and can manage high-privilege admins
+- `SUPER_ADMIN` — manages gateway resources and viewer accounts
+- `READ_ONLY_ADMIN` — can access read-only administrative endpoints such as analytics, usage statistics, view clients, plans, route-specific policies, and abuse alerts
 
 This separation allows the platform to enforce role-based access control for sensitive management operations while still supporting restricted monitoring and observability access.
 
@@ -228,10 +229,11 @@ Administrative actions are protected using role-based access control.
 
 Current roles include:
 
+- `OWNER` — can manage high-privilege admins and all gateway resources
+- `SUPER_ADMIN` — can manage gateway resources and viewer accounts
 - `READ_ONLY_ADMIN` — can access monitoring and observability endpoints such as analytics, usage statistics, and abuse alerts
-- `SUPER_ADMIN` — has full access to management operations including clients, plans, route policies, and administrative configuration
 
-The Pacific UI presents these roles with customer-facing labels where appropriate, but API payloads and JWT claims continue to use the backend enum values.
+The Pacific UI presents these roles as Owner, Admin, and Viewer, but API payloads and JWT claims continue to use the backend enum values.
 
 This separation allows sensitive platform operations to remain protected while still supporting restricted operational visibility for lower-privileged administrators.
 
@@ -383,10 +385,10 @@ docker compose up --build
 http://localhost:3000
 ```
 
-3. Log in as a seeded super admin:
+3. Log in as a seeded owner:
 
 ```text
-username: super admin
+username: owner
 password: admin123
 ```
 
@@ -415,7 +417,7 @@ for i in {1..15}; do
 done
 ```
 
-8. Return to the UI and confirm dashboard and analytics values update, blocked requests appear, and an abuse alert appears once the blocked-request threshold is crossed. As `super admin`, acknowledge or resolve the alert from Abuse Alerts.
+8. Return to the UI and confirm dashboard and analytics values update, blocked requests appear, and an abuse alert appears once the blocked-request threshold is crossed. As `owner` or `super admin`, acknowledge or resolve the alert from Abuse Alerts.
 
 9. Log out and sign in as the seeded viewer:
 
@@ -461,6 +463,7 @@ The application automatically seeds demo data when the database is empty.
 
 | Username | Password | Role |
 |-----------|-----------|---------|
+| owner | admin123 | OWNER |
 | super admin | admin123 | SUPER_ADMIN |
 | viewer | admin123 | READ_ONLY_ADMIN |
 
@@ -495,7 +498,7 @@ Obtain a short-lived JWT access token before accessing administrative endpoints.
 curl -X POST http://localhost:8080/auth/login \
 -H "Content-Type: application/json" \
 -d '{
-  "username":"super admin",
+  "username":"owner",
   "password":"admin123"
 }'
 ```
@@ -506,8 +509,8 @@ curl -X POST http://localhost:8080/auth/login \
 {
   "token":"eyJhbGciOiJIUzI1NiJ9...",
   "refreshToken":"admref_...",
-  "username":"super admin",
-  "role":"SUPER_ADMIN",
+  "username":"owner",
+  "role":"OWNER",
   "expiresInMs":3600000
 }
 ```
@@ -562,7 +565,7 @@ curl "http://localhost:8080/admin/abuse-alerts?status=OPEN" \
   -H "Authorization: Bearer <token>"
 ```
 
-Gateway settings can be updated by a super admin:
+Gateway settings can be updated by an Owner or Admin:
 
 ```bash
 curl -X PUT http://localhost:8080/admin/settings/gateway \
@@ -588,7 +591,7 @@ curl -X POST http://localhost:8080/admin/settings/gateway/test-connection \
   }'
 ```
 
-Abuse alerts support lifecycle actions for super admins:
+Abuse alerts support lifecycle actions for Owners and Admins:
 
 ```bash
 curl -X PATCH http://localhost:8080/admin/abuse-alerts/<alert-id>/acknowledge \
@@ -768,9 +771,10 @@ curl -X DELETE http://localhost:8080/admin/users/2 \
 
 #### Safety Rules
 
-- Only SUPER_ADMIN users can create, update, or delete administrators.
-- The system prevents deletion of the last SUPER_ADMIN.
-- The system prevents demotion of the last SUPER_ADMIN.
+- Owners can create, update, or delete Owner, Admin, and Viewer accounts.
+- Admins can create or delete Viewer accounts, but cannot manage Owners or other Admins.
+- Viewers cannot mutate admin users.
+- The system prevents deletion or demotion of the last Owner.
 
 ---
 
@@ -863,16 +867,16 @@ The gateway:
 
 ### Role Based Access Control
 
-| Endpoint Type | READ_ONLY_ADMIN | SUPER_ADMIN |
-|--------------|-----------------|-------------|
-| View Data | allowed         | allowed     |
-| Create Resources | denied          | allowed     |
-| Update Resources | denied          | allowed     |
-| Delete Resources | denied          | allowed     |
+| Endpoint Type | READ_ONLY_ADMIN | SUPER_ADMIN | OWNER |
+|--------------|-----------------|-------------|-------|
+| View Data | allowed         | allowed     | allowed |
+| Create Resources | denied          | allowed     | allowed |
+| Update Resources | denied          | allowed     | allowed |
+| Delete Resources | denied          | allowed     | allowed |
 
-This separation allows operational users to monitor the platform while restricting configuration changes to SUPER_ADMIN accounts.
+This separation allows operational users to monitor the platform while restricting configuration changes to Admin and Owner accounts.
 
-The UI presents these roles with customer-facing labels such as Admin and Viewer, while API payloads and JWT authorization continue to use `SUPER_ADMIN` and `READ_ONLY_ADMIN`.
+The UI presents these roles with customer-facing labels Owner, Admin, and Viewer, while API payloads and JWT authorization continue to use `OWNER`, `SUPER_ADMIN`, and `READ_ONLY_ADMIN`.
 
 ## Upcoming Updates
 
