@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Activity, BarChart3, Route, Users } from 'lucide-react';
+import { Activity, BarChart3, Route, Search, Users, X } from 'lucide-react';
 import {
   CartesianGrid,
   Line,
@@ -13,13 +13,21 @@ import { api } from '../api/client';
 import { ClientAnalyticsDto, RouteAnalyticsDto, RouteTrafficAnalyticsDto, TrafficAnalyticsDto } from '../types';
 import { EmptyState, PageHeader, Panel } from '../components/PageShell';
 import { formatBucket, formatNumber } from '../utils/display';
+import { useToast } from '../hooks/useToast';
 
 type RouteTrendMetric = 'totalRequests' | 'allowedRequests' | 'blockedRequests';
-type RouteTrendLimit = 5 | 10;
+type RouteTrendDisplayMode = 'top5' | 'top10' | 'custom';
 
 type RouteTrendChartPoint = {
   bucketLabel: string;
   [key: string]: string | number;
+};
+
+type RouteTrendRouteTotals = {
+  route: string;
+  totalRequests: number;
+  allowedRequests: number;
+  blockedRequests: number;
 };
 
 type RouteTrendRoute = {
@@ -46,7 +54,15 @@ const routeTrendMetricOptions: Array<{ key: RouteTrendMetric; label: string }> =
   { key: 'blockedRequests', label: 'Blocked' }
 ];
 
-const routeTrendLimitOptions: RouteTrendLimit[] = [5, 10];
+const routeTrendDisplayOptions: Array<{ key: RouteTrendDisplayMode; label: string }> = [
+  { key: 'top5', label: 'Top 5' },
+  { key: 'top10', label: 'Top 10' },
+  { key: 'custom', label: 'Custom' }
+];
+
+const getTopRouteLimit = (mode: RouteTrendDisplayMode) => (
+  mode === 'top10' ? 10 : 5
+);
 
 const routeTrendColors = [
   '#93c5fd',
@@ -77,12 +93,15 @@ const routeTrendLineStyles: Array<Pick<RouteTrendRoute, 'strokeDasharray' | 'str
 const getRouteTrendStyle = (index: number) => routeTrendLineStyles[index % routeTrendLineStyles.length];
 
 export const AnalyticsPage: React.FC = () => {
+  const { showToast } = useToast();
   const [routeAnalytics, setRouteAnalytics] = useState<RouteAnalyticsDto[]>([]);
   const [routeTrafficAnalytics, setRouteTrafficAnalytics] = useState<RouteTrafficAnalyticsDto[]>([]);
   const [clientAnalytics, setClientAnalytics] = useState<ClientAnalyticsDto[]>([]);
   const [trafficAnalytics, setTrafficAnalytics] = useState<TrafficAnalyticsDto[]>([]);
   const [selectedRouteMetric, setSelectedRouteMetric] = useState<RouteTrendMetric>('totalRequests');
-  const [routeTrendLimit, setRouteTrendLimit] = useState<RouteTrendLimit>(5);
+  const [routeTrendMode, setRouteTrendMode] = useState<RouteTrendDisplayMode>('top5');
+  const [routeSearch, setRouteSearch] = useState('');
+  const [selectedCustomRoutes, setSelectedCustomRoutes] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
@@ -116,41 +135,86 @@ export const AnalyticsPage: React.FC = () => {
     loadAnalytics();
   }, []);
 
-  const routeTrendRoutes = useMemo<RouteTrendRoute[]>(() => {
-    const totals = new Map<string, { selected: number; total: number }>();
+  const routeTrendRouteOptions = useMemo<RouteTrendRouteTotals[]>(() => {
+    const totals = new Map<string, RouteTrendRouteTotals>();
 
     routeTrafficAnalytics.forEach((point) => {
       const route = getRouteName(point.route);
-      const current = totals.get(route) ?? { selected: 0, total: 0 };
+      const current = totals.get(route) ?? {
+        route,
+        totalRequests: 0,
+        allowedRequests: 0,
+        blockedRequests: 0
+      };
 
       totals.set(route, {
-        selected: current.selected + safeCount(point[selectedRouteMetric]),
-        total: current.total + safeCount(point.totalRequests)
+        route,
+        totalRequests: current.totalRequests + safeCount(point.totalRequests),
+        allowedRequests: current.allowedRequests + safeCount(point.allowedRequests),
+        blockedRequests: current.blockedRequests + safeCount(point.blockedRequests)
       });
     });
 
-    return [...totals.entries()]
-      .sort(([firstRoute, first], [secondRoute, second]) => {
-        const selectedDifference = second.selected - first.selected;
-        if (selectedDifference !== 0) return selectedDifference;
-
-        const totalDifference = second.total - first.total;
+    return [...totals.values()]
+      .sort((first, second) => {
+        const totalDifference = second.totalRequests - first.totalRequests;
         if (totalDifference !== 0) return totalDifference;
 
-        return firstRoute.localeCompare(secondRoute);
-      })
-      .slice(0, routeTrendLimit)
-      .map(([route], index) => ({
-        key: `route_${index}`,
-        route,
-        color: routeTrendColors[index % routeTrendColors.length],
-        ...getRouteTrendStyle(index)
-      }));
-  }, [routeTrafficAnalytics, routeTrendLimit, selectedRouteMetric]);
+        return first.route.localeCompare(second.route);
+      });
+  }, [routeTrafficAnalytics]);
 
-  const routeTrendRouteCount = useMemo(() => (
-    new Set(routeTrafficAnalytics.map((point) => getRouteName(point.route))).size
-  ), [routeTrafficAnalytics]);
+  const routeTrendRoutes = useMemo<RouteTrendRoute[]>(() => {
+    const routeOptionByName = new Map(routeTrendRouteOptions.map((option) => [option.route, option]));
+    const routeNames = routeTrendMode === 'custom'
+      ? selectedCustomRoutes.filter((route) => routeOptionByName.has(route))
+      : [...routeTrendRouteOptions]
+          .sort((first, second) => {
+            const selectedDifference = second[selectedRouteMetric] - first[selectedRouteMetric];
+            if (selectedDifference !== 0) return selectedDifference;
+
+            const totalDifference = second.totalRequests - first.totalRequests;
+            if (totalDifference !== 0) return totalDifference;
+
+            return first.route.localeCompare(second.route);
+          })
+          .slice(0, getTopRouteLimit(routeTrendMode))
+          .map((option) => option.route);
+
+    return routeNames.map((route, index) => ({
+      key: `route_${index}`,
+      route,
+      color: routeTrendColors[index % routeTrendColors.length],
+      ...getRouteTrendStyle(index)
+    }));
+  }, [routeTrendMode, routeTrendRouteOptions, selectedCustomRoutes, selectedRouteMetric]);
+
+  const routeTrendRouteCount = routeTrendRouteOptions.length;
+
+  const routeSearchResults = useMemo(() => {
+    const query = routeSearch.trim().toLowerCase();
+    if (!query) return routeTrendRouteOptions.slice(0, 6);
+
+    return routeTrendRouteOptions
+      .filter((option) => option.route.toLowerCase().includes(query))
+      .slice(0, 6);
+  }, [routeSearch, routeTrendRouteOptions]);
+
+  const handleSelectCustomRoute = (route: string) => {
+    if (selectedCustomRoutes.includes(route)) return;
+
+    if (selectedCustomRoutes.length >= 5) {
+      showToast({ message: 'Compare up to 5 routes at a time.', type: 'error' });
+      return;
+    }
+
+    setSelectedCustomRoutes((routes) => [...routes, route]);
+    setRouteSearch('');
+  };
+
+  const handleRemoveCustomRoute = (route: string) => {
+    setSelectedCustomRoutes((routes) => routes.filter((selectedRoute) => selectedRoute !== route));
+  };
 
   const routeTrendData = useMemo<RouteTrendChartPoint[]>(() => {
     const buckets = new Map<string, RouteTrendChartPoint>();
@@ -222,24 +286,107 @@ export const AnalyticsPage: React.FC = () => {
                 ))}
               </div>
               <div className="flex rounded-md border border-slate-800/70 bg-slate-950/40 p-1">
-                {routeTrendLimitOptions.map((option) => (
+                {routeTrendDisplayOptions.map((option) => (
                   <button
-                    key={option}
+                    key={option.key}
                     type="button"
-                    onClick={() => setRouteTrendLimit(option)}
+                    onClick={() => setRouteTrendMode(option.key)}
                     className={`rounded px-2.5 py-1 text-xs font-medium transition-colors ${
-                      routeTrendLimit === option
+                      routeTrendMode === option.key
                         ? 'bg-slate-800/80 text-slate-100'
                         : 'text-slate-500 hover:bg-slate-900/60 hover:text-slate-300'
                     }`}
                   >
-                    Top {option}
+                    {option.label}
                   </button>
                 ))}
               </div>
               <BarChart3 className="text-slate-600" size={20} aria-hidden="true" />
             </div>
           </div>
+
+          {routeTrendMode === 'custom' && !isLoading && !errorMessage && routeTrendRouteCount > 0 && (
+            <div className="mb-5 space-y-3">
+              <div className="relative max-w-xl">
+                <div className="flex items-center rounded-md border border-slate-800 bg-slate-950/75 px-3 transition-colors focus-within:border-slate-600">
+                  <Search className="mr-2 shrink-0 text-slate-700" size={15} aria-hidden="true" />
+                  <input
+                    type="search"
+                    value={routeSearch}
+                    onChange={(event) => setRouteSearch(event.target.value)}
+                    placeholder="Search routes..."
+                    className="min-w-0 flex-1 bg-transparent py-2 text-sm text-slate-100 outline-none placeholder:text-slate-700"
+                  />
+                  {routeSearch.trim() && (
+                    <button
+                      type="button"
+                      onClick={() => setRouteSearch('')}
+                      className="ml-2 shrink-0 text-xs font-medium text-slate-600 transition-colors hover:text-slate-300"
+                    >
+                      Clear
+                    </button>
+                  )}
+                </div>
+                {routeSearch.trim() && (
+                  <div className="absolute left-0 right-0 top-11 z-20 overflow-hidden rounded-md border border-slate-800/80 bg-slate-950/95 shadow-xl shadow-black/20">
+                    {routeSearchResults.length === 0 ? (
+                      <p className="px-3 py-3 text-sm text-slate-500">No routes match this search.</p>
+                    ) : (
+                      <div className="max-h-56 overflow-y-auto py-1">
+                        {routeSearchResults.map((option) => {
+                          const isSelected = selectedCustomRoutes.includes(option.route);
+
+                          return (
+                            <button
+                              key={option.route}
+                              type="button"
+                              onClick={() => handleSelectCustomRoute(option.route)}
+                              className="flex w-full min-w-0 items-center justify-between gap-3 px-3 py-2 text-left transition-colors hover:bg-slate-900/70"
+                            >
+                              <span className="min-w-0 truncate font-mono text-xs text-slate-300" title={option.route}>
+                                {option.route}
+                              </span>
+                              <span className="shrink-0 text-xs text-slate-600">
+                                {isSelected ? 'Selected' : `${formatNumber(option.totalRequests)} total`}
+                              </span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {selectedCustomRoutes.length > 0 && (
+                <div className="flex flex-wrap items-center gap-2">
+                  {selectedCustomRoutes.map((route) => (
+                    <span
+                      key={route}
+                      className="inline-flex max-w-full items-center gap-1.5 rounded-md bg-slate-950/65 px-2 py-1 text-xs text-slate-400 ring-1 ring-slate-800/70"
+                    >
+                      <span className="max-w-56 truncate font-mono" title={route}>{route}</span>
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveCustomRoute(route)}
+                        className="text-slate-600 transition-colors hover:text-slate-300 focus:outline-none focus:ring-2 focus:ring-slate-700/40"
+                        aria-label={`Remove ${route}`}
+                      >
+                        <X size={13} aria-hidden="true" />
+                      </button>
+                    </span>
+                  ))}
+                  <button
+                    type="button"
+                    onClick={() => setSelectedCustomRoutes([])}
+                    className="text-xs font-medium text-slate-600 transition-colors hover:text-slate-300"
+                  >
+                    Clear
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
 
           {isLoading ? (
             <div className="flex h-72 items-center justify-center text-sm text-slate-500">
@@ -251,7 +398,19 @@ export const AnalyticsPage: React.FC = () => {
               title="Route trends unavailable"
               description={errorMessage}
             />
-          ) : routeTrendData.length === 0 || routeTrendRoutes.length === 0 ? (
+          ) : routeTrendRouteCount === 0 ? (
+            <EmptyState
+              icon={Route}
+              title="No route trend data yet"
+              description="Send requests through the gateway to populate this chart."
+            />
+          ) : routeTrendMode === 'custom' && routeTrendRoutes.length === 0 ? (
+            <EmptyState
+              icon={Route}
+              title="Select routes to compare"
+              description="Search and select routes to compare trends."
+            />
+          ) : routeTrendData.length === 0 ? (
             <EmptyState
               icon={Route}
               title="No route trend data yet"
@@ -302,7 +461,9 @@ export const AnalyticsPage: React.FC = () => {
           {!isLoading && !errorMessage && routeTrendRoutes.length > 0 && (
             <div className="mt-4 flex flex-col gap-3">
               <p className="text-xs text-slate-600">
-                Showing top {Math.min(routeTrendLimit, routeTrendRoutes.length)}{routeTrendRouteCount > routeTrendRoutes.length ? ` of ${routeTrendRouteCount}` : ''} routes
+                {routeTrendMode === 'custom'
+                  ? `Comparing ${routeTrendRoutes.length} ${routeTrendRoutes.length === 1 ? 'route' : 'routes'}`
+                  : `Showing top ${Math.min(getTopRouteLimit(routeTrendMode), routeTrendRoutes.length)}${routeTrendRouteCount > routeTrendRoutes.length ? ` of ${routeTrendRouteCount}` : ''} routes`}
               </p>
               <div className="grid gap-x-4 gap-y-2 sm:grid-cols-2 xl:grid-cols-3">
                 {routeTrendRoutes.map((route) => (
