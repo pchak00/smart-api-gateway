@@ -1,13 +1,8 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
-  Activity,
-  CreditCard,
   KeyRound,
   Plus,
-  Route,
-  ShieldAlert,
-  ShieldCheck,
   SlidersHorizontal,
   Users
 } from 'lucide-react';
@@ -16,12 +11,6 @@ import { AbuseAlertDto, DashboardSummaryDto, GatewaySettingsDto, RouteAnalyticsD
 import { PageHeader } from '../components/PageShell';
 import { useAuth } from '../hooks/useAuth';
 import { formatDateTime, formatNumber, getStatusLabel } from '../utils/display';
-
-interface MetricCardProps {
-  label: string;
-  value: number | string;
-  icon: React.ElementType;
-}
 
 interface DashboardSectionProps {
   children: React.ReactNode;
@@ -33,16 +22,6 @@ interface DashboardSectionProps {
 interface StateMessageProps {
   children: React.ReactNode;
 }
-
-const MetricCard: React.FC<MetricCardProps> = ({ label, value, icon: Icon }) => (
-  <section className="flex min-h-32 flex-col justify-between rounded-lg bg-slate-900/20 px-5 py-5 transition-colors hover:bg-slate-900/40">
-    <div className="flex items-center justify-between gap-4">
-      <p className="text-sm font-medium text-slate-500">{label}</p>
-      <Icon className="shrink-0 text-slate-700" size={18} aria-hidden="true" />
-    </div>
-    <p className="pt-6 text-3xl font-semibold leading-none text-slate-50">{value}</p>
-  </section>
-);
 
 const DashboardSection: React.FC<DashboardSectionProps> = ({ children, className = '', title, action }) => (
   <section className={`rounded-lg bg-slate-900/20 p-5 ${className}`}>
@@ -71,6 +50,36 @@ const valueOrLoading = (value: number | null | undefined, isLoading: boolean) =>
   if (typeof value !== 'number' || Number.isNaN(value)) return 'Unavailable';
 
   return formatNumber(value);
+};
+
+const GatewaySummaryStrip: React.FC<{ summary: DashboardSummaryDto | null; isLoading: boolean }> = ({
+  summary,
+  isLoading
+}) => {
+  const metrics = [
+    { label: 'Clients', value: valueOrLoading(summary?.clientCount, isLoading) },
+    { label: 'Plans', value: valueOrLoading(summary?.planCount, isLoading) },
+    { label: 'Route limits', value: valueOrLoading(summary?.routeLimitCount, isLoading) },
+    { label: 'Requests', value: valueOrLoading(summary?.totalRequests, isLoading) },
+    { label: 'Blocked', value: valueOrLoading(summary?.blockedRequests, isLoading) },
+    { label: 'Open alerts', value: valueOrLoading(summary?.openAlertCount, isLoading) }
+  ];
+
+  return (
+    <section className="rounded-lg bg-slate-900/25 px-5 py-5">
+      <h2 className="text-sm font-semibold text-slate-100">Gateway summary</h2>
+      <dl className="mt-5 grid grid-cols-2 gap-x-8 gap-y-5 md:grid-cols-3 xl:grid-cols-6">
+        {metrics.map((metric) => (
+          <div key={metric.label} className="min-w-0">
+            <dt className="truncate text-xs font-medium text-slate-500">{metric.label}</dt>
+            <dd className="mt-2 truncate text-2xl font-semibold leading-none text-slate-50">
+              {metric.value}
+            </dd>
+          </div>
+        ))}
+      </dl>
+    </section>
+  );
 };
 
 const percentOrLoading = (summary: DashboardSummaryDto | null, isLoading: boolean) => {
@@ -323,38 +332,7 @@ export const DashboardPage: React.FC = () => {
         meta={errorMessage ? <span className="text-xs text-slate-500">{errorMessage}</span> : undefined}
       />
 
-      <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-6">
-        <MetricCard
-          label="Clients"
-          value={valueOrLoading(summary?.clientCount, isLoading)}
-          icon={Users}
-        />
-        <MetricCard
-          label="Plans"
-          value={valueOrLoading(summary?.planCount, isLoading)}
-          icon={CreditCard}
-        />
-        <MetricCard
-          label="Route limits"
-          value={valueOrLoading(summary?.routeLimitCount, isLoading)}
-          icon={Route}
-        />
-        <MetricCard
-          label="Requests"
-          value={valueOrLoading(summary?.totalRequests, isLoading)}
-          icon={Activity}
-        />
-        <MetricCard
-          label="Blocked"
-          value={valueOrLoading(summary?.blockedRequests, isLoading)}
-          icon={ShieldCheck}
-        />
-        <MetricCard
-          label="Open alerts"
-          value={valueOrLoading(summary?.openAlertCount, isLoading)}
-          icon={ShieldAlert}
-        />
-      </div>
+      <GatewaySummaryStrip summary={summary} isLoading={isLoading} />
 
       <div className="mt-5 grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1.35fr)_minmax(22rem,0.65fr)]">
         <GatewayHealthPanel
