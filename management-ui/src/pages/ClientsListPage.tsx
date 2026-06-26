@@ -8,9 +8,14 @@ import { PrimaryButton, SecondaryButton } from '../components/Button';
 import { ListSearch } from '../components/ListSearch';
 import { EmptyState, PageHeader } from '../components/PageShell';
 import { RowActions } from '../components/RowActions';
+import {
+  ClientApiKeyLifecycleDialogs,
+  PendingClientLifecycleAction
+} from '../components/ClientApiKeyLifecycleDialogs';
 import { getPlanLabel } from '../utils/display';
 import { getApiErrorMessage } from '../utils/apiError';
 import { matchesSearch, normalizeSearch } from '../utils/search';
+import { ClientApiKeyRotationResponse } from '../types';
 
 export const ClientsListPage: React.FC = () => {
   const { canMutate } = useAuth();
@@ -27,6 +32,8 @@ export const ClientsListPage: React.FC = () => {
   const [newClientActive, setNewClientActive] = useState(true);
   const [selectedPlanId, setSelectedPlanId] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
+  const [pendingLifecycleAction, setPendingLifecycleAction] = useState<PendingClientLifecycleAction | null>(null);
+  const [rotatedKey, setRotatedKey] = useState<ClientApiKeyRotationResponse | null>(null);
 
   const loadClients = async () => {
     try {
@@ -138,6 +145,80 @@ export const ClientsListPage: React.FC = () => {
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  const handleConfirmRotateApiKey = async () => {
+    if (!canMutate || pendingLifecycleAction?.kind !== 'rotate' || !pendingLifecycleAction.client.id) return;
+
+    setIsSubmitting(true);
+    try {
+      const response = await api.rotateClientApiKey(pendingLifecycleAction.client.id);
+      setPendingLifecycleAction(null);
+      setRotatedKey(response);
+      showToast({ message: 'API key rotated.', type: 'success' });
+      await loadClients();
+    } catch (error) {
+      showToast({
+        message: getApiErrorMessage(error, 'Could not rotate API key.'),
+        type: 'error'
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleConfirmDisableClient = async () => {
+    if (!canMutate || pendingLifecycleAction?.kind !== 'disable' || !pendingLifecycleAction.client.id) return;
+
+    setIsSubmitting(true);
+    try {
+      await api.disableClient(pendingLifecycleAction.client.id);
+      setPendingLifecycleAction(null);
+      showToast({ message: 'Client disabled.', type: 'success' });
+      await loadClients();
+    } catch (error) {
+      showToast({
+        message: getApiErrorMessage(error, 'Could not disable client.'),
+        type: 'error'
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleEnableClient = async (client: ClientDto) => {
+    if (!canMutate || !client.id) return;
+
+    setIsSubmitting(true);
+    try {
+      await api.enableClient(client.id);
+      showToast({ message: 'Client enabled.', type: 'success' });
+      await loadClients();
+    } catch (error) {
+      showToast({
+        message: getApiErrorMessage(error, 'Could not enable client.'),
+        type: 'error'
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleCopyRotatedKey = async () => {
+    if (!rotatedKey?.apiKey) return false;
+
+    try {
+      await navigator.clipboard.writeText(rotatedKey.apiKey);
+      showToast({ message: 'Copied.', type: 'success' });
+      return true;
+    } catch {
+      showToast({ message: 'Could not copy API key.', type: 'error' });
+      return false;
+    }
+  };
+
+  const closeRotatedKeyDialog = () => {
+    setRotatedKey(null);
   };
 
   const hasRowsWithoutIds = clients.some((client) => client.id === undefined);
@@ -346,6 +427,28 @@ export const ClientsListPage: React.FC = () => {
                                   disabled: true,
                                   title: 'Client response does not include an id'
                             },
+                            ...(canMutate ? [
+                              {
+                                label: 'Rotate API key',
+                                disabled: !hasBackendId,
+                                title: !hasBackendId ? 'Client response does not include an id' : undefined,
+                                onClick: () => setPendingLifecycleAction({ kind: 'rotate', client })
+                              },
+                              client.active
+                                ? {
+                                    label: 'Disable client',
+                                    tone: 'danger' as const,
+                                    disabled: !hasBackendId,
+                                    title: !hasBackendId ? 'Client response does not include an id' : undefined,
+                                    onClick: () => setPendingLifecycleAction({ kind: 'disable', client })
+                                  }
+                                : {
+                                    label: 'Enable client',
+                                    disabled: !hasBackendId,
+                                    title: !hasBackendId ? 'Client response does not include an id' : undefined,
+                                    onClick: () => handleEnableClient(client)
+                                  }
+                            ] : []),
                             {
                               label: 'Change plan',
                               disabled: !canMutate || !hasBackendId || plans.length === 0,
@@ -380,6 +483,17 @@ export const ClientsListPage: React.FC = () => {
           </div>
         )}
       </section>
+
+      <ClientApiKeyLifecycleDialogs
+        pendingAction={pendingLifecycleAction}
+        rotatedKey={rotatedKey}
+        isSubmitting={isSubmitting}
+        onCancelPendingAction={() => setPendingLifecycleAction(null)}
+        onConfirmRotate={handleConfirmRotateApiKey}
+        onConfirmDisable={handleConfirmDisableClient}
+        onCloseRotatedKey={closeRotatedKeyDialog}
+        onCopyRotatedKey={handleCopyRotatedKey}
+      />
     </div>
   );
 };

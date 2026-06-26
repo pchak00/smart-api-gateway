@@ -1,13 +1,23 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import { Activity, KeyRound, Server, ShieldAlert } from 'lucide-react';
+import { Activity, KeyRound, Power, RotateCw, Server, ShieldAlert } from 'lucide-react';
 import { api } from '../api/client';
 import { EmptyState, PageHeader, Panel } from '../components/PageShell';
-import { AbuseAlertDto, ClientDto, ClientStatsDto, UsageLogDto } from '../types';
+import { AbuseAlertDto, ClientApiKeyRotationResponse, ClientDto, ClientStatsDto, UsageLogDto } from '../types';
 import { formatDateTime, getPlanLabel, getSeverityLabel } from '../utils/display';
+import { useAuth } from '../hooks/useAuth';
+import { useToast } from '../hooks/useToast';
+import { getApiErrorMessage } from '../utils/apiError';
+import { PrimaryButton, SecondaryButton } from '../components/Button';
+import {
+  ClientApiKeyLifecycleDialogs,
+  PendingClientLifecycleAction
+} from '../components/ClientApiKeyLifecycleDialogs';
 
 export const ClientDetailPage: React.FC = () => {
   const { id } = useParams();
+  const { canMutate } = useAuth();
+  const { showToast } = useToast();
   const clientId = Number(id);
   const hasClientId = Boolean(id && Number.isInteger(clientId) && clientId > 0);
   const [stats, setStats] = useState<ClientStatsDto | null>(null);
@@ -15,11 +25,14 @@ export const ClientDetailPage: React.FC = () => {
   const [abuseAlerts, setAbuseAlerts] = useState<AbuseAlertDto[]>([]);
   const [client, setClient] = useState<ClientDto | null>(null);
   const [isLoading, setIsLoading] = useState(hasClientId);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [pendingLifecycleAction, setPendingLifecycleAction] = useState<PendingClientLifecycleAction | null>(null);
+  const [rotatedKey, setRotatedKey] = useState<ClientApiKeyRotationResponse | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(
     hasClientId ? null : 'A backend client id is required to load live client activity.'
   );
 
-  useEffect(() => {
+  const loadClientActivity = useCallback(async () => {
     if (!hasClientId) {
       setStats(null);
       setUsageLogs([]);
@@ -30,56 +43,155 @@ export const ClientDetailPage: React.FC = () => {
       return;
     }
 
-    const loadClientActivity = async () => {
-      setIsLoading(true);
-      const [clientsResult, statsResult, usageResult, abuseResult] = await Promise.allSettled([
-        api.getClients(),
-        api.getClientStats(clientId),
-        api.getUsageLogs(clientId),
-        api.getClientAbuseAlerts(clientId)
-      ]);
+    setIsLoading(true);
+    const [clientsResult, statsResult, usageResult, abuseResult] = await Promise.allSettled([
+      api.getClients(),
+      api.getClientStats(clientId),
+      api.getUsageLogs(clientId),
+      api.getClientAbuseAlerts(clientId)
+    ]);
 
-      if (clientsResult.status === 'fulfilled') {
-        setClient(clientsResult.value.find((candidate) => candidate.id === clientId) ?? null);
-      } else {
-        console.error('Failed to load client identity:', clientsResult.reason);
-        setClient(null);
-      }
+    if (clientsResult.status === 'fulfilled') {
+      setClient(clientsResult.value.find((candidate) => candidate.id === clientId) ?? null);
+    } else {
+      console.error('Failed to load client identity:', clientsResult.reason);
+      setClient(null);
+    }
 
-      if (statsResult.status === 'fulfilled') {
-        setStats(statsResult.value);
-      } else {
-        console.error('Failed to load client stats:', statsResult.reason);
-        setStats(null);
-      }
+    if (statsResult.status === 'fulfilled') {
+      setStats(statsResult.value);
+    } else {
+      console.error('Failed to load client stats:', statsResult.reason);
+      setStats(null);
+    }
 
-      if (usageResult.status === 'fulfilled') {
-        setUsageLogs(usageResult.value);
-      } else {
-        console.error('Failed to load client usage:', usageResult.reason);
-        setUsageLogs([]);
-      }
+    if (usageResult.status === 'fulfilled') {
+      setUsageLogs(usageResult.value);
+    } else {
+      console.error('Failed to load client usage:', usageResult.reason);
+      setUsageLogs([]);
+    }
 
-      if (abuseResult.status === 'fulfilled') {
-        setAbuseAlerts(abuseResult.value);
-      } else {
-        console.error('Failed to load client abuse alerts:', abuseResult.reason);
-        setAbuseAlerts([]);
-      }
+    if (abuseResult.status === 'fulfilled') {
+      setAbuseAlerts(abuseResult.value);
+    } else {
+      console.error('Failed to load client abuse alerts:', abuseResult.reason);
+      setAbuseAlerts([]);
+    }
 
-      const activityLoaded = statsResult.status === 'fulfilled' || usageResult.status === 'fulfilled' || abuseResult.status === 'fulfilled';
-      setErrorMessage(activityLoaded ? null : 'Live client activity could not be loaded for this id.');
-      setIsLoading(false);
-    };
+    const activityLoaded = statsResult.status === 'fulfilled' || usageResult.status === 'fulfilled' || abuseResult.status === 'fulfilled';
+    setErrorMessage(activityLoaded ? null : 'Live client activity could not be loaded for this id.');
+    setIsLoading(false);
+  }, [clientId, hasClientId, id]);
 
+  useEffect(() => {
     loadClientActivity();
-  }, [clientId, hasClientId]);
+  }, [loadClientActivity]);
+
+  const handleConfirmRotateApiKey = async () => {
+    if (!canMutate || pendingLifecycleAction?.kind !== 'rotate' || !pendingLifecycleAction.client.id) return;
+
+    setIsSubmitting(true);
+    try {
+      const response = await api.rotateClientApiKey(pendingLifecycleAction.client.id);
+      setPendingLifecycleAction(null);
+      setRotatedKey(response);
+      showToast({ message: 'API key rotated.', type: 'success' });
+      await loadClientActivity();
+    } catch (error) {
+      showToast({
+        message: getApiErrorMessage(error, 'Could not rotate API key.'),
+        type: 'error'
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleConfirmDisableClient = async () => {
+    if (!canMutate || pendingLifecycleAction?.kind !== 'disable' || !pendingLifecycleAction.client.id) return;
+
+    setIsSubmitting(true);
+    try {
+      await api.disableClient(pendingLifecycleAction.client.id);
+      setPendingLifecycleAction(null);
+      showToast({ message: 'Client disabled.', type: 'success' });
+      await loadClientActivity();
+    } catch (error) {
+      showToast({
+        message: getApiErrorMessage(error, 'Could not disable client.'),
+        type: 'error'
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleEnableClient = async () => {
+    if (!canMutate || !client?.id) return;
+
+    setIsSubmitting(true);
+    try {
+      await api.enableClient(client.id);
+      showToast({ message: 'Client enabled.', type: 'success' });
+      await loadClientActivity();
+    } catch (error) {
+      showToast({
+        message: getApiErrorMessage(error, 'Could not enable client.'),
+        type: 'error'
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleCopyRotatedKey = async () => {
+    if (!rotatedKey?.apiKey) return false;
+
+    try {
+      await navigator.clipboard.writeText(rotatedKey.apiKey);
+      showToast({ message: 'Copied.', type: 'success' });
+      return true;
+    } catch {
+      showToast({ message: 'Could not copy API key.', type: 'error' });
+      return false;
+    }
+  };
+
+  const actionButtons = canMutate && client?.id ? (
+    <>
+      <SecondaryButton
+        type="button"
+        disabled={isSubmitting}
+        onClick={() => setPendingLifecycleAction({ kind: 'rotate', client })}
+      >
+        <RotateCw size={15} aria-hidden="true" />
+        Rotate API key
+      </SecondaryButton>
+      {client.active ? (
+        <SecondaryButton
+          type="button"
+          disabled={isSubmitting}
+          onClick={() => setPendingLifecycleAction({ kind: 'disable', client })}
+        >
+          <Power size={15} aria-hidden="true" />
+          Disable client
+        </SecondaryButton>
+      ) : (
+        <PrimaryButton type="button" disabled={isSubmitting} onClick={handleEnableClient}>
+          <Power size={15} aria-hidden="true" />
+          Enable client
+        </PrimaryButton>
+      )}
+    </>
+  ) : undefined;
 
   return (
     <div>
       <PageHeader
         title={client?.clientName ?? `Client ${id ?? ''}`.trim()}
         description="Inspect live per-client activity and identity fields available from the current admin read APIs."
+        actions={actionButtons}
         meta={
           <span className="text-xs text-slate-500">
             {hasClientId
@@ -236,6 +348,17 @@ export const ClientDetailPage: React.FC = () => {
           </div>
         )}
       </section>
+
+      <ClientApiKeyLifecycleDialogs
+        pendingAction={pendingLifecycleAction}
+        rotatedKey={rotatedKey}
+        isSubmitting={isSubmitting}
+        onCancelPendingAction={() => setPendingLifecycleAction(null)}
+        onConfirmRotate={handleConfirmRotateApiKey}
+        onConfirmDisable={handleConfirmDisableClient}
+        onCloseRotatedKey={() => setRotatedKey(null)}
+        onCopyRotatedKey={handleCopyRotatedKey}
+      />
     </div>
   );
 };

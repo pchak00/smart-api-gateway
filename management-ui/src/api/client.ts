@@ -13,6 +13,8 @@ import {
   UsageLogDto,
   AbuseAlertDto,
   AbuseAlertQueryParams,
+  ClientApiKeyRotationResponse,
+  ClientMetadataResponse,
   UpdateClientPlanRequest,
   UpdateRouteLimitRequest,
   AdminUserDto,
@@ -174,6 +176,23 @@ class ApiClient {
 
   async deleteClient(id: number): Promise<void> {
     await this.axiosInstance.delete(`/admin/clients/${id}`);
+  }
+
+  async rotateClientApiKey(id: number): Promise<ClientApiKeyRotationResponse> {
+    const response = await this.axiosInstance.post<ClientApiKeyRotationResponse>(
+      `/admin/clients/${id}/rotate-api-key`
+    );
+    return response.data;
+  }
+
+  async disableClient(id: number): Promise<ClientMetadataResponse> {
+    const response = await this.axiosInstance.patch<ClientMetadataResponse>(`/admin/clients/${id}/disable`);
+    return response.data;
+  }
+
+  async enableClient(id: number): Promise<ClientMetadataResponse> {
+    const response = await this.axiosInstance.patch<ClientMetadataResponse>(`/admin/clients/${id}/enable`);
+    return response.data;
   }
 
   async getClientStats(clientId: number): Promise<ClientStatsDto> {

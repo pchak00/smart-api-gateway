@@ -65,6 +65,22 @@ export interface UpdateClientPlanRequest {
   planId: number;
 }
 
+export interface ClientApiKeyRotationResponse {
+  id: number;
+  clientName: string;
+  apiKey: string;
+  planName: string;
+  active: boolean;
+  rotatedAt?: string;
+}
+
+export interface ClientMetadataResponse {
+  id: number;
+  clientName: string;
+  active: boolean;
+  planName: string;
+}
+
 export interface ClientStatsDto {
   clientId?: number;
   totalRequests: number;
