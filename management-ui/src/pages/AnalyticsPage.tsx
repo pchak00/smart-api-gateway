@@ -253,6 +253,11 @@ export const AnalyticsPage: React.FC = () => {
   const totalRequests = trafficAnalytics.reduce((sum, point) => sum + safeCount(point.totalRequests), 0);
   const totalAllowed = trafficAnalytics.reduce((sum, point) => sum + safeCount(point.allowedRequests), 0);
   const totalBlocked = trafficAnalytics.reduce((sum, point) => sum + safeCount(point.blockedRequests), 0);
+  const routeSearchPlaceholder = selectedCustomRoutes.length >= 5
+    ? 'Remove a route to add another'
+    : selectedCustomRoutes.length > 0
+      ? 'Add another route...'
+      : 'Search routes...';
 
   return (
     <div>
@@ -314,7 +319,7 @@ export const AnalyticsPage: React.FC = () => {
                     type="search"
                     value={routeSearch}
                     onChange={(event) => setRouteSearch(event.target.value)}
-                    placeholder="Search routes..."
+                    placeholder={routeSearchPlaceholder}
                     className="min-w-0 flex-1 bg-transparent py-2 text-sm text-slate-100 outline-none placeholder:text-slate-700"
                   />
                   {routeSearch.trim() && (
