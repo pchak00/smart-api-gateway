@@ -3,6 +3,7 @@ import { Navigate, useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { useToast } from '../hooks/useToast';
 import { PrimaryButton } from '../components/Button';
+import { PasswordInput } from '../components/PasswordInput';
 import pacificLogo from '../assets/pacific-logo.png';
 
 export const LoginPage: React.FC = () => {
@@ -62,12 +63,12 @@ export const LoginPage: React.FC = () => {
               <label htmlFor="password" className="block text-sm text-slate-500">
                 Password
               </label>
-              <input
+              <PasswordInput
                 id="password"
-                type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="mt-2 w-full border-b border-slate-800 bg-transparent px-0 py-3 text-sm text-slate-100 outline-none transition-colors placeholder:text-slate-700 hover:border-slate-700 focus:border-slate-500"
+                wrapperClassName="mt-2"
+                inputClassName="w-full border-b border-slate-800 bg-transparent px-0 py-3 text-sm text-slate-100 outline-none transition-colors placeholder:text-slate-700 hover:border-slate-700 focus:border-slate-500"
                 placeholder="password"
                 required
               />
