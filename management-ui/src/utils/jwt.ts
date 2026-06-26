@@ -9,7 +9,7 @@ export interface DecodedToken {
 }
 
 const isAdminRole = (role: unknown): role is AdminRole =>
-  role === 'SUPER_ADMIN' || role === 'READ_ONLY_ADMIN';
+  role === 'OWNER' || role === 'SUPER_ADMIN' || role === 'READ_ONLY_ADMIN';
 
 export const decodeToken = (token: string): DecodedToken | null => {
   try {

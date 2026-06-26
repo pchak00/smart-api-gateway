@@ -28,7 +28,8 @@ import {
   GatewaySettingsDto,
   UpdateGatewaySettingsRequest,
   TestGatewayConnectionRequest,
-  TestGatewayConnectionResponse
+  TestGatewayConnectionResponse,
+  AdminRole
 } from '../types';
 
 const baseURL = (import.meta.env.VITE_API_BASE_URL as string | undefined) || '/';
@@ -297,12 +298,12 @@ class ApiClient {
     return response.data;
   }
 
-  async createAdminUser(payload: { username: string; password: string; role: string }): Promise<AdminUserDto> {
+  async createAdminUser(payload: { username: string; password: string; role: AdminRole }): Promise<AdminUserDto> {
     const response = await this.axiosInstance.post<AdminUserDto>('/admin/users', payload);
     return response.data;
   }
 
-  async updateAdminUserRole(id: number, payload: { role: string }): Promise<AdminUserDto> {
+  async updateAdminUserRole(id: number, payload: { role: AdminRole }): Promise<AdminUserDto> {
     const response = await this.axiosInstance.patch<AdminUserDto>(`/admin/users/${id}/role`, payload);
     return response.data;
   }

@@ -6,7 +6,7 @@ import { AdminRole } from '../types';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
-  requiredRole?: AdminRole;
+  requiredRole?: AdminRole | AdminRole[];
   blockUnauthorizedRoute?: boolean;
 }
 
@@ -18,7 +18,8 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   const { isAuthenticated, role, isLoading } = useAuth();
   const { showToast } = useToast();
   const hasShownUnauthorizedToast = useRef(false);
-  const isMissingRequiredRole = Boolean(requiredRole && role !== requiredRole);
+  const requiredRoles = Array.isArray(requiredRole) ? requiredRole : requiredRole ? [requiredRole] : [];
+  const isMissingRequiredRole = requiredRoles.length > 0 && !requiredRoles.includes(role as AdminRole);
   const shouldBlockRoute = !isLoading && isAuthenticated && isMissingRequiredRole && blockUnauthorizedRoute;
 
   useEffect(() => {

@@ -1,4 +1,4 @@
-export type AdminRole = 'SUPER_ADMIN' | 'READ_ONLY_ADMIN';
+export type AdminRole = 'OWNER' | 'SUPER_ADMIN' | 'READ_ONLY_ADMIN';
 
 // Auth & Admin
 export interface LoginRequest {

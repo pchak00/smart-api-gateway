@@ -71,4 +71,37 @@ class RouteLimitControllerTest {
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message").value("* wildcards must be whole path segments"));
     }
+
+    @Test
+    @WithMockUser(roles = "OWNER")
+    void ownerCanAccessRouteLimitMutationEndpoint() throws Exception {
+        when(routeLimitService.createRouteLimit(any()))
+                .thenThrow(new InvalidRouteLimitException("* wildcards must be whole path segments"));
+
+        mockMvc.perform(post("/admin/clients/routeLimits")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "planId": 1,
+                                  "routePattern": "/api/user*",
+                                  "requestsPerMinute": 5
+                                }
+                                """))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    @WithMockUser(roles = "READ_ONLY_ADMIN")
+    void readOnlyAdminCannotAccessRouteLimitMutationEndpoint() throws Exception {
+        mockMvc.perform(post("/admin/clients/routeLimits")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "planId": 1,
+                                  "routePattern": "/api/products",
+                                  "requestsPerMinute": 5
+                                }
+                                """))
+                .andExpect(status().isForbidden());
+    }
 }

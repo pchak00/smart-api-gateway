@@ -6,8 +6,9 @@ import com.prakash.gateaway_service.DTO.UpdateAdminRoleDto;
 import com.prakash.gateaway_service.Entity.AdminRole;
 import com.prakash.gateaway_service.Entity.AdminUser;
 import com.prakash.gateaway_service.Exception.AdminNotFoundException;
+import com.prakash.gateaway_service.Exception.AdminRoleHierarchyException;
 import com.prakash.gateaway_service.Exception.DuplicateAdminException;
-import com.prakash.gateaway_service.Exception.LastSuperAdminException;
+import com.prakash.gateaway_service.Exception.LastOwnerException;
 import com.prakash.gateaway_service.Repository.AdminUserRepository;
 import jakarta.transaction.Transactional;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -24,7 +25,10 @@ public class AdminService {
         this.passwordEncoder = passwordEncoder;
     }
     @Transactional
-    public AdminResponseDto createAdmin(AdminDto request) {
+    public AdminResponseDto createAdmin(AdminDto request, String actorUsername) {
+        AdminUser actor = findActor(actorUsername);
+        assertCanCreate(actor, request.role());
+
         if (adminUserRepository.existsByUsername(request.username())) {
             throw new DuplicateAdminException(
                     "Admin already exists with username: " + request.username()
@@ -49,44 +53,79 @@ public class AdminService {
     }
 
     @Transactional
-    public void deleteAdmin(Long adminId) {
+    public void deleteAdmin(Long adminId, String actorUsername) {
+        AdminUser actor = findActor(actorUsername);
         AdminUser admin = adminUserRepository.findById(adminId)
                 .orElseThrow(() ->
                         new AdminNotFoundException("Admin not found with id: " + adminId));
 
-        if (admin.getRole() == AdminRole.SUPER_ADMIN) {
-            long superAdminCount = adminUserRepository.countByRole(AdminRole.SUPER_ADMIN);
-
-            if (superAdminCount <= 1) {
-                throw new LastSuperAdminException("Cannot delete the last SUPER_ADMIN");
-            }
-        }
+        assertCanManage(actor, admin);
+        assertNotRemovingLastOwner(admin.getRole(), null, "Cannot delete the last OWNER");
 
         adminUserRepository.delete(admin);
     }
 
     @Transactional
-    public AdminResponseDto updateAdminRole(Long adminId, UpdateAdminRoleDto request) {
+    public AdminResponseDto updateAdminRole(Long adminId, UpdateAdminRoleDto request, String actorUsername) {
+        AdminUser actor = findActor(actorUsername);
         AdminUser admin = adminUserRepository.findById(adminId)
                 .orElseThrow(() ->
                         new AdminNotFoundException("Admin not found with id: " + adminId));
 
-        boolean demotingSuperAdmin =
-                admin.getRole() == AdminRole.SUPER_ADMIN &&
-                        request.role() == AdminRole.READ_ONLY_ADMIN;
-
-        if (demotingSuperAdmin) {
-            long superAdminCount = adminUserRepository.countByRole(AdminRole.SUPER_ADMIN);
-
-            if (superAdminCount <= 1) {
-                throw new LastSuperAdminException("Cannot demote the last SUPER_ADMIN");
-            }
-        }
+        assertCanManage(actor, admin);
+        assertCanAssign(actor, request.role());
+        assertNotRemovingLastOwner(admin.getRole(), request.role(), "Cannot demote the last OWNER");
 
         admin.setRole(request.role());
 
         AdminUser saved = adminUserRepository.save(admin);
 
         return AdminResponseDto.from(saved);
+    }
+
+    private AdminUser findActor(String username) {
+        return adminUserRepository.findByUsername(username)
+                .orElseThrow(() ->
+                        new AdminNotFoundException("Admin not found with username: " + username));
+    }
+
+    private void assertCanCreate(AdminUser actor, AdminRole requestedRole) {
+        assertCanAssign(actor, requestedRole);
+    }
+
+    private void assertCanManage(AdminUser actor, AdminUser target) {
+        if (actor.getRole() == AdminRole.OWNER) {
+            return;
+        }
+
+        if (actor.getRole() == AdminRole.SUPER_ADMIN && target.getRole() == AdminRole.READ_ONLY_ADMIN) {
+            return;
+        }
+
+        throw new AdminRoleHierarchyException("You do not have permission to manage this admin user");
+    }
+
+    private void assertCanAssign(AdminUser actor, AdminRole requestedRole) {
+        if (requestedRole == null) {
+            throw new AdminRoleHierarchyException("Admin role is required");
+        }
+
+        if (actor.getRole() == AdminRole.OWNER) {
+            return;
+        }
+
+        if (actor.getRole() == AdminRole.SUPER_ADMIN && requestedRole == AdminRole.READ_ONLY_ADMIN) {
+            return;
+        }
+
+        throw new AdminRoleHierarchyException("You do not have permission to assign this admin role");
+    }
+
+    private void assertNotRemovingLastOwner(AdminRole currentRole, AdminRole requestedRole, String message) {
+        boolean removingOwner = currentRole == AdminRole.OWNER && requestedRole != AdminRole.OWNER;
+
+        if (removingOwner && adminUserRepository.countByRole(AdminRole.OWNER) <= 1) {
+            throw new LastOwnerException(message);
+        }
     }
 }

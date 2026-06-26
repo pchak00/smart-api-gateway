@@ -1,4 +1,4 @@
-import React, { FormEvent, useEffect, useState } from 'react';
+import React, { FormEvent, useEffect, useMemo, useState } from 'react';
 import { Plus, UserCog } from 'lucide-react';
 import { api } from '../api/client';
 import { useAuth } from '../hooks/useAuth';
@@ -6,13 +6,13 @@ import { useToast } from '../hooks/useToast';
 import { PrimaryButton, SecondaryButton } from '../components/Button';
 import { EmptyState, PageHeader } from '../components/PageShell';
 import { AdminRole, AdminUserDto } from '../types';
-import { getRoleLabel } from '../utils/roles';
+import { canManageAdminUser, getAssignableRoles, getRoleLabel, isOwnerRole, isSuperAdminRole } from '../utils/roles';
 import { RowActions } from '../components/RowActions';
 import { getApiErrorMessage } from '../utils/apiError';
 import { PasswordInput } from '../components/PasswordInput';
 
 export const AdminUsersPage: React.FC = () => {
-  const { canMutate, username } = useAuth();
+  const { role, username } = useAuth();
   const { showToast } = useToast();
   const [adminUsers, setAdminUsers] = useState<AdminUserDto[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -24,9 +24,9 @@ export const AdminUsersPage: React.FC = () => {
   const [newPassword, setNewPassword] = useState('');
   const [newRole, setNewRole] = useState<AdminRole>('READ_ONLY_ADMIN');
   const [selectedRole, setSelectedRole] = useState<AdminRole>('READ_ONLY_ADMIN');
-  const writeTooltip = !canMutate
-    ? 'Admin required'
-    : undefined;
+  const assignableRoles = useMemo(() => getAssignableRoles(role), [role]);
+  const canCreateAdminUsers = assignableRoles.length > 0;
+  const writeTooltip = !canCreateAdminUsers ? 'Owner or Admin required' : undefined;
 
   const loadAdminUsers = async () => {
     try {
@@ -46,15 +46,27 @@ export const AdminUsersPage: React.FC = () => {
     loadAdminUsers();
   }, []);
 
+  useEffect(() => {
+    if (!assignableRoles.includes(newRole)) {
+      setNewRole(assignableRoles[assignableRoles.length - 1] ?? 'READ_ONLY_ADMIN');
+    }
+  }, [assignableRoles, newRole]);
+
+  const getEditableRoles = (targetRole: AdminRole | string): AdminRole[] => {
+    if (isOwnerRole(role)) return ['OWNER', 'SUPER_ADMIN', 'READ_ONLY_ADMIN'];
+    if (isSuperAdminRole(role) && targetRole === 'READ_ONLY_ADMIN') return ['READ_ONLY_ADMIN'];
+    return [];
+  };
+
   const resetCreateForm = () => {
     setNewUsername('');
     setNewPassword('');
-    setNewRole('READ_ONLY_ADMIN');
+    setNewRole(assignableRoles[assignableRoles.length - 1] ?? 'READ_ONLY_ADMIN');
   };
 
   const handleCreateAdmin = async (event: FormEvent) => {
     event.preventDefault();
-    if (!canMutate) return;
+    if (!canCreateAdminUsers) return;
 
     setIsSubmitting(true);
     try {
@@ -78,14 +90,19 @@ export const AdminUsersPage: React.FC = () => {
   };
 
   const startRoleEdit = (adminUser: AdminUserDto) => {
+    const editableRoles = getEditableRoles(adminUser.role);
+    if (editableRoles.length === 0) return;
+
     setEditingAdmin(adminUser);
     setIsCreateOpen(false);
-    setSelectedRole(adminUser.role === 'SUPER_ADMIN' ? 'SUPER_ADMIN' : 'READ_ONLY_ADMIN');
+    setSelectedRole(editableRoles.includes(adminUser.role as AdminRole)
+      ? adminUser.role as AdminRole
+      : editableRoles[editableRoles.length - 1]);
   };
 
   const handleUpdateRole = async (event: FormEvent) => {
     event.preventDefault();
-    if (!canMutate || !editingAdmin?.id) return;
+    if (!editingAdmin?.id || !canManageAdminUser(role, editingAdmin.role)) return;
 
     setIsSubmitting(true);
     try {
@@ -104,7 +121,7 @@ export const AdminUsersPage: React.FC = () => {
   };
 
   const handleDeleteAdmin = async (adminUser: AdminUserDto) => {
-    if (!canMutate || !adminUser.id) return;
+    if (!adminUser.id || !canManageAdminUser(role, adminUser.role)) return;
     if (!window.confirm(`Delete admin user ${adminUser.username}?`)) return;
 
     setIsSubmitting(true);
@@ -126,12 +143,12 @@ export const AdminUsersPage: React.FC = () => {
     <div>
       <PageHeader
         title="Admin Users"
-        description="Manage platform operators and their access level. This section is restricted to Admin users."
+        description="Manage platform operators and their access level."
         meta={errorMessage ? <span className="text-xs text-slate-500">{errorMessage}</span> : undefined}
         actions={
           <PrimaryButton
             type="button"
-            disabled={!canMutate}
+            disabled={!canCreateAdminUsers}
             tooltip={writeTooltip}
             onClick={() => {
               setEditingAdmin(null);
@@ -173,8 +190,11 @@ export const AdminUsersPage: React.FC = () => {
               onChange={(event) => setNewRole(event.target.value as AdminRole)}
               className="mt-2 w-full rounded-md border border-slate-800 bg-slate-950 px-3 py-2 text-sm text-slate-100 outline-none focus:border-slate-600"
             >
-              <option value="READ_ONLY_ADMIN">Viewer</option>
-              <option value="SUPER_ADMIN">Admin</option>
+              {assignableRoles.map((assignableRole) => (
+                <option key={assignableRole} value={assignableRole}>
+                  {getRoleLabel(assignableRole)}
+                </option>
+              ))}
             </select>
           </label>
           <div className="flex gap-2">
@@ -201,8 +221,11 @@ export const AdminUsersPage: React.FC = () => {
               onChange={(event) => setSelectedRole(event.target.value as AdminRole)}
               className="mt-2 w-full rounded-md border border-slate-800 bg-slate-950 px-3 py-2 text-sm text-slate-100 outline-none focus:border-slate-600"
             >
-              <option value="READ_ONLY_ADMIN">Viewer</option>
-              <option value="SUPER_ADMIN">Admin</option>
+              {getEditableRoles(editingAdmin.role).map((editableRole) => (
+                <option key={editableRole} value={editableRole}>
+                  {getRoleLabel(editableRole)}
+                </option>
+              ))}
             </select>
           </label>
           <PrimaryButton type="submit" disabled={isSubmitting}>
@@ -242,42 +265,48 @@ export const AdminUsersPage: React.FC = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-800/35">
-                {adminUsers.map((adminUser) => (
-                  <tr key={adminUser.id ?? adminUser.username} className="transition-colors hover:bg-slate-900/35">
-                    <td className="px-4 py-4">
-                      <div className="flex items-center gap-3">
-                        <UserCog className="text-slate-600" size={16} aria-hidden="true" />
-                        <span className="text-sm font-medium text-slate-100">{adminUser.username}</span>
-                      </div>
-                    </td>
-                    <td className="px-4 py-4 text-sm text-slate-300">{getRoleLabel(adminUser.role)}</td>
-                    <td className="px-4 py-4 text-right text-sm">
-                      {adminUser.id !== undefined && (
-                        <RowActions
-                          actions={[
-                            {
-                              label: 'Change role',
-                              disabled: !canMutate,
-                              title: writeTooltip,
-                              onClick: () => startRoleEdit(adminUser)
-                            },
-                            {
-                              label: 'Delete',
-                              tone: 'danger',
-                              disabled: !canMutate || adminUser.username === username,
-                              title: !canMutate
-                                ? writeTooltip
-                                : adminUser.username === username
+                {adminUsers.map((adminUser) => {
+                  const canManageRow = canManageAdminUser(role, adminUser.role);
+                  const editableRoles = getEditableRoles(adminUser.role);
+                  const canChangeRole = editableRoles.length > 1;
+                  const isCurrentUser = adminUser.username === username;
+                  const rowAccessTitle = canManageRow ? undefined : 'Owner required';
+
+                  return (
+                    <tr key={adminUser.id ?? adminUser.username} className="transition-colors hover:bg-slate-900/35">
+                      <td className="px-4 py-4">
+                        <div className="flex items-center gap-3">
+                          <UserCog className="text-slate-600" size={16} aria-hidden="true" />
+                          <span className="text-sm font-medium text-slate-100">{adminUser.username}</span>
+                        </div>
+                      </td>
+                      <td className="px-4 py-4 text-sm text-slate-300">{getRoleLabel(adminUser.role)}</td>
+                      <td className="px-4 py-4 text-right text-sm">
+                        {adminUser.id !== undefined && (
+                          <RowActions
+                            actions={[
+                              {
+                                label: 'Change role',
+                                disabled: !canChangeRole,
+                                title: rowAccessTitle ?? (!canChangeRole ? 'No role changes available' : undefined),
+                                onClick: () => startRoleEdit(adminUser)
+                              },
+                              {
+                                label: 'Delete',
+                                tone: 'danger',
+                                disabled: !canManageRow || isCurrentUser,
+                                title: rowAccessTitle ?? (isCurrentUser
                                   ? 'You cannot delete your current session user'
-                                  : undefined,
-                              onClick: () => handleDeleteAdmin(adminUser)
-                            }
-                          ]}
-                        />
-                      )}
-                    </td>
-                  </tr>
-                ))}
+                                  : undefined),
+                                onClick: () => handleDeleteAdmin(adminUser)
+                              }
+                            ]}
+                          />
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>

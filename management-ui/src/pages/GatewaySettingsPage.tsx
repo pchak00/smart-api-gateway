@@ -10,7 +10,7 @@ import { GatewaySettingsDto, TestGatewayConnectionResponse } from '../types';
 import { getApiErrorMessage } from '../utils/apiError';
 import { formatDateTime } from '../utils/display';
 
-const permissionMessage = 'You need Owner access to perform this action.';
+const permissionMessage = 'You need Admin access to perform this action.';
 
 interface GatewaySettingsForm {
   upstreamBaseUrl: string;
@@ -40,7 +40,7 @@ export const GatewaySettingsPage: React.FC = () => {
   const [saveError, setSaveError] = useState<string | null>(null);
   const [testError, setTestError] = useState<string | null>(null);
   const [testResult, setTestResult] = useState<TestGatewayConnectionResponse | null>(null);
-  const writeTooltip = !canMutate ? 'Owner required' : undefined;
+  const writeTooltip = !canMutate ? 'Admin required' : undefined;
 
   const loadSettings = async () => {
     setIsLoading(true);
