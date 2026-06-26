@@ -125,7 +125,6 @@ const GatewayHealthPanel: React.FC<GatewayHealthPanelProps> = ({
   isOperationalLoading,
   settingsError
 }) => {
-  const totalRequests = valueOrLoading(summary?.totalRequests, isSummaryLoading);
   const allowedRequests = valueOrLoading(summary?.allowedRequests, isSummaryLoading);
   const blockedRequests = valueOrLoading(summary?.blockedRequests, isSummaryLoading);
   const upstreamValue = isOperationalLoading
@@ -152,10 +151,6 @@ const GatewayHealthPanel: React.FC<GatewayHealthPanelProps> = ({
           <dd className={healthValueClass} title={upstreamValue}>{upstreamValue}</dd>
         </div>
         <div className="rounded-md bg-slate-950/30 px-4 py-3">
-          <dt className="text-xs font-medium text-slate-600">Traffic processed</dt>
-          <dd className={healthValueClass}>{totalRequests}</dd>
-        </div>
-        <div className="rounded-md bg-slate-950/30 px-4 py-3">
           <dt className="text-xs font-medium text-slate-600">Allowed / blocked</dt>
           <dd className={healthValueClass}>{allowedRequests} / {blockedRequests}</dd>
         </div>
@@ -166,10 +161,6 @@ const GatewayHealthPanel: React.FC<GatewayHealthPanelProps> = ({
         <div className="min-w-0 rounded-md bg-slate-950/30 px-4 py-3">
           <dt className="text-xs font-medium text-slate-600">Most active route</dt>
           <dd className={healthValueClass} title={mostActiveRouteLabel}>{mostActiveRouteLabel}</dd>
-        </div>
-        <div className="rounded-md bg-slate-950/30 px-4 py-3">
-          <dt className="text-xs font-medium text-slate-600">Open alerts</dt>
-          <dd className={healthValueClass}>{valueOrLoading(summary?.openAlertCount, isSummaryLoading)}</dd>
         </div>
       </dl>
 

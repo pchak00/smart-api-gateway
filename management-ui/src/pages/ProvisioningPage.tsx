@@ -239,12 +239,6 @@ export const ProvisioningPage: React.FC = () => {
         </section>
       )}
 
-      <section className="mb-7 border-y border-slate-800/35 py-4">
-        <p className="max-w-3xl text-sm leading-6 text-slate-500">
-          Tokens are shown only once when created.
-        </p>
-      </section>
-
       <section>
         {isLoading ? (
           <div className="px-6 py-12 text-center text-sm text-slate-500">Loading provisioning tokens...</div>

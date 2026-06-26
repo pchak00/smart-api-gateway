@@ -9,6 +9,7 @@ import { AdminRole, AdminUserDto } from '../types';
 import { getRoleLabel } from '../utils/roles';
 import { RowActions } from '../components/RowActions';
 import { getApiErrorMessage } from '../utils/apiError';
+import { PasswordInput } from '../components/PasswordInput';
 
 export const AdminUsersPage: React.FC = () => {
   const { canMutate, username } = useAuth();
@@ -157,11 +158,11 @@ export const AdminUsersPage: React.FC = () => {
           </label>
           <label className="block text-sm text-slate-500">
             Password
-            <input
-              type="password"
+            <PasswordInput
               value={newPassword}
               onChange={(event) => setNewPassword(event.target.value)}
-              className="mt-2 w-full rounded-md border border-slate-800 bg-slate-950 px-3 py-2 text-sm text-slate-100 outline-none focus:border-slate-600"
+              wrapperClassName="mt-2"
+              inputClassName="w-full rounded-md border border-slate-800 bg-slate-950 px-3 py-2 text-sm text-slate-100 outline-none focus:border-slate-600"
               required
             />
           </label>

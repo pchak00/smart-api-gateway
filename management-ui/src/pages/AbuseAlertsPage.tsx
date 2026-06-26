@@ -6,7 +6,7 @@ import { useAuth } from '../hooks/useAuth';
 import { useToast } from '../hooks/useToast';
 import { EmptyState, PageHeader } from '../components/PageShell';
 import { RowActions } from '../components/RowActions';
-import { formatDateTime, formatNumber, getSeverityLabel, getStatusLabel } from '../utils/display';
+import { formatDateTime, formatNumber, getStatusLabel } from '../utils/display';
 import { getApiErrorMessage } from '../utils/apiError';
 
 type AlertFilter = 'ALL' | AbuseAlertStatus;
@@ -159,13 +159,12 @@ export const AbuseAlertsPage: React.FC = () => {
           />
         ) : (
           <div className="overflow-x-auto pb-16">
-            <table className="w-full min-w-[920px]">
+            <table className="w-full min-w-[760px]">
               <thead className="border-b border-slate-800/40">
                 <tr>
                   <th className="px-4 py-3 text-left text-xs font-medium text-slate-500">Client</th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-slate-500">Status</th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-slate-500">Blocked</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-slate-500">Severity</th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-slate-500">Timeline</th>
                   <th className="px-4 py-3 text-right text-xs font-medium text-slate-500">
                     <span className="sr-only">Lifecycle actions</span>
@@ -199,9 +198,6 @@ export const AbuseAlertsPage: React.FC = () => {
                         <p className="text-sm font-medium text-slate-100">
                           {alert.clientName ?? `Client #${alert.clientId ?? index + 1}`}
                         </p>
-                        <p className="mt-1 max-w-xl text-sm text-slate-500">
-                          {alert.message ?? 'Blocked request threshold reached.'}
-                        </p>
                       </td>
                       <td className="px-4 py-4">
                         <span className={`inline-flex rounded-md px-2 py-0.5 text-xs font-medium ${statusLabelClass(status)}`}>
@@ -213,9 +209,6 @@ export const AbuseAlertsPage: React.FC = () => {
                         <p className="mt-1 text-xs text-slate-500">
                           Window from {formatDateTime(alert.windowStart)}
                         </p>
-                      </td>
-                      <td className="px-4 py-4 text-sm text-slate-300">
-                        {getSeverityLabel(alert.severity)}
                       </td>
                       <td className="px-4 py-4">
                         <p className="text-sm text-slate-300">
