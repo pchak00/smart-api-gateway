@@ -6,6 +6,7 @@ import com.prakash.gateaway_service.Repository.ClientRepository;
 import com.prakash.gateaway_service.Service.AbuseDetectionService;
 import com.prakash.gateaway_service.Service.GatewayUpstreamResolver;
 import com.prakash.gateaway_service.Service.RateLimitResolverService;
+import com.prakash.gateaway_service.Service.RateLimitResolverService.ResolvedRateLimit;
 import com.prakash.gateaway_service.Service.RateLimiterService;
 import com.prakash.gateaway_service.Service.UsageLogService;
 import org.jspecify.annotations.NonNull;
@@ -65,8 +66,12 @@ public class ApiKeyFilter implements HandlerFilterFunction<ServerResponse, Serve
         }
 
         //check rate limit
-        Integer limit = rateLimitResolverService.resolveLimit(client, path);
-        boolean isAllowed = rateLimiterService.isAllowed(client.getApiKey(), path, limit);
+        ResolvedRateLimit resolvedRateLimit = rateLimitResolverService.resolve(client, path);
+        boolean isAllowed = rateLimiterService.isAllowed(
+                client.getApiKey(),
+                resolvedRateLimit.rateLimitBucket(),
+                resolvedRateLimit.requestsPerMinute()
+        );
         if (!isAllowed) {
             usageLogService.log(client, path, method, false, 429, "Rate limit exceeded");
 
@@ -76,9 +81,6 @@ public class ApiKeyFilter implements HandlerFilterFunction<ServerResponse, Serve
 
             return ServerResponse.status(429).body("Rate limit exceeded");
         }
-
-        //ABUSE CHECK
-        abuseDetectionService.checkAndCreateAlert(client);
 
         // Continue request
         usageLogService.log(client, path, method, true, 200, "Client is allowed");

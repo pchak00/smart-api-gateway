@@ -63,12 +63,20 @@ class ApiKeyFilterRoutePatternTest {
         HandlerFunction<ServerResponse> next = mock(HandlerFunction.class);
         when(clientRepository.findByApiKey("free-demo-api-key")).thenReturn(Optional.of(client));
         when(routeLimitRepository.findByPlanId(1L)).thenReturn(List.of(routeLimit("/api/reports/**", 2)));
-        when(rateLimiterService.isAllowed("free-demo-api-key", "/api/reports/daily", 2)).thenReturn(false);
+        when(rateLimiterService.isAllowed(
+                "free-demo-api-key",
+                "route:plan:1:pattern:/api/reports/**",
+                2
+        )).thenReturn(false);
 
         ServerResponse response = apiKeyFilter.filter(request, next);
 
         assertEquals(429, response.statusCode().value());
-        verify(rateLimiterService).isAllowed("free-demo-api-key", "/api/reports/daily", 2);
+        verify(rateLimiterService).isAllowed(
+                "free-demo-api-key",
+                "route:plan:1:pattern:/api/reports/**",
+                2
+        );
         verify(usageLogService).log(client, "/api/reports/daily", "GET", false, 429, "Rate limit exceeded");
         verify(abuseDetectionService).checkAndCreateAlert(client);
         verify(gatewayUpstreamResolver, never()).resolveUpstreamBaseUri();

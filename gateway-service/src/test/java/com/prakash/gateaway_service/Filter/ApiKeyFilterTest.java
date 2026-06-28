@@ -6,6 +6,7 @@ import com.prakash.gateaway_service.Repository.ClientRepository;
 import com.prakash.gateaway_service.Service.AbuseDetectionService;
 import com.prakash.gateaway_service.Service.GatewayUpstreamResolver;
 import com.prakash.gateaway_service.Service.RateLimitResolverService;
+import com.prakash.gateaway_service.Service.RateLimitResolverService.ResolvedRateLimit;
 import com.prakash.gateaway_service.Service.RateLimiterService;
 import com.prakash.gateaway_service.Service.UsageLogService;
 import org.junit.jupiter.api.BeforeEach;
@@ -22,6 +23,8 @@ import java.util.HashMap;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -63,6 +66,7 @@ class ApiKeyFilterTest {
         ServerResponse response = apiKeyFilter.filter(request, next);
 
         assertEquals(401, response.statusCode().value());
+        verify(rateLimiterService, never()).isAllowed(anyString(), anyString(), anyInt());
         verify(gatewayUpstreamResolver, never()).resolveUpstreamBaseUri();
         verify(next, never()).handle(request);
     }
@@ -73,12 +77,15 @@ class ApiKeyFilterTest {
         ServerRequest request = request("free-demo-api-key");
         HandlerFunction<ServerResponse> next = mock(HandlerFunction.class);
         when(clientRepository.findByApiKey("free-demo-api-key")).thenReturn(Optional.of(client));
-        when(rateLimitResolverService.resolveLimit(client, "/api/products")).thenReturn(10);
-        when(rateLimiterService.isAllowed("free-demo-api-key", "/api/products", 10)).thenReturn(false);
+        when(rateLimitResolverService.resolve(client, "/api/products"))
+                .thenReturn(planLimit("/api/products", 10));
+        when(rateLimiterService.isAllowed("free-demo-api-key", "plan:1:path:/api/products", 10)).thenReturn(false);
 
         ServerResponse response = apiKeyFilter.filter(request, next);
 
         assertEquals(429, response.statusCode().value());
+        verify(usageLogService).log(client, "/api/products", "GET", false, 429, "Rate limit exceeded");
+        verify(abuseDetectionService).checkAndCreateAlert(client);
         verify(gatewayUpstreamResolver, never()).resolveUpstreamBaseUri();
         verify(next, never()).handle(request);
     }
@@ -93,8 +100,9 @@ class ApiKeyFilterTest {
         URI upstreamUri = URI.create("http://dynamic-backend:9000");
         when(clientRepository.findByApiKey("old-api-key")).thenReturn(Optional.empty());
         when(clientRepository.findByApiKey("new-api-key")).thenReturn(Optional.of(client));
-        when(rateLimitResolverService.resolveLimit(client, "/api/products")).thenReturn(10);
-        when(rateLimiterService.isAllowed("new-api-key", "/api/products", 10)).thenReturn(true);
+        when(rateLimitResolverService.resolve(client, "/api/products"))
+                .thenReturn(planLimit("/api/products", 10));
+        when(rateLimiterService.isAllowed("new-api-key", "plan:1:path:/api/products", 10)).thenReturn(true);
         when(gatewayUpstreamResolver.resolveUpstreamBaseUri()).thenReturn(upstreamUri);
         when(next.handle(newKeyRequest)).thenReturn(ServerResponse.ok().build());
 
@@ -103,7 +111,7 @@ class ApiKeyFilterTest {
 
         assertEquals(401, oldKeyResponse.statusCode().value());
         assertEquals(200, newKeyResponse.statusCode().value());
-        verify(rateLimiterService).isAllowed("new-api-key", "/api/products", 10);
+        verify(rateLimiterService).isAllowed("new-api-key", "plan:1:path:/api/products", 10);
         verify(next, never()).handle(oldKeyRequest);
         verify(next).handle(newKeyRequest);
     }
@@ -120,7 +128,7 @@ class ApiKeyFilterTest {
 
         assertEquals(403, response.statusCode().value());
         verify(usageLogService).log(client, "/api/products", "GET", false, 403, "Client inactive");
-        verify(rateLimiterService, never()).isAllowed("free-demo-api-key", "/api/products", 10);
+        verify(rateLimiterService, never()).isAllowed(anyString(), anyString(), anyInt());
         verify(next, never()).handle(request);
     }
 
@@ -131,8 +139,9 @@ class ApiKeyFilterTest {
         HandlerFunction<ServerResponse> next = mock(HandlerFunction.class);
         URI upstreamUri = URI.create("http://dynamic-backend:9000");
         when(clientRepository.findByApiKey("free-demo-api-key")).thenReturn(Optional.of(client));
-        when(rateLimitResolverService.resolveLimit(client, "/api/products")).thenReturn(10);
-        when(rateLimiterService.isAllowed("free-demo-api-key", "/api/products", 10)).thenReturn(true);
+        when(rateLimitResolverService.resolve(client, "/api/products"))
+                .thenReturn(planLimit("/api/products", 10));
+        when(rateLimiterService.isAllowed("free-demo-api-key", "plan:1:path:/api/products", 10)).thenReturn(true);
         when(gatewayUpstreamResolver.resolveUpstreamBaseUri()).thenReturn(upstreamUri);
         when(next.handle(request)).thenReturn(ServerResponse.ok().build());
 
@@ -143,6 +152,7 @@ class ApiKeyFilterTest {
         verify(gatewayUpstreamResolver).resolveUpstreamBaseUri();
         verify(next).handle(request);
         verify(usageLogService).log(client, "/api/products", "GET", true, 200, "Client is allowed");
+        verify(abuseDetectionService, never()).checkAndCreateAlert(client);
     }
 
     private ServerRequest request(String apiKey) {
@@ -171,5 +181,14 @@ class ApiKeyFilterTest {
         client.setPlan(plan);
         client.setActive(true);
         return client;
+    }
+
+    private ResolvedRateLimit planLimit(String path, int requestsPerMinute) {
+        return new ResolvedRateLimit(
+                requestsPerMinute,
+                "plan:1:path:" + path,
+                "PLAN",
+                null
+        );
     }
 }

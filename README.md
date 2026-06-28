@@ -189,7 +189,7 @@ Patterns can be exact paths such as `/api/products`, one-segment wildcards such 
 
 #### Distributed Redis-Backed Rate Limiting
 
-Rate limiting uses Redis-based shared counters instead of local in-memory tracking.
+Pacific uses Redis-backed sliding-window rate limiting to enforce plan and route-specific quotas over a rolling 60-second window. This avoids fixed-window boundary bursts while preserving plan defaults and route override behavior, including exact paths, one-segment wildcards, and nested wildcard route limits.
 
 This allows multiple gateway instances to share rate limit state consistently and supports a more horizontally scalable architecture compared to application-local counters.
 
@@ -907,10 +907,9 @@ Planned improvements and future platform enhancements include:
 
 ### Advanced Rate Limiting Algorithms
 
-The current implementation uses a fixed-window rate limiting strategy.
+The current implementation uses Redis-backed sliding-window rate limiting for rolling 60-second enforcement.
 
 Future versions will introduce:
-- sliding window rate limiting
 - token bucket algorithms
 - burst traffic handling
 - dynamic quota policies

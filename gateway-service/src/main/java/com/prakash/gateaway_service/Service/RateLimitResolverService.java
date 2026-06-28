@@ -17,13 +17,36 @@ public class RateLimitResolverService {
     }
 
     public int resolveLimit(Client client, String path) {
+        return resolve(client, path).requestsPerMinute();
+    }
+
+    public ResolvedRateLimit resolve(Client client, String path) {
         return routeLimitRepository.findByPlanId(client.getPlan().getId())
                 .stream()
                 .map(routeLimit -> new RouteLimitMatch(routeLimit, matchScore(routeLimit.getRoutePattern(), path)))
                 .filter(match -> match.score() > 0)
                 .max(Comparator.comparingInt(RouteLimitMatch::score))
-                .map(match -> match.routeLimit().getRequestsPerMinute())
-                .orElse(client.getPlan().getRequestsPerMinute());
+                .map(match -> routeLimit(client, match.routeLimit()))
+                .orElseGet(() -> planLimit(client, path));
+    }
+
+    private ResolvedRateLimit routeLimit(Client client, RouteLimit routeLimit) {
+        String routePattern = routeLimit.getRoutePattern();
+        return new ResolvedRateLimit(
+                routeLimit.getRequestsPerMinute(),
+                "route:plan:" + client.getPlan().getId() + ":pattern:" + routePattern,
+                "ROUTE",
+                routePattern
+        );
+    }
+
+    private ResolvedRateLimit planLimit(Client client, String path) {
+        return new ResolvedRateLimit(
+                client.getPlan().getRequestsPerMinute(),
+                "plan:" + client.getPlan().getId() + ":path:" + path,
+                "PLAN",
+                null
+        );
     }
 
     int matchScore(String routePattern, String path) {
@@ -87,5 +110,13 @@ public class RateLimitResolverService {
     }
 
     private record RouteLimitMatch(RouteLimit routeLimit, int score) {
+    }
+
+    public record ResolvedRateLimit(
+            int requestsPerMinute,
+            String rateLimitBucket,
+            String source,
+            String matchedRoutePattern
+    ) {
     }
 }

@@ -10,6 +10,7 @@ import org.junit.jupiter.api.Test;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -32,8 +33,14 @@ class RateLimitResolverServiceTest {
                 .thenReturn(List.of(routeLimit("/api/products", 5)));
 
         int limit = rateLimitResolverService.resolveLimit(client, "/api/products");
+        RateLimitResolverService.ResolvedRateLimit resolved =
+                rateLimitResolverService.resolve(client, "/api/products");
 
         assertEquals(5, limit);
+        assertEquals(5, resolved.requestsPerMinute());
+        assertEquals("ROUTE", resolved.source());
+        assertEquals("/api/products", resolved.matchedRoutePattern());
+        assertEquals("route:plan:1:pattern:/api/products", resolved.rateLimitBucket());
     }
 
     @Test
@@ -52,8 +59,11 @@ class RateLimitResolverServiceTest {
                 .thenReturn(List.of(routeLimit("/api/users/*", 7)));
 
         int limit = rateLimitResolverService.resolveLimit(client, "/api/users/123");
+        RateLimitResolverService.ResolvedRateLimit resolved =
+                rateLimitResolverService.resolve(client, "/api/users/123");
 
         assertEquals(7, limit);
+        assertEquals("route:plan:1:pattern:/api/users/*", resolved.rateLimitBucket());
     }
 
     @Test
@@ -92,8 +102,11 @@ class RateLimitResolverServiceTest {
                 .thenReturn(List.of(routeLimit("/api/users/**", 20)));
 
         int limit = rateLimitResolverService.resolveLimit(client, "/api/users/123/profile");
+        RateLimitResolverService.ResolvedRateLimit resolved =
+                rateLimitResolverService.resolve(client, "/api/users/123/profile");
 
         assertEquals(20, limit);
+        assertEquals("route:plan:1:pattern:/api/users/**", resolved.rateLimitBucket());
     }
 
     @Test
@@ -105,8 +118,12 @@ class RateLimitResolverServiceTest {
                 ));
 
         int limit = rateLimitResolverService.resolveLimit(client, "/api/users/profile");
+        RateLimitResolverService.ResolvedRateLimit resolved =
+                rateLimitResolverService.resolve(client, "/api/users/profile");
 
         assertEquals(5, limit);
+        assertEquals("/api/users/profile", resolved.matchedRoutePattern());
+        assertEquals("route:plan:1:pattern:/api/users/profile", resolved.rateLimitBucket());
     }
 
     @Test
@@ -141,8 +158,13 @@ class RateLimitResolverServiceTest {
                 .thenReturn(List.of(routeLimit("/api/reports/**", 2)));
 
         int limit = rateLimitResolverService.resolveLimit(client, "/api/products");
+        RateLimitResolverService.ResolvedRateLimit resolved =
+                rateLimitResolverService.resolve(client, "/api/products");
 
         assertEquals(10, limit);
+        assertEquals("PLAN", resolved.source());
+        assertNull(resolved.matchedRoutePattern());
+        assertEquals("plan:1:path:/api/products", resolved.rateLimitBucket());
     }
 
     private Client client() {
