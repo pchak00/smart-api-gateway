@@ -310,6 +310,37 @@ Service configuration is managed through environment variables and container con
 
 This simplifies deployment portability and environment-specific configuration management.
 
+#### Deployment Configuration
+
+Root `.env.example` documents the local/demo variables used by Docker Compose. Public deployments should provide real secret values through the deployment platform instead of committing a `.env` file.
+
+| Variable | Purpose | Local/demo value |
+|---|---|---|
+| `POSTGRES_DB` | PostgreSQL database created by the local container | `gateway_db` |
+| `POSTGRES_USER` | PostgreSQL user created by the local container | `postgres` |
+| `POSTGRES_PASSWORD` | PostgreSQL password for local Compose | replace before deployment |
+| `SPRING_DATASOURCE_URL` | Gateway JDBC URL | `jdbc:postgresql://postgres:5432/gateway_db` |
+| `SPRING_DATASOURCE_USERNAME` | Gateway database username | `postgres` |
+| `SPRING_DATASOURCE_PASSWORD` | Gateway database password | replace before deployment |
+| `SPRING_DATA_REDIS_HOST` | Redis host used by the gateway | `redis` |
+| `SPRING_DATA_REDIS_PORT` | Redis port used by the gateway | `6379` |
+| `JWT_SECRET` | Admin JWT signing secret | replace with a long random secret |
+| `JWT_EXPIRATION_MS` | Admin access token lifetime | `3600000` |
+| `ADMIN_REFRESH_TOKEN_EXPIRATION_MS` | Admin refresh token lifetime | `604800000` |
+| `BACKEND_SERVICE_URL` | Fallback upstream backend URL for gateway routing | `http://backend-service:8081` |
+| `CORS_ALLOWED_ORIGINS` | Comma-separated allowed management UI origins | local UI origins |
+| `VITE_API_BASE_URL` | Browser-visible gateway/admin API base URL embedded into the UI bundle | `http://localhost:8080` |
+
+The management UI runs in the browser, so `VITE_API_BASE_URL` must be reachable by the user's browser. For local Docker Compose this is `http://localhost:8080`. For public deployment it should be the public gateway/admin API URL, not Docker-internal names such as `gateway-service`.
+
+`CORS_ALLOWED_ORIGINS` must list the deployed UI origin exactly. The gateway rejects wildcard `*` origins; use explicit origins when deploying.
+
+Local Docker Compose uses demo/local defaults when no `.env` file is present. Deployment environments should override passwords, `JWT_SECRET`, URLs, and CORS origins. No Spring profile split is required today; configuration is environment-variable driven.
+
+Health endpoints are intentionally lightweight: the gateway exposes `GET /health`, and the demo backend exposes `GET /health`.
+
+Seeded demo admins, demo API keys, and the local `demo-provisioning-token` remain for local demos. Before a public demo or production deployment, decide whether to disable seed data, rotate seeded values, or replace demo seeding with deployment-specific bootstrap data.
+
 ### Production-Oriented Separation
 
 The architecture separates:
