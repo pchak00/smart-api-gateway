@@ -314,6 +314,8 @@ This simplifies deployment portability and environment-specific configuration ma
 
 Root `.env.example` documents the local/demo variables used by Docker Compose. Public deployments should provide real secret values through the deployment platform instead of committing a `.env` file.
 
+For deployment beyond localhost, see [Deployment Guide](docs/DEPLOYMENT.md).
+
 | Variable | Purpose | Local/demo value |
 |---|---|---|
 | `POSTGRES_DB` | PostgreSQL database created by the local container | `gateway_db` |
