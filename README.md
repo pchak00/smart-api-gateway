@@ -316,6 +316,8 @@ Root `.env.example` documents the local/demo variables used by Docker Compose. P
 
 For deployment beyond localhost, see [Deployment Guide](docs/DEPLOYMENT.md).
 
+For Railway-specific deployment notes, see [Railway Deployment](docs/RAILWAY_DEPLOYMENT.md).
+
 | Variable | Purpose | Local/demo value |
 |---|---|---|
 | `POSTGRES_DB` | PostgreSQL database created by the local container | `gateway_db` |
