@@ -203,6 +203,40 @@ Checklist:
 - Run the gateway settings test connection flow.
 - Log in as Viewer and confirm the Viewer cannot mutate resources.
 
+## Generate Demo Traffic
+
+Use `scripts/railway-smoke-demo.sh` from your local shell to generate realistic public-demo traffic against the deployed Railway gateway. The script reads all connection details and credentials from environment variables, so do not edit the script with real Railway domains, passwords, tokens, or API keys.
+
+Required variables:
+
+```text
+PACIFIC_API_URL=https://<gateway-service-public-domain>
+PACIFIC_ADMIN_USERNAME=<admin-username>
+PACIFIC_ADMIN_PASSWORD=<admin-password>
+```
+
+Optional variables:
+
+```text
+PACIFIC_CLIENT_API_KEY=<client-api-key>
+PACIFIC_PRODUCTS_CALLS=12
+PACIFIC_REPORTS_CALLS=6
+```
+
+Example:
+
+```bash
+PACIFIC_API_URL=https://your-gateway.up.railway.app \
+PACIFIC_ADMIN_USERNAME=owner \
+PACIFIC_ADMIN_PASSWORD=admin123 \
+PACIFIC_CLIENT_API_KEY=your-client-key \
+./scripts/railway-smoke-demo.sh
+```
+
+If `PACIFIC_CLIENT_API_KEY` is omitted, the script logs in and tries to use the first active client API key returned by `GET /admin/clients`. If the API no longer returns raw API keys, copy or rotate a client API key from the UI and rerun with `PACIFIC_CLIENT_API_KEY`.
+
+The script calls `/api/products`, `/api/reports`, and one known `/api/orders` route with `X-API-Key`, then checks dashboard and analytics admin endpoints. After it runs, the Dashboard, Analytics, Abuse Alerts, and Clients pages should show updated demo data.
+
 ## Troubleshooting
 
 ### UI Cannot Reach the API
