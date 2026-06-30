@@ -231,7 +231,7 @@ printf 'Blocked gateway responses: %s\n' "$blocked_count"
 printf 'Other gateway responses: %s\n' "$other_count"
 printf '\n'
 printf 'Updated demo data should be visible in these UI pages:\n'
-printf '- Dashboard\n'
-printf '- Analytics\n'
-printf '- Abuse Alerts\n'
-printf '- Clients\n'
+printf '%s\n' '- Dashboard'
+printf '%s\n' '- Analytics'
+printf '%s\n' '- Abuse Alerts'
+printf '%s\n' '- Clients'
