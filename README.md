@@ -318,6 +318,8 @@ For deployment beyond localhost, see [Deployment Guide](docs/DEPLOYMENT.md).
 
 For Railway-specific deployment notes, see [Railway Deployment](docs/RAILWAY_DEPLOYMENT.md).
 
+For a polished walkthrough, see [Demo Script](docs/DEMO_SCRIPT.md).
+
 | Variable | Purpose | Local/demo value |
 |---|---|---|
 | `POSTGRES_DB` | PostgreSQL database created by the local container | `gateway_db` |
