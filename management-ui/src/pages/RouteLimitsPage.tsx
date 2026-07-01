@@ -8,6 +8,8 @@ import { PrimaryButton, SecondaryButton } from '../components/Button';
 import { ListSearch } from '../components/ListSearch';
 import { EmptyState, PageHeader } from '../components/PageShell';
 import { RowActions } from '../components/RowActions';
+import { AppDropdown, DropdownOption } from '../components/AppDropdown';
+import { NumberField } from '../components/NumberField';
 import { getPlanLabel } from '../utils/display';
 import { getApiErrorMessage } from '../utils/apiError';
 import { matchesSearch, normalizeSearch } from '../utils/search';
@@ -164,6 +166,14 @@ export const RouteLimitsPage: React.FC = () => {
   const routeLimitResultLabel = trimmedSearchQuery
     ? `${filteredRouteLimits.length} ${filteredRouteLimits.length === 1 ? 'result' : 'results'}`
     : `${routeLimits.length} ${routeLimits.length === 1 ? 'route limit' : 'route limits'}`;
+  const planOptions = useMemo<DropdownOption[]>(() => (
+    plans
+      .filter((plan) => plan.id !== undefined)
+      .map((plan) => ({
+        value: String(plan.id),
+        label: getPlanLabel(plan.planName)
+      }))
+  ), [plans]);
 
   return (
     <div>
@@ -204,19 +214,17 @@ export const RouteLimitsPage: React.FC = () => {
         >
           <div className="grid gap-4 md:grid-cols-[12rem_minmax(0,1fr)_10rem_auto] md:items-end">
             {!editingLimit && (
-              <label className="block text-sm text-slate-500">
-                Plan
-                <select
+              <div className="block text-sm text-slate-500">
+                <span>Plan</span>
+                <AppDropdown
                   value={planId}
-                  onChange={(event) => setPlanId(event.target.value)}
-                  className="mt-2 w-full rounded-md border border-slate-800 bg-slate-950 px-3 py-2 text-sm text-slate-100 outline-none focus:border-slate-600"
-                  required
-                >
-                  {plans.map((plan) => (
-                    <option key={plan.id} value={plan.id}>{getPlanLabel(plan.planName)}</option>
-                  ))}
-                </select>
-              </label>
+                  onChange={setPlanId}
+                  options={planOptions}
+                  ariaLabel="Select route limit plan"
+                  className="mt-2"
+                  disabled={plans.length === 0}
+                />
+              </div>
             )}
             {editingLimit && (
               <div className="text-sm">
@@ -237,12 +245,10 @@ export const RouteLimitsPage: React.FC = () => {
             </label>
             <label className="block text-sm text-slate-500">
               Requests/min
-              <input
-                type="number"
-                min="1"
+              <NumberField
+                min={1}
                 value={requestsPerMinute}
-                onChange={(event) => setRequestsPerMinute(event.target.value)}
-                className="mt-2 w-full rounded-md border border-slate-800 bg-slate-950 px-3 py-2 text-sm text-slate-100 outline-none focus:border-slate-600"
+                onChange={setRequestsPerMinute}
                 required
               />
             </label>

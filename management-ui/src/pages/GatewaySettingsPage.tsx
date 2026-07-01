@@ -3,6 +3,7 @@ import { Activity, AlertCircle, CheckCircle2, RefreshCcw, Save, SlidersHorizonta
 import { api } from '../api/client';
 import { PrimaryButton, SecondaryButton } from '../components/Button';
 import { EmptyState, PageHeader } from '../components/PageShell';
+import { NumberField } from '../components/NumberField';
 import { SettingsTabs } from '../components/SettingsTabs';
 import { useAuth } from '../hooks/useAuth';
 import { useToast } from '../hooks/useToast';
@@ -208,13 +209,11 @@ export const GatewaySettingsPage: React.FC = () => {
 
             <label className="block text-sm text-slate-500">
               Request timeout in milliseconds
-              <input
-                type="number"
+              <NumberField
                 min={1}
                 max={60000}
                 value={formState.timeoutMs}
-                onChange={(event) => updateField('timeoutMs', event.target.value)}
-                className="mt-2 w-full rounded-md border border-slate-800 bg-slate-950 px-3 py-2 text-sm text-slate-100 outline-none transition-colors focus:border-slate-600 disabled:cursor-not-allowed disabled:text-slate-500"
+                onChange={(value) => updateField('timeoutMs', value)}
                 disabled={!canMutate || isSaving || isTestingConnection}
                 required
               />

@@ -8,6 +8,7 @@ import { PrimaryButton, SecondaryButton } from '../components/Button';
 import { ListSearch } from '../components/ListSearch';
 import { EmptyState, PageHeader } from '../components/PageShell';
 import { RowActions } from '../components/RowActions';
+import { AppDropdown, DropdownOption } from '../components/AppDropdown';
 import {
   ClientApiKeyLifecycleDialogs,
   PendingClientLifecycleAction
@@ -250,6 +251,14 @@ export const ClientsListPage: React.FC = () => {
       {errorMessage && <span className="text-xs text-slate-500">{errorMessage}</span>}
     </div>
   ) : undefined;
+  const planOptions = useMemo<DropdownOption[]>(() => (
+    plans
+      .filter((plan) => plan.id !== undefined)
+      .map((plan) => ({
+        value: String(plan.id),
+        label: getPlanLabel(plan.planName)
+      }))
+  ), [plans]);
 
   return (
     <div>
@@ -294,19 +303,17 @@ export const ClientsListPage: React.FC = () => {
               required
             />
           </label>
-          <label className="block text-sm text-slate-500">
-            Plan
-            <select
+          <div className="block text-sm text-slate-500">
+            <span>Plan</span>
+            <AppDropdown
               value={newClientPlanId}
-              onChange={(event) => setNewClientPlanId(event.target.value)}
-              className="mt-2 w-full rounded-md border border-slate-800 bg-slate-950 px-3 py-2 text-sm text-slate-100 outline-none focus:border-slate-600"
-              required
-            >
-              {plans.map((plan) => (
-                <option key={plan.id} value={plan.id}>{getPlanLabel(plan.planName)}</option>
-              ))}
-            </select>
-          </label>
+              onChange={setNewClientPlanId}
+              options={planOptions}
+              ariaLabel="Select client plan"
+              className="mt-2"
+              disabled={plans.length === 0}
+            />
+          </div>
           <label className="flex items-center gap-2 pb-2 text-sm text-slate-400">
             <input
               type="checkbox"
@@ -333,20 +340,17 @@ export const ClientsListPage: React.FC = () => {
             <p className="text-sm font-medium text-slate-100">{editingClient.clientName}</p>
             <p className="mt-1 text-xs text-slate-500">Change assigned plan</p>
           </div>
-          <label className="block min-w-48 text-sm text-slate-500">
-            Plan
-            <select
+          <div className="block min-w-48 text-sm text-slate-500">
+            <span>Plan</span>
+            <AppDropdown
               value={selectedPlanId}
-              onChange={(event) => setSelectedPlanId(event.target.value)}
-              className="mt-2 w-full rounded-md border border-slate-800 bg-slate-950 px-3 py-2 text-sm text-slate-100 outline-none focus:border-slate-600"
-              required
-            >
-              <option value="" disabled>Select plan</option>
-              {plans.map((plan) => (
-                <option key={plan.id} value={plan.id}>{getPlanLabel(plan.planName)}</option>
-              ))}
-            </select>
-          </label>
+              onChange={setSelectedPlanId}
+              options={[{ value: '', label: 'Select plan', disabled: true }, ...planOptions]}
+              ariaLabel="Select replacement client plan"
+              className="mt-2"
+              disabled={plans.length === 0}
+            />
+          </div>
           <PrimaryButton type="submit" disabled={isSubmitting || !selectedPlanId}>
             Save
           </PrimaryButton>

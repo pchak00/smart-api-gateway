@@ -236,6 +236,8 @@ export interface RouteTrafficAnalyticsDto {
 export interface ClientAnalyticsDto {
   clientId?: number;
   clientName?: string | null;
+  planId?: number;
+  planName?: string | null;
   totalRequests?: number;
   allowedRequests?: number;
   blockedRequests?: number;

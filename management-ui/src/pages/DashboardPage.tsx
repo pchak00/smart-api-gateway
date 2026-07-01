@@ -104,8 +104,8 @@ const topRoutes = (routes: RouteAnalyticsDto[]) => (
 );
 
 const clampPercent = (value: number) => Math.min(Math.max(value, 0), 100);
-const allowedRouteSegmentClass = 'bg-slate-500/65';
-const blockedRouteSegmentClass = 'bg-amber-500/55';
+const allowedRouteSegmentClass = 'bg-slate-500/60';
+const blockedRouteSegmentClass = 'bg-slate-300/55';
 
 interface GatewayHealthPanelProps {
   settings: GatewaySettingsDto | null;
@@ -202,7 +202,7 @@ const TopRoutesPanel: React.FC<TopRoutesPanelProps> = ({ routes }) => {
         const routeLabel = route.route ?? 'Unknown route';
 
         return (
-          <div key={`${routeLabel}-${index}`} className="rounded-md bg-slate-950/25 px-4 py-3">
+          <div key={`${routeLabel}-${index}`} className="rounded-md bg-slate-950/20 px-4 py-3">
             <div className="flex items-center justify-between gap-4">
               <p className="min-w-0 truncate font-mono text-xs text-slate-300" title={routeLabel}>
                 {routeLabel}
@@ -214,11 +214,11 @@ const TopRoutesPanel: React.FC<TopRoutesPanelProps> = ({ routes }) => {
               </p>
             </div>
             <div
-              className="mt-2 h-2 overflow-hidden rounded-full bg-slate-950/30"
+              className="mt-2 h-2 overflow-hidden rounded-full bg-slate-950/15"
               title="Bar length is relative to the busiest route."
             >
               <div
-                className="flex h-full overflow-hidden rounded-full bg-slate-900/45"
+                className="flex h-full overflow-hidden rounded-full bg-slate-900/35"
                 style={{ width: `${totalWidth}%` }}
                 aria-hidden="true"
               >

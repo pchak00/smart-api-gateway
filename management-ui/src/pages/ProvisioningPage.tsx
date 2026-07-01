@@ -1,4 +1,4 @@
-import React, { FormEvent, useEffect, useState } from 'react';
+import React, { FormEvent, useEffect, useMemo, useState } from 'react';
 import { Clipboard, KeyRound, Plus } from 'lucide-react';
 import { api } from '../api/client';
 import { useAuth } from '../hooks/useAuth';
@@ -7,6 +7,7 @@ import { EmptyState, PageHeader } from '../components/PageShell';
 import { PrimaryButton, SecondaryButton } from '../components/Button';
 import { RowActions } from '../components/RowActions';
 import { SettingsTabs } from '../components/SettingsTabs';
+import { AppDropdown, DropdownOption } from '../components/AppDropdown';
 import { PlanDto, ProvisioningTokenDto } from '../types';
 import { formatDateTime, getPlanLabel } from '../utils/display';
 import { getApiErrorMessage } from '../utils/apiError';
@@ -147,6 +148,12 @@ export const ProvisioningPage: React.FC = () => {
   const closeOneTimeToken = () => {
     setOneTimeToken(null);
   };
+  const planOptions = useMemo<DropdownOption[]>(() => (
+    plans.map((plan) => ({
+      value: plan.planName,
+      label: getPlanLabel(plan.planName)
+    }))
+  ), [plans]);
 
   return (
     <div>
@@ -186,21 +193,17 @@ export const ProvisioningPage: React.FC = () => {
               required
             />
           </label>
-          <label className="block text-sm text-slate-500">
-            Default plan
-            <select
+          <div className="block text-sm text-slate-500">
+            <span>Default plan</span>
+            <AppDropdown
               value={defaultPlanName}
-              onChange={(event) => setDefaultPlanName(event.target.value)}
-              className="mt-2 w-full rounded-md border border-slate-800 bg-slate-950 px-3 py-2 text-sm text-slate-100 outline-none focus:border-slate-600"
-              required
-            >
-              {plans.map((plan) => (
-                <option key={plan.id ?? plan.planName} value={plan.planName}>
-                  {getPlanLabel(plan.planName)}
-                </option>
-              ))}
-            </select>
-          </label>
+              onChange={setDefaultPlanName}
+              options={planOptions}
+              ariaLabel="Select default provisioning plan"
+              className="mt-2"
+              disabled={plans.length === 0}
+            />
+          </div>
           <div className="flex gap-2">
             <PrimaryButton type="submit" disabled={isSubmitting || plans.length === 0}>
               Create

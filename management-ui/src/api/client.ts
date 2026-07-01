@@ -337,18 +337,24 @@ class ApiClient {
     return response.data;
   }
 
-  async getRouteAnalytics(): Promise<RouteAnalyticsDto[]> {
-    const response = await this.axiosInstance.get<RouteAnalyticsDto[]>('/admin/analytics/routes');
+  async getRouteAnalytics(planName?: string): Promise<RouteAnalyticsDto[]> {
+    const response = await this.axiosInstance.get<RouteAnalyticsDto[]>('/admin/analytics/routes', {
+      params: planName ? { planName } : undefined
+    });
     return response.data;
   }
 
-  async getRouteTrafficAnalytics(): Promise<RouteTrafficAnalyticsDto[]> {
-    const response = await this.axiosInstance.get<RouteTrafficAnalyticsDto[]>('/admin/analytics/route-traffic');
+  async getRouteTrafficAnalytics(planName?: string): Promise<RouteTrafficAnalyticsDto[]> {
+    const response = await this.axiosInstance.get<RouteTrafficAnalyticsDto[]>('/admin/analytics/route-traffic', {
+      params: planName ? { planName } : undefined
+    });
     return response.data;
   }
 
-  async getClientAnalytics(): Promise<ClientAnalyticsDto[]> {
-    const response = await this.axiosInstance.get<ClientAnalyticsDto[]>('/admin/analytics/clients');
+  async getClientAnalytics(planName?: string): Promise<ClientAnalyticsDto[]> {
+    const response = await this.axiosInstance.get<ClientAnalyticsDto[]>('/admin/analytics/clients', {
+      params: planName ? { planName } : undefined
+    });
     return response.data;
   }
 

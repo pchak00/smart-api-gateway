@@ -8,6 +8,7 @@ import { PrimaryButton, SecondaryButton } from '../components/Button';
 import { ListSearch } from '../components/ListSearch';
 import { EmptyState, PageHeader } from '../components/PageShell';
 import { RowActions } from '../components/RowActions';
+import { NumberField } from '../components/NumberField';
 import { getPlanLabel } from '../utils/display';
 import { getApiErrorMessage } from '../utils/apiError';
 import { matchesSearch, normalizeSearch } from '../utils/search';
@@ -202,24 +203,20 @@ export const PlansPage: React.FC = () => {
           </label>
           <label className="block text-sm text-slate-500">
             Requests/min
-            <input
-              type="number"
-              min="1"
+            <NumberField
+              min={1}
               value={requestsPerMinute}
-              onChange={(event) => setRequestsPerMinute(event.target.value)}
-              className="mt-2 w-full rounded-md border border-slate-800 bg-slate-950 px-3 py-2 text-sm text-slate-100 outline-none focus:border-slate-600"
+              onChange={setRequestsPerMinute}
               required
             />
           </label>
           <label className="block text-sm text-slate-500">
             Price
-            <input
-              type="number"
-              min="0"
-              step="0.01"
+            <NumberField
+              min={0}
+              step={0.01}
               value={price}
-              onChange={(event) => setPrice(event.target.value)}
-              className="mt-2 w-full rounded-md border border-slate-800 bg-slate-950 px-3 py-2 text-sm text-slate-100 outline-none focus:border-slate-600"
+              onChange={setPrice}
               required
             />
           </label>

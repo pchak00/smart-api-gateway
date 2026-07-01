@@ -10,9 +10,16 @@ import {
   YAxis
 } from 'recharts';
 import { api } from '../api/client';
-import { ClientAnalyticsDto, RouteAnalyticsDto, RouteTrafficAnalyticsDto, TrafficAnalyticsDto } from '../types';
+import {
+  ClientAnalyticsDto,
+  PlanDto,
+  RouteAnalyticsDto,
+  RouteTrafficAnalyticsDto,
+  TrafficAnalyticsDto
+} from '../types';
 import { EmptyState, PageHeader, Panel } from '../components/PageShell';
-import { formatBucket, formatNumber } from '../utils/display';
+import { AppDropdown, DropdownOption } from '../components/AppDropdown';
+import { formatBucket, formatNumber, getPlanLabel } from '../utils/display';
 import { useToast } from '../hooks/useToast';
 
 type RouteTrendMetric = 'totalRequests' | 'allowedRequests' | 'blockedRequests';
@@ -79,6 +86,10 @@ const analyticsSortOptions: Array<{ key: AnalyticsSortKey; label: string }> = [
   { key: 'blockRate', label: 'Block rate' },
   { key: 'name', label: 'Name A-Z' }
 ];
+const analyticsSortDropdownOptions: DropdownOption[] = analyticsSortOptions.map((option) => ({
+  value: option.key,
+  label: option.label
+}));
 
 const getTopRouteLimit = (mode: RouteTrendDisplayMode) => (
   mode === 'top10' ? 10 : 5
@@ -169,6 +180,8 @@ export const AnalyticsPage: React.FC = () => {
   const [routeTrafficAnalytics, setRouteTrafficAnalytics] = useState<RouteTrafficAnalyticsDto[]>([]);
   const [clientAnalytics, setClientAnalytics] = useState<ClientAnalyticsDto[]>([]);
   const [trafficAnalytics, setTrafficAnalytics] = useState<TrafficAnalyticsDto[]>([]);
+  const [plans, setPlans] = useState<PlanDto[]>([]);
+  const [selectedPlanName, setSelectedPlanName] = useState('');
   const [selectedRouteMetric, setSelectedRouteMetric] = useState<RouteTrendMetric>('totalRequests');
   const [routeTrendMode, setRouteTrendMode] = useState<RouteTrendDisplayMode>('top5');
   const [routeAnalyticsSort, setRouteAnalyticsSort] = useState<AnalyticsSortKey>('totalRequests');
@@ -180,11 +193,14 @@ export const AnalyticsPage: React.FC = () => {
 
   useEffect(() => {
     const loadAnalytics = async () => {
+      setIsLoading(true);
+      const planName = selectedPlanName || undefined;
+
       try {
         const [routes, routeTraffic, clients, traffic] = await Promise.all([
-          api.getRouteAnalytics(),
-          api.getRouteTrafficAnalytics(),
-          api.getClientAnalytics(),
+          api.getRouteAnalytics(planName),
+          api.getRouteTrafficAnalytics(planName),
+          api.getClientAnalytics(planName),
           api.getTrafficAnalytics()
         ]);
 
@@ -206,6 +222,19 @@ export const AnalyticsPage: React.FC = () => {
     };
 
     loadAnalytics();
+  }, [selectedPlanName]);
+
+  useEffect(() => {
+    const loadPlans = async () => {
+      try {
+        const data = await api.getPlans();
+        setPlans(Array.isArray(data) ? data : []);
+      } catch (error) {
+        console.error('Failed to load plans for analytics filters:', error);
+      }
+    };
+
+    loadPlans();
   }, []);
 
   const routeTrendRouteOptions = useMemo<RouteTrendRouteTotals[]>(() => {
@@ -334,17 +363,40 @@ export const AnalyticsPage: React.FC = () => {
     () => sortClientAnalytics(clientAnalytics, clientAnalyticsSort),
     [clientAnalytics, clientAnalyticsSort]
   );
+  const planFilterOptions = useMemo<DropdownOption[]>(() => [
+    { value: '', label: 'All plans' },
+    ...plans
+      .filter((plan) => Boolean(plan.planName))
+      .map((plan) => ({
+        value: plan.planName,
+        label: getPlanLabel(plan.planName)
+      }))
+  ], [plans]);
   const routeSearchPlaceholder = selectedCustomRoutes.length >= 5
     ? 'Remove a route to add another'
     : selectedCustomRoutes.length > 0
       ? 'Add another route...'
       : 'Search routes...';
+  const selectedPlanLabel = planFilterOptions.find((option) => option.value === selectedPlanName)?.label ?? 'All plans';
 
   return (
     <div>
       <PageHeader
         title="Analytics"
         meta={errorMessage ? <span className="text-xs text-slate-500">{errorMessage}</span> : undefined}
+        actions={
+          <AppDropdown
+            value={selectedPlanName}
+            onChange={setSelectedPlanName}
+            options={planFilterOptions}
+            ariaLabel="Filter analytics by plan"
+            fullWidth={false}
+            align="right"
+            displayValue={selectedPlanLabel}
+            buttonClassName="min-w-32 border-slate-800/80 bg-slate-950/50 px-2.5 text-xs text-slate-400 hover:bg-slate-900/55"
+            menuClassName="w-44"
+          />
+        }
       />
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1fr_16rem]">
@@ -609,19 +661,17 @@ export const AnalyticsPage: React.FC = () => {
               <p className="mt-1 text-sm text-slate-500">Usage grouped by gateway path.</p>
             </div>
             <div className="flex items-center gap-3">
-              <label className="flex items-center gap-2 text-xs font-medium text-slate-500">
-                Sort
-                <select
-                  value={routeAnalyticsSort}
-                  onChange={(event) => setRouteAnalyticsSort(event.target.value as AnalyticsSortKey)}
-                  className="h-8 rounded-md border border-slate-800 bg-slate-950 px-2.5 text-xs text-slate-300 outline-none transition-colors hover:border-slate-700 focus:border-slate-600"
-                  aria-label="Sort route analytics"
-                >
-                  {analyticsSortOptions.map((option) => (
-                    <option key={option.key} value={option.key}>{option.label}</option>
-                  ))}
-                </select>
-              </label>
+              <AppDropdown
+                value={routeAnalyticsSort}
+                onChange={(value) => setRouteAnalyticsSort(value as AnalyticsSortKey)}
+                options={analyticsSortDropdownOptions}
+                ariaLabel="Sort route analytics"
+                fullWidth={false}
+                align="right"
+                displayValue="Sort"
+                buttonClassName="h-8 border-slate-800/70 bg-slate-950/45 px-2.5 text-xs text-slate-500 hover:bg-slate-900/55 hover:text-slate-300"
+                menuClassName="w-48"
+              />
               <Route className="text-slate-600" size={18} aria-hidden="true" />
             </div>
           </div>
@@ -637,9 +687,9 @@ export const AnalyticsPage: React.FC = () => {
               description="Send requests through the gateway to populate route analytics."
             />
           ) : (
-            <div className="max-h-[400px] overflow-auto rounded-md">
+            <div className="max-h-[400px] overflow-auto">
               <table className="w-full min-w-[640px]">
-                <thead className="sticky top-0 z-10 border-b border-slate-800/40 bg-slate-950/95">
+                <thead className="border-b border-slate-800/40">
                   <tr>
                     <th className="px-4 py-3 text-left text-xs font-medium text-slate-500">Route</th>
                     <th className="px-4 py-3 text-right text-xs font-medium text-slate-500">Total</th>
@@ -673,19 +723,17 @@ export const AnalyticsPage: React.FC = () => {
               <p className="mt-1 text-sm text-slate-500">Usage grouped by API consumer.</p>
             </div>
             <div className="flex items-center gap-3">
-              <label className="flex items-center gap-2 text-xs font-medium text-slate-500">
-                Sort
-                <select
-                  value={clientAnalyticsSort}
-                  onChange={(event) => setClientAnalyticsSort(event.target.value as AnalyticsSortKey)}
-                  className="h-8 rounded-md border border-slate-800 bg-slate-950 px-2.5 text-xs text-slate-300 outline-none transition-colors hover:border-slate-700 focus:border-slate-600"
-                  aria-label="Sort client analytics"
-                >
-                  {analyticsSortOptions.map((option) => (
-                    <option key={option.key} value={option.key}>{option.label}</option>
-                  ))}
-                </select>
-              </label>
+              <AppDropdown
+                value={clientAnalyticsSort}
+                onChange={(value) => setClientAnalyticsSort(value as AnalyticsSortKey)}
+                options={analyticsSortDropdownOptions}
+                ariaLabel="Sort client analytics"
+                fullWidth={false}
+                align="right"
+                displayValue="Sort"
+                buttonClassName="h-8 border-slate-800/70 bg-slate-950/45 px-2.5 text-xs text-slate-500 hover:bg-slate-900/55 hover:text-slate-300"
+                menuClassName="w-48"
+              />
               <Users className="text-slate-600" size={18} aria-hidden="true" />
             </div>
           </div>
@@ -701,11 +749,12 @@ export const AnalyticsPage: React.FC = () => {
               description="Client usage will appear here after gateway requests are logged."
             />
           ) : (
-            <div className="max-h-[400px] overflow-auto rounded-md">
-              <table className="w-full min-w-[640px]">
-                <thead className="sticky top-0 z-10 border-b border-slate-800/40 bg-slate-950/95">
+            <div className="max-h-[400px] overflow-auto">
+              <table className="w-full min-w-[720px]">
+                <thead className="border-b border-slate-800/40">
                   <tr>
                     <th className="px-4 py-3 text-left text-xs font-medium text-slate-500">Client</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-slate-500">Plan</th>
                     <th className="px-4 py-3 text-right text-xs font-medium text-slate-500">Total</th>
                     <th className="px-4 py-3 text-right text-xs font-medium text-slate-500">Allowed</th>
                     <th className="px-4 py-3 text-right text-xs font-medium text-slate-500">Blocked</th>
@@ -718,6 +767,7 @@ export const AnalyticsPage: React.FC = () => {
                       <td className="px-4 py-4 text-sm font-medium text-slate-100">
                         {client.clientName || `Client #${client.clientId ?? index + 1}`}
                       </td>
+                      <td className="px-4 py-4 text-sm text-slate-400">{getPlanLabel(client.planName)}</td>
                       <td className="px-4 py-4 text-right text-sm text-slate-300">{formatNumber(client.totalRequests)}</td>
                       <td className="px-4 py-4 text-right text-sm text-slate-400">{formatNumber(client.allowedRequests)}</td>
                       <td className="px-4 py-4 text-right text-sm text-slate-400">{formatNumber(client.blockedRequests)}</td>
