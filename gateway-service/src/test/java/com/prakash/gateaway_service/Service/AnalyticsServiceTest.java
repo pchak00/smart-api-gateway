@@ -1,6 +1,8 @@
 package com.prakash.gateaway_service.Service;
 
 import com.prakash.gateaway_service.DTO.DashboardSummaryResponseDto;
+import com.prakash.gateaway_service.DTO.ClientAnalyticsResponseDto;
+import com.prakash.gateaway_service.DTO.RouteAnalyticsResponseDto;
 import com.prakash.gateaway_service.DTO.RouteTrafficAnalyticsResponseDto;
 import com.prakash.gateaway_service.Repository.AbuseAlertRepository;
 import com.prakash.gateaway_service.Repository.ClientRepository;
@@ -14,6 +16,7 @@ import java.time.LocalDate;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -58,13 +61,85 @@ class AnalyticsServiceTest {
     }
 
     @Test
+    void routeAnalyticsWithoutPlanFilterPreservesAllPlanResults() {
+        when(usageLogRepository.findRouteAnalytics(null)).thenReturn(List.of(
+                new Object[] { "/api/products", 12L, 8L, 4L },
+                new Object[] { "/api/reports", 5L, 3L, 2L }
+        ));
+
+        List<RouteAnalyticsResponseDto> routes = analyticsService.getRouteAnalytics(null);
+
+        assertEquals(2, routes.size());
+        assertEquals("/api/products", routes.get(0).route());
+        assertEquals(12, routes.get(0).totalRequests());
+        verify(usageLogRepository).findRouteAnalytics(null);
+    }
+
+    @Test
+    void routeAnalyticsFiltersByPlanName() {
+        when(usageLogRepository.findRouteAnalytics("Free")).thenReturn(List.<Object[]>of(
+                new Object[] { "/api/products", 4L, 3L, 1L }
+        ));
+
+        List<RouteAnalyticsResponseDto> routes = analyticsService.getRouteAnalytics(" Free ");
+
+        assertEquals(1, routes.size());
+        assertEquals("/api/products", routes.get(0).route());
+        assertEquals(4, routes.get(0).totalRequests());
+        verify(usageLogRepository).findRouteAnalytics("Free");
+    }
+
+    @Test
+    void routeAnalyticsUnknownPlanReturnsEmptyRows() {
+        when(usageLogRepository.findRouteAnalytics("Unknown")).thenReturn(List.of());
+
+        assertEquals(0, analyticsService.getRouteAnalytics("Unknown").size());
+    }
+
+    @Test
+    void clientAnalyticsIncludesPlanInformation() {
+        when(usageLogRepository.findClientAnalytics(null)).thenReturn(List.<Object[]>of(
+                new Object[] { 7L, "Demo Free Client", 1L, "FREE", 10L, 8L, 2L }
+        ));
+
+        List<ClientAnalyticsResponseDto> clients = analyticsService.getClientAnalytics(null);
+
+        assertEquals(1, clients.size());
+        assertEquals(7L, clients.get(0).clientId());
+        assertEquals("Demo Free Client", clients.get(0).clientName());
+        assertEquals(1L, clients.get(0).planId());
+        assertEquals("FREE", clients.get(0).planName());
+        assertEquals(10, clients.get(0).totalRequests());
+    }
+
+    @Test
+    void clientAnalyticsFiltersByPlanName() {
+        when(usageLogRepository.findClientAnalytics("PRO")).thenReturn(List.<Object[]>of(
+                new Object[] { 8L, "Demo Pro Client", 2L, "PRO", 12L, 12L, 0L }
+        ));
+
+        List<ClientAnalyticsResponseDto> clients = analyticsService.getClientAnalytics("PRO");
+
+        assertEquals(1, clients.size());
+        assertEquals("PRO", clients.get(0).planName());
+        verify(usageLogRepository).findClientAnalytics("PRO");
+    }
+
+    @Test
+    void clientAnalyticsUnknownPlanReturnsEmptyRows() {
+        when(usageLogRepository.findClientAnalytics("Unknown")).thenReturn(List.of());
+
+        assertEquals(0, analyticsService.getClientAnalytics("Unknown").size());
+    }
+
+    @Test
     void routeTrafficAnalyticsMapsDailyRouteRows() {
-        when(usageLogRepository.findDailyRouteTrafficAnalytics()).thenReturn(List.of(
+        when(usageLogRepository.findDailyRouteTrafficAnalytics(null)).thenReturn(List.of(
                 new Object[] { LocalDate.of(2026, 6, 18), "/api/products", 12L, 8L, 4L },
                 new Object[] { LocalDate.of(2026, 6, 18), "/api/reports", 5L, 3L, 2L }
         ));
 
-        List<RouteTrafficAnalyticsResponseDto> trends = analyticsService.getRouteTrafficAnalytics();
+        List<RouteTrafficAnalyticsResponseDto> trends = analyticsService.getRouteTrafficAnalytics(null);
 
         assertEquals(2, trends.size());
         assertEquals("2026-06-18", trends.get(0).bucket());
@@ -76,8 +151,21 @@ class AnalyticsServiceTest {
 
     @Test
     void routeTrafficAnalyticsHandlesEmptyRows() {
-        when(usageLogRepository.findDailyRouteTrafficAnalytics()).thenReturn(List.of());
+        when(usageLogRepository.findDailyRouteTrafficAnalytics(null)).thenReturn(List.of());
 
-        assertEquals(0, analyticsService.getRouteTrafficAnalytics().size());
+        assertEquals(0, analyticsService.getRouteTrafficAnalytics(null).size());
+    }
+
+    @Test
+    void routeTrafficAnalyticsFiltersByPlanName() {
+        when(usageLogRepository.findDailyRouteTrafficAnalytics("Enterprise")).thenReturn(List.<Object[]>of(
+                new Object[] { LocalDate.of(2026, 6, 19), "/api/admin", 3L, 2L, 1L }
+        ));
+
+        List<RouteTrafficAnalyticsResponseDto> trends = analyticsService.getRouteTrafficAnalytics(" Enterprise ");
+
+        assertEquals(1, trends.size());
+        assertEquals("/api/admin", trends.get(0).route());
+        verify(usageLogRepository).findDailyRouteTrafficAnalytics("Enterprise");
     }
 }

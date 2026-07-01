@@ -1,6 +1,8 @@
 package com.prakash.gateaway_service.Controller;
 
 import com.prakash.gateaway_service.Config.SecurityConfig;
+import com.prakash.gateaway_service.DTO.ClientAnalyticsResponseDto;
+import com.prakash.gateaway_service.DTO.RouteAnalyticsResponseDto;
 import com.prakash.gateaway_service.DTO.RouteTrafficAnalyticsResponseDto;
 import com.prakash.gateaway_service.Filter.JwtAuthenticationFilter;
 import com.prakash.gateaway_service.Repository.AdminUserRepository;
@@ -40,7 +42,7 @@ class AnalyticsControllerTest {
     @Test
     @WithMockUser(roles = "SUPER_ADMIN")
     void routeTrafficAnalyticsAsSuperAdmin() throws Exception {
-        when(analyticsService.getRouteTrafficAnalytics()).thenReturn(List.of(routeTraffic()));
+        when(analyticsService.getRouteTrafficAnalytics(null)).thenReturn(List.of(routeTraffic()));
 
         mockMvc.perform(get("/admin/analytics/route-traffic"))
                 .andExpect(status().isOk())
@@ -54,7 +56,7 @@ class AnalyticsControllerTest {
     @Test
     @WithMockUser(roles = "READ_ONLY_ADMIN")
     void routeTrafficAnalyticsAsReadOnlyAdmin() throws Exception {
-        when(analyticsService.getRouteTrafficAnalytics()).thenReturn(List.of(routeTraffic()));
+        when(analyticsService.getRouteTrafficAnalytics(null)).thenReturn(List.of(routeTraffic()));
 
         mockMvc.perform(get("/admin/analytics/route-traffic"))
                 .andExpect(status().isOk());
@@ -63,7 +65,7 @@ class AnalyticsControllerTest {
     @Test
     @WithMockUser(roles = "READ_ONLY_ADMIN")
     void routeTrafficAnalyticsReturnsEmptyData() throws Exception {
-        when(analyticsService.getRouteTrafficAnalytics()).thenReturn(List.of());
+        when(analyticsService.getRouteTrafficAnalytics(null)).thenReturn(List.of());
 
         mockMvc.perform(get("/admin/analytics/route-traffic"))
                 .andExpect(status().isOk())
@@ -75,6 +77,44 @@ class AnalyticsControllerTest {
     void unauthenticatedRouteTrafficAnalyticsDenied() throws Exception {
         mockMvc.perform(get("/admin/analytics/route-traffic"))
                 .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @WithMockUser(roles = "SUPER_ADMIN")
+    void routeAnalyticsPassesPlanFilter() throws Exception {
+        when(analyticsService.getRouteAnalytics("Free")).thenReturn(List.of(
+                new RouteAnalyticsResponseDto("/api/products", 7, 5, 2)
+        ));
+
+        mockMvc.perform(get("/admin/analytics/routes").param("planName", "Free"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].route").value("/api/products"))
+                .andExpect(jsonPath("$[0].totalRequests").value(7));
+    }
+
+    @Test
+    @WithMockUser(roles = "SUPER_ADMIN")
+    void clientAnalyticsIncludesPlanInformation() throws Exception {
+        when(analyticsService.getClientAnalytics("PRO")).thenReturn(List.of(
+                new ClientAnalyticsResponseDto(2L, "Demo Pro Client", 2L, "PRO", 11, 10, 1)
+        ));
+
+        mockMvc.perform(get("/admin/analytics/clients").param("planName", "PRO"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].clientName").value("Demo Pro Client"))
+                .andExpect(jsonPath("$[0].planId").value(2))
+                .andExpect(jsonPath("$[0].planName").value("PRO"))
+                .andExpect(jsonPath("$[0].blockedRequests").value(1));
+    }
+
+    @Test
+    @WithMockUser(roles = "SUPER_ADMIN")
+    void routeTrafficAnalyticsPassesPlanFilter() throws Exception {
+        when(analyticsService.getRouteTrafficAnalytics("Enterprise")).thenReturn(List.of(routeTraffic()));
+
+        mockMvc.perform(get("/admin/analytics/route-traffic").param("planName", "Enterprise"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].route").value("/api/products"));
     }
 
     private RouteTrafficAnalyticsResponseDto routeTraffic() {

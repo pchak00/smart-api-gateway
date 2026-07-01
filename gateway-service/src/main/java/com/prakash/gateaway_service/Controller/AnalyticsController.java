@@ -8,6 +8,7 @@ import com.prakash.gateaway_service.DTO.TrafficAnalyticsResponseDto;
 import com.prakash.gateaway_service.Service.AnalyticsService;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
@@ -28,13 +29,13 @@ public class AnalyticsController {
     }
 
     @GetMapping("/analytics/routes")
-    public List<RouteAnalyticsResponseDto> getRouteAnalytics() {
-        return analyticsService.getRouteAnalytics();
+    public List<RouteAnalyticsResponseDto> getRouteAnalytics(@RequestParam(required = false) String planName) {
+        return analyticsService.getRouteAnalytics(planName);
     }
 
     @GetMapping("/analytics/clients")
-    public List<ClientAnalyticsResponseDto> getClientAnalytics() {
-        return analyticsService.getClientAnalytics();
+    public List<ClientAnalyticsResponseDto> getClientAnalytics(@RequestParam(required = false) String planName) {
+        return analyticsService.getClientAnalytics(planName);
     }
 
     @GetMapping("/analytics/traffic")
@@ -43,7 +44,7 @@ public class AnalyticsController {
     }
 
     @GetMapping("/analytics/route-traffic")
-    public List<RouteTrafficAnalyticsResponseDto> getRouteTrafficAnalytics() {
-        return analyticsService.getRouteTrafficAnalytics();
+    public List<RouteTrafficAnalyticsResponseDto> getRouteTrafficAnalytics(@RequestParam(required = false) String planName) {
+        return analyticsService.getRouteTrafficAnalytics(planName);
     }
 }

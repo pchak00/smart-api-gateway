@@ -49,8 +49,8 @@ public class AnalyticsService {
         );
     }
 
-    public List<RouteAnalyticsResponseDto> getRouteAnalytics() {
-        return usageLogRepository.findRouteAnalytics()
+    public List<RouteAnalyticsResponseDto> getRouteAnalytics(String planName) {
+        return usageLogRepository.findRouteAnalytics(normalizePlanFilter(planName))
                 .stream()
                 .map(row -> new RouteAnalyticsResponseDto(
                         (String) row[0],
@@ -61,15 +61,17 @@ public class AnalyticsService {
                 .toList();
     }
 
-    public List<ClientAnalyticsResponseDto> getClientAnalytics() {
-        return usageLogRepository.findClientAnalytics()
+    public List<ClientAnalyticsResponseDto> getClientAnalytics(String planName) {
+        return usageLogRepository.findClientAnalytics(normalizePlanFilter(planName))
                 .stream()
                 .map(row -> new ClientAnalyticsResponseDto(
                         toLong(row[0]),
                         (String) row[1],
                         toLong(row[2]),
-                        toLong(row[3]),
-                        toLong(row[4])
+                        (String) row[3],
+                        toLong(row[4]),
+                        toLong(row[5]),
+                        toLong(row[6])
                 ))
                 .toList();
     }
@@ -86,8 +88,8 @@ public class AnalyticsService {
                 .toList();
     }
 
-    public List<RouteTrafficAnalyticsResponseDto> getRouteTrafficAnalytics() {
-        return usageLogRepository.findDailyRouteTrafficAnalytics()
+    public List<RouteTrafficAnalyticsResponseDto> getRouteTrafficAnalytics(String planName) {
+        return usageLogRepository.findDailyRouteTrafficAnalytics(normalizePlanFilter(planName))
                 .stream()
                 .map(row -> new RouteTrafficAnalyticsResponseDto(
                         row[0].toString(),
@@ -109,5 +111,13 @@ public class AnalyticsService {
         }
 
         return ((Number) value).longValue();
+    }
+
+    private String normalizePlanFilter(String planName) {
+        if (planName == null || planName.isBlank()) {
+            return null;
+        }
+
+        return planName.trim();
     }
 }
