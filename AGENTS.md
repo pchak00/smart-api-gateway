@@ -201,7 +201,7 @@ This keeps entity structure decoupled from API contracts.
 - Check Redis rate limit counter: `redisTemplate.opsForValue().get("rate_limit:{apiKey}:{path}")`
 - Check abuse alerts for client: `abuseDetectionService.findClientAbuse(clientId)`
 - Verify JWT token: Decode at jwt.io and check `exp` claim matches current time
-- Check database connectivity: logs show SQL queries due to `spring.jpa.show-sql=true`
+- Check database connectivity: SQL logging is disabled by default; enable `SPRING_JPA_SHOW_SQL=true` locally only when debugging database queries
 
 ## Development Workflow
 

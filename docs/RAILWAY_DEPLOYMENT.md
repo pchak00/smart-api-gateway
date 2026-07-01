@@ -117,6 +117,7 @@ Set these on `gateway-service`:
 | `ADMIN_REFRESH_TOKEN_EXPIRATION_MS` | `604800000` | Admin refresh token lifetime. |
 | `BACKEND_SERVICE_URL` | `http://backend-service.railway.internal:8081` | Prefer Railway private networking if available. Use the actual internal hostname Railway assigns. |
 | `CORS_ALLOWED_ORIGINS` | `https://<management-ui-public-domain>` | Must match the public UI origin exactly. |
+| `SPRING_JPA_SHOW_SQL` | `false` | Leave disabled so Railway logs stay readable. Enable only for short local database-query debugging sessions. |
 
 If private routing for `backend-service` is not configured yet, temporarily set `BACKEND_SERVICE_URL` to the public backend URL for a demo:
 

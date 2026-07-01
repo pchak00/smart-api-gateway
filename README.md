@@ -328,6 +328,7 @@ For a polished walkthrough, see [Demo Script](docs/DEMO_SCRIPT.md).
 | `SPRING_DATASOURCE_URL` | Gateway JDBC URL | `jdbc:postgresql://postgres:5432/gateway_db` |
 | `SPRING_DATASOURCE_USERNAME` | Gateway database username | `postgres` |
 | `SPRING_DATASOURCE_PASSWORD` | Gateway database password | replace before deployment |
+| `SPRING_JPA_SHOW_SQL` | Opt-in Hibernate SQL statement logging for local query debugging | `false` |
 | `SPRING_DATA_REDIS_HOST` | Redis host used by the gateway | `redis` |
 | `SPRING_DATA_REDIS_PORT` | Redis port used by the gateway | `6379` |
 | `JWT_SECRET` | Admin JWT signing secret | replace with a long random secret |
@@ -342,6 +343,8 @@ The management UI runs in the browser, so `VITE_API_BASE_URL` must be reachable 
 `CORS_ALLOWED_ORIGINS` must list the deployed UI origin exactly. The gateway rejects wildcard `*` origins; use explicit origins when deploying.
 
 Local Docker Compose uses demo/local defaults when no `.env` file is present. Deployment environments should override passwords, `JWT_SECRET`, URLs, and CORS origins. No Spring profile split is required today; configuration is environment-variable driven.
+
+SQL logging is disabled by default so public deployment logs stay readable. Set `SPRING_JPA_SHOW_SQL=true` locally only when debugging database queries.
 
 Health endpoints are intentionally lightweight: the gateway exposes `GET /health`, and the demo backend exposes `GET /health`.
 
