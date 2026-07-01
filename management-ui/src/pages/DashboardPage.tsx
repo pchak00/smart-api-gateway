@@ -104,6 +104,8 @@ const topRoutes = (routes: RouteAnalyticsDto[]) => (
 );
 
 const clampPercent = (value: number) => Math.min(Math.max(value, 0), 100);
+const allowedRouteSegmentClass = 'bg-slate-500/65';
+const blockedRouteSegmentClass = 'bg-amber-500/55';
 
 interface GatewayHealthPanelProps {
   settings: GatewaySettingsDto | null;
@@ -211,21 +213,24 @@ const TopRoutesPanel: React.FC<TopRoutesPanelProps> = ({ routes }) => {
                 <span>{formatNumber(blockedRequests)} blocked</span>
               </p>
             </div>
-            <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-slate-950/70">
+            <div
+              className="mt-2 h-2 overflow-hidden rounded-full bg-slate-950/30"
+              title="Bar length is relative to the busiest route."
+            >
               <div
-                className="flex h-full overflow-hidden rounded-full"
+                className="flex h-full overflow-hidden rounded-full bg-slate-900/45"
                 style={{ width: `${totalWidth}%` }}
                 aria-hidden="true"
               >
                 {allowedWidth > 0 && (
                   <div
-                    className="h-full bg-slate-500/70"
+                    className={`h-full ${allowedRouteSegmentClass}`}
                     style={{ width: `${allowedWidth}%` }}
                   />
                 )}
                 {blockedWidth > 0 && (
                   <div
-                    className="h-full bg-cyan-500/45"
+                    className={`h-full ${blockedRouteSegmentClass}`}
                     style={{ width: `${blockedWidth}%` }}
                   />
                 )}
@@ -396,11 +401,11 @@ export const DashboardPage: React.FC = () => {
             <div className="flex items-center gap-4">
               <div className="hidden items-center gap-3 text-xs text-slate-600 sm:flex" aria-hidden="true">
                 <span className="inline-flex items-center gap-1.5">
-                  <span className="h-1.5 w-3 rounded-full bg-slate-500/70" />
+                  <span className={`h-1.5 w-3 rounded-full ${allowedRouteSegmentClass}`} />
                   Allowed
                 </span>
                 <span className="inline-flex items-center gap-1.5">
-                  <span className="h-1.5 w-3 rounded-full bg-cyan-500/45" />
+                  <span className={`h-1.5 w-3 rounded-full ${blockedRouteSegmentClass}`} />
                   Blocked
                 </span>
               </div>

@@ -2,10 +2,16 @@
 @tailwind components;
 @tailwind utilities;
 
+:root {
+  color-scheme: dark;
+}
+
 * {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(71, 85, 105, 0.72) rgba(15, 23, 42, 0.28);
 }
 
 body {
@@ -26,4 +32,56 @@ code {
 ::selection {
   background: rgba(71, 85, 105, 0.55);
   color: #f8fafc;
+}
+
+select {
+  color-scheme: dark;
+  background-color: #020617;
+}
+
+select option {
+  background-color: #020617;
+  color: #cbd5e1;
+}
+
+select:disabled {
+  cursor: not-allowed;
+  color: #64748b;
+}
+
+select:focus-visible,
+input:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid rgba(100, 116, 139, 0.32);
+  outline-offset: 2px;
+}
+
+input[type='number'] {
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+
+input[type='number']::-webkit-inner-spin-button,
+input[type='number']::-webkit-outer-spin-button {
+  margin: 0;
+  -webkit-appearance: none;
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(15, 23, 42, 0.28);
+}
+
+::-webkit-scrollbar-thumb {
+  border: 2px solid rgba(15, 23, 42, 0.28);
+  border-radius: 999px;
+  background: rgba(71, 85, 105, 0.72);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(100, 116, 139, 0.82);
 }

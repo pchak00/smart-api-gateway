@@ -17,6 +17,7 @@ import { useToast } from '../hooks/useToast';
 
 type RouteTrendMetric = 'totalRequests' | 'allowedRequests' | 'blockedRequests';
 type RouteTrendDisplayMode = 'top5' | 'top10' | 'custom';
+type AnalyticsSortKey = 'totalRequests' | 'allowedRequests' | 'blockedRequests' | 'blockRate' | 'name';
 
 type RouteTrendChartPoint = {
   bucketLabel: string;
@@ -43,10 +44,21 @@ const safeCount = (value: number | null | undefined) => (
   typeof value === 'number' && !Number.isNaN(value) ? value : 0
 );
 
+const getBlockRate = (totalRequests: number | null | undefined, blockedRequests: number | null | undefined) => {
+  const total = safeCount(totalRequests);
+  if (total <= 0) return 0;
+
+  return safeCount(blockedRequests) / total;
+};
+
 const getRouteName = (route: string | null | undefined) => {
   const routeName = route?.trim();
   return routeName || 'Unknown route';
 };
+
+const getClientName = (client: ClientAnalyticsDto, index: number) => (
+  client.clientName || `Client #${client.clientId ?? index + 1}`
+);
 
 const routeTrendMetricOptions: Array<{ key: RouteTrendMetric; label: string }> = [
   { key: 'totalRequests', label: 'Total' },
@@ -58,6 +70,14 @@ const routeTrendDisplayOptions: Array<{ key: RouteTrendDisplayMode; label: strin
   { key: 'top5', label: 'Top 5' },
   { key: 'top10', label: 'Top 10' },
   { key: 'custom', label: 'Custom' }
+];
+
+const analyticsSortOptions: Array<{ key: AnalyticsSortKey; label: string }> = [
+  { key: 'totalRequests', label: 'Total requests' },
+  { key: 'allowedRequests', label: 'Allowed requests' },
+  { key: 'blockedRequests', label: 'Blocked requests' },
+  { key: 'blockRate', label: 'Block rate' },
+  { key: 'name', label: 'Name A-Z' }
 ];
 
 const getTopRouteLimit = (mode: RouteTrendDisplayMode) => (
@@ -92,6 +112,57 @@ const routeTrendLineStyles: Array<Pick<RouteTrendRoute, 'strokeDasharray' | 'str
 
 const getRouteTrendStyle = (index: number) => routeTrendLineStyles[index % routeTrendLineStyles.length];
 
+const formatBlockRate = (totalRequests: number | null | undefined, blockedRequests: number | null | undefined) => (
+  `${(getBlockRate(totalRequests, blockedRequests) * 100).toFixed(1)}%`
+);
+
+const compareMetricDescending = (first: number, second: number) => {
+  const difference = second - first;
+  return difference === 0 ? 0 : difference;
+};
+
+const sortRouteAnalytics = (routes: RouteAnalyticsDto[], sortKey: AnalyticsSortKey) => (
+  [...routes].sort((first, second) => {
+    const firstRoute = getRouteName(first.route);
+    const secondRoute = getRouteName(second.route);
+
+    if (sortKey === 'name') {
+      return firstRoute.localeCompare(secondRoute);
+    }
+
+    const firstValue = sortKey === 'blockRate'
+      ? getBlockRate(first.totalRequests, first.blockedRequests)
+      : safeCount(first[sortKey]);
+    const secondValue = sortKey === 'blockRate'
+      ? getBlockRate(second.totalRequests, second.blockedRequests)
+      : safeCount(second[sortKey]);
+    const metricDifference = compareMetricDescending(firstValue, secondValue);
+
+    return metricDifference || firstRoute.localeCompare(secondRoute);
+  })
+);
+
+const sortClientAnalytics = (clients: ClientAnalyticsDto[], sortKey: AnalyticsSortKey) => (
+  [...clients].sort((first, second) => {
+    const firstName = getClientName(first, 0);
+    const secondName = getClientName(second, 0);
+
+    if (sortKey === 'name') {
+      return firstName.localeCompare(secondName);
+    }
+
+    const firstValue = sortKey === 'blockRate'
+      ? getBlockRate(first.totalRequests, first.blockedRequests)
+      : safeCount(first[sortKey]);
+    const secondValue = sortKey === 'blockRate'
+      ? getBlockRate(second.totalRequests, second.blockedRequests)
+      : safeCount(second[sortKey]);
+    const metricDifference = compareMetricDescending(firstValue, secondValue);
+
+    return metricDifference || firstName.localeCompare(secondName);
+  })
+);
+
 export const AnalyticsPage: React.FC = () => {
   const { showToast } = useToast();
   const [routeAnalytics, setRouteAnalytics] = useState<RouteAnalyticsDto[]>([]);
@@ -100,6 +171,8 @@ export const AnalyticsPage: React.FC = () => {
   const [trafficAnalytics, setTrafficAnalytics] = useState<TrafficAnalyticsDto[]>([]);
   const [selectedRouteMetric, setSelectedRouteMetric] = useState<RouteTrendMetric>('totalRequests');
   const [routeTrendMode, setRouteTrendMode] = useState<RouteTrendDisplayMode>('top5');
+  const [routeAnalyticsSort, setRouteAnalyticsSort] = useState<AnalyticsSortKey>('totalRequests');
+  const [clientAnalyticsSort, setClientAnalyticsSort] = useState<AnalyticsSortKey>('totalRequests');
   const [routeSearch, setRouteSearch] = useState('');
   const [selectedCustomRoutes, setSelectedCustomRoutes] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -253,6 +326,14 @@ export const AnalyticsPage: React.FC = () => {
   const totalRequests = trafficAnalytics.reduce((sum, point) => sum + safeCount(point.totalRequests), 0);
   const totalAllowed = trafficAnalytics.reduce((sum, point) => sum + safeCount(point.allowedRequests), 0);
   const totalBlocked = trafficAnalytics.reduce((sum, point) => sum + safeCount(point.blockedRequests), 0);
+  const sortedRouteAnalytics = useMemo(
+    () => sortRouteAnalytics(routeAnalytics, routeAnalyticsSort),
+    [routeAnalytics, routeAnalyticsSort]
+  );
+  const sortedClientAnalytics = useMemo(
+    () => sortClientAnalytics(clientAnalytics, clientAnalyticsSort),
+    [clientAnalytics, clientAnalyticsSort]
+  );
   const routeSearchPlaceholder = selectedCustomRoutes.length >= 5
     ? 'Remove a route to add another'
     : selectedCustomRoutes.length > 0
@@ -522,12 +603,27 @@ export const AnalyticsPage: React.FC = () => {
 
       <div className="mt-4 grid grid-cols-1 gap-4 xl:grid-cols-2">
         <Panel className="p-5">
-          <div className="mb-4 flex items-center justify-between">
+          <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
             <div>
               <h2 className="text-sm font-semibold text-slate-100">Routes</h2>
               <p className="mt-1 text-sm text-slate-500">Usage grouped by gateway path.</p>
             </div>
-            <Route className="text-slate-600" size={18} aria-hidden="true" />
+            <div className="flex items-center gap-3">
+              <label className="flex items-center gap-2 text-xs font-medium text-slate-500">
+                Sort
+                <select
+                  value={routeAnalyticsSort}
+                  onChange={(event) => setRouteAnalyticsSort(event.target.value as AnalyticsSortKey)}
+                  className="h-8 rounded-md border border-slate-800 bg-slate-950 px-2.5 text-xs text-slate-300 outline-none transition-colors hover:border-slate-700 focus:border-slate-600"
+                  aria-label="Sort route analytics"
+                >
+                  {analyticsSortOptions.map((option) => (
+                    <option key={option.key} value={option.key}>{option.label}</option>
+                  ))}
+                </select>
+              </label>
+              <Route className="text-slate-600" size={18} aria-hidden="true" />
+            </div>
           </div>
 
           {isLoading ? (
@@ -541,23 +637,27 @@ export const AnalyticsPage: React.FC = () => {
               description="Send requests through the gateway to populate route analytics."
             />
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full min-w-[560px]">
-                <thead className="border-b border-slate-800/40">
+            <div className="max-h-[400px] overflow-auto rounded-md">
+              <table className="w-full min-w-[640px]">
+                <thead className="sticky top-0 z-10 border-b border-slate-800/40 bg-slate-950/95">
                   <tr>
                     <th className="px-4 py-3 text-left text-xs font-medium text-slate-500">Route</th>
                     <th className="px-4 py-3 text-right text-xs font-medium text-slate-500">Total</th>
                     <th className="px-4 py-3 text-right text-xs font-medium text-slate-500">Allowed</th>
                     <th className="px-4 py-3 text-right text-xs font-medium text-slate-500">Blocked</th>
+                    <th className="px-4 py-3 text-right text-xs font-medium text-slate-500">Block rate</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-800/35">
-                  {routeAnalytics.map((route, index) => (
+                  {sortedRouteAnalytics.map((route, index) => (
                     <tr key={route.route ?? index} className="transition-colors hover:bg-slate-900/35">
                       <td className="px-4 py-4 font-mono text-xs text-slate-300">{route.route ?? 'Unknown route'}</td>
                       <td className="px-4 py-4 text-right text-sm text-slate-300">{formatNumber(route.totalRequests)}</td>
                       <td className="px-4 py-4 text-right text-sm text-slate-400">{formatNumber(route.allowedRequests)}</td>
                       <td className="px-4 py-4 text-right text-sm text-slate-400">{formatNumber(route.blockedRequests)}</td>
+                      <td className="px-4 py-4 text-right text-sm text-slate-400">
+                        {formatBlockRate(route.totalRequests, route.blockedRequests)}
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -567,12 +667,27 @@ export const AnalyticsPage: React.FC = () => {
         </Panel>
 
         <Panel className="p-5">
-          <div className="mb-4 flex items-center justify-between">
+          <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
             <div>
               <h2 className="text-sm font-semibold text-slate-100">Clients</h2>
               <p className="mt-1 text-sm text-slate-500">Usage grouped by API consumer.</p>
             </div>
-            <Users className="text-slate-600" size={18} aria-hidden="true" />
+            <div className="flex items-center gap-3">
+              <label className="flex items-center gap-2 text-xs font-medium text-slate-500">
+                Sort
+                <select
+                  value={clientAnalyticsSort}
+                  onChange={(event) => setClientAnalyticsSort(event.target.value as AnalyticsSortKey)}
+                  className="h-8 rounded-md border border-slate-800 bg-slate-950 px-2.5 text-xs text-slate-300 outline-none transition-colors hover:border-slate-700 focus:border-slate-600"
+                  aria-label="Sort client analytics"
+                >
+                  {analyticsSortOptions.map((option) => (
+                    <option key={option.key} value={option.key}>{option.label}</option>
+                  ))}
+                </select>
+              </label>
+              <Users className="text-slate-600" size={18} aria-hidden="true" />
+            </div>
           </div>
 
           {isLoading ? (
@@ -586,18 +701,19 @@ export const AnalyticsPage: React.FC = () => {
               description="Client usage will appear here after gateway requests are logged."
             />
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full min-w-[560px]">
-                <thead className="border-b border-slate-800/40">
+            <div className="max-h-[400px] overflow-auto rounded-md">
+              <table className="w-full min-w-[640px]">
+                <thead className="sticky top-0 z-10 border-b border-slate-800/40 bg-slate-950/95">
                   <tr>
                     <th className="px-4 py-3 text-left text-xs font-medium text-slate-500">Client</th>
                     <th className="px-4 py-3 text-right text-xs font-medium text-slate-500">Total</th>
                     <th className="px-4 py-3 text-right text-xs font-medium text-slate-500">Allowed</th>
                     <th className="px-4 py-3 text-right text-xs font-medium text-slate-500">Blocked</th>
+                    <th className="px-4 py-3 text-right text-xs font-medium text-slate-500">Block rate</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-800/35">
-                  {clientAnalytics.map((client, index) => (
+                  {sortedClientAnalytics.map((client, index) => (
                     <tr key={client.clientId ?? index} className="transition-colors hover:bg-slate-900/35">
                       <td className="px-4 py-4 text-sm font-medium text-slate-100">
                         {client.clientName || `Client #${client.clientId ?? index + 1}`}
@@ -605,6 +721,9 @@ export const AnalyticsPage: React.FC = () => {
                       <td className="px-4 py-4 text-right text-sm text-slate-300">{formatNumber(client.totalRequests)}</td>
                       <td className="px-4 py-4 text-right text-sm text-slate-400">{formatNumber(client.allowedRequests)}</td>
                       <td className="px-4 py-4 text-right text-sm text-slate-400">{formatNumber(client.blockedRequests)}</td>
+                      <td className="px-4 py-4 text-right text-sm text-slate-400">
+                        {formatBlockRate(client.totalRequests, client.blockedRequests)}
+                      </td>
                     </tr>
                   ))}
                 </tbody>

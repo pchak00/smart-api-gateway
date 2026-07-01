@@ -4,7 +4,7 @@ import { Activity, KeyRound, Power, RotateCw, Server, ShieldAlert } from 'lucide
 import { api } from '../api/client';
 import { EmptyState, PageHeader, Panel } from '../components/PageShell';
 import { AbuseAlertDto, ClientApiKeyRotationResponse, ClientDto, ClientStatsDto, UsageLogDto } from '../types';
-import { formatDateTime, getPlanLabel, getSeverityLabel } from '../utils/display';
+import { formatDateTime, formatNumber, getPlanLabel, getSeverityLabel } from '../utils/display';
 import { useAuth } from '../hooks/useAuth';
 import { useToast } from '../hooks/useToast';
 import { getApiErrorMessage } from '../utils/apiError';
@@ -234,7 +234,7 @@ export const ClientDetailPage: React.FC = () => {
             <div>
               <h2 className="text-sm font-semibold text-slate-100">Usage</h2>
               <p className="mt-1 text-sm text-slate-500">
-                {stats ? `${stats.totalRequests.toLocaleString()} total requests` : 'Request and block history.'}
+                {stats ? `${formatNumber(stats.totalRequests)} total requests` : 'Request and block history.'}
               </p>
             </div>
           </div>
@@ -338,7 +338,7 @@ export const ClientDetailPage: React.FC = () => {
                       </div>
                       <p className="mt-2 text-sm text-slate-400">{alert.message ?? 'Blocked request threshold reached.'}</p>
                       <p className="mt-2 text-xs text-slate-500">
-                        {(alert.blockedCount ?? alert.blockedRequestCount ?? 0).toLocaleString()} blocked requests
+                        {formatNumber(alert.blockedCount ?? alert.blockedRequestCount ?? 0)} blocked requests
                       </p>
                     </div>
                   ))}

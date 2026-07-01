@@ -47,17 +47,58 @@ export const getStatusLabel = (status: string | null | undefined) => {
   return labels[normalized] ?? normalized;
 };
 
+const dateOnlyPattern = /^(\d{4})-(\d{2})-(\d{2})$/;
+const dateTimePattern = /^\d{4}-\d{2}-\d{2}[T\s]\d{2}:/;
+const explicitTimeZonePattern = /(?:Z|[+-]\d{2}:?\d{2})$/i;
+
+const parseBrowserLocalCalendarDate = (value: string) => {
+  const match = dateOnlyPattern.exec(value);
+  if (!match) return null;
+
+  const [, year, month, day] = match;
+  return new Date(Number(year), Number(month) - 1, Number(day));
+};
+
+const parseServerTimestamp = (value: string | null | undefined) => {
+  if (!value) return null;
+
+  const trimmedValue = value.trim();
+  if (!trimmedValue) return null;
+
+  const localCalendarDate = parseBrowserLocalCalendarDate(trimmedValue);
+  if (localCalendarDate) return localCalendarDate;
+
+  const normalizedValue = dateTimePattern.test(trimmedValue) && !explicitTimeZonePattern.test(trimmedValue)
+    ? `${trimmedValue.replace(' ', 'T')}Z`
+    : trimmedValue;
+  const date = new Date(normalizedValue);
+
+  return Number.isNaN(date.getTime()) ? null : date;
+};
+
 export const formatDateTime = (value: string | null | undefined) => {
   if (!value) return 'Pending';
 
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return value;
+  const date = parseServerTimestamp(value);
+  if (!date) return value;
 
   return new Intl.DateTimeFormat(undefined, {
     month: 'short',
     day: 'numeric',
     hour: 'numeric',
     minute: '2-digit'
+  }).format(date);
+};
+
+export const formatShortDate = (value: string | null | undefined) => {
+  if (!value) return 'No date';
+
+  const date = parseServerTimestamp(value);
+  if (!date) return value;
+
+  return new Intl.DateTimeFormat(undefined, {
+    month: 'short',
+    day: 'numeric'
   }).format(date);
 };
 
@@ -68,13 +109,5 @@ export const formatNumber = (value: number | null | undefined) => {
 };
 
 export const formatBucket = (value: string | null | undefined) => {
-  if (!value) return 'No date';
-
-  const date = new Date(`${value}T00:00:00`);
-  if (Number.isNaN(date.getTime())) return value;
-
-  return new Intl.DateTimeFormat(undefined, {
-    month: 'short',
-    day: 'numeric'
-  }).format(date);
+  return formatShortDate(value);
 };
