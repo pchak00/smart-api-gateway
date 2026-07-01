@@ -37,7 +37,7 @@ export const NumberField: React.FC<NumberFieldProps> = ({
   disabled,
   ...props
 }) => (
-  <div className="mt-2 flex rounded-md border border-slate-800 bg-slate-950 transition-colors focus-within:border-slate-600 focus-within:ring-2 focus-within:ring-slate-700/20">
+  <div className="mt-2 flex rounded-md border border-slate-800 bg-slate-950 pr-1 transition-colors focus-within:border-slate-600 focus-within:ring-2 focus-within:ring-slate-700/20">
     <input
       {...props}
       type="number"
@@ -49,12 +49,12 @@ export const NumberField: React.FC<NumberFieldProps> = ({
       onChange={(event) => onChange(event.target.value)}
       className={`min-w-0 flex-1 rounded-l-md bg-transparent px-3 py-2 text-sm text-slate-100 outline-none disabled:cursor-not-allowed disabled:text-slate-600 ${className}`}
     />
-    <div className="flex shrink-0 border-l border-slate-800/70">
+    <div className="flex shrink-0 items-stretch gap-0.5 py-1">
       <button
         type="button"
         disabled={disabled}
         onClick={() => onChange(toNextValue(value, -1, step, min, max))}
-        className="flex w-8 items-center justify-center text-slate-500 transition-colors hover:bg-slate-900/70 hover:text-slate-200 focus:outline-none focus:ring-2 focus:ring-slate-700/30 disabled:cursor-not-allowed disabled:text-slate-700"
+        className="flex w-7 items-center justify-center rounded text-slate-500 transition-colors hover:bg-slate-900/55 hover:text-slate-200 focus:outline-none focus:ring-2 focus:ring-slate-700/30 disabled:cursor-not-allowed disabled:text-slate-700"
         aria-label="Decrease value"
       >
         <Minus size={13} aria-hidden="true" />
@@ -63,7 +63,7 @@ export const NumberField: React.FC<NumberFieldProps> = ({
         type="button"
         disabled={disabled}
         onClick={() => onChange(toNextValue(value, 1, step, min, max))}
-        className="flex w-8 items-center justify-center rounded-r-md text-slate-500 transition-colors hover:bg-slate-900/70 hover:text-slate-200 focus:outline-none focus:ring-2 focus:ring-slate-700/30 disabled:cursor-not-allowed disabled:text-slate-700"
+        className="flex w-7 items-center justify-center rounded text-slate-500 transition-colors hover:bg-slate-900/55 hover:text-slate-200 focus:outline-none focus:ring-2 focus:ring-slate-700/30 disabled:cursor-not-allowed disabled:text-slate-700"
         aria-label="Increase value"
       >
         <Plus size={13} aria-hidden="true" />

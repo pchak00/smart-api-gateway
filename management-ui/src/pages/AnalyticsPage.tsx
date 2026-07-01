@@ -186,6 +186,7 @@ export const AnalyticsPage: React.FC = () => {
   const [routeTrendMode, setRouteTrendMode] = useState<RouteTrendDisplayMode>('top5');
   const [routeAnalyticsSort, setRouteAnalyticsSort] = useState<AnalyticsSortKey>('totalRequests');
   const [clientAnalyticsSort, setClientAnalyticsSort] = useState<AnalyticsSortKey>('totalRequests');
+  const [clientPlanFilter, setClientPlanFilter] = useState('');
   const [routeSearch, setRouteSearch] = useState('');
   const [selectedCustomRoutes, setSelectedCustomRoutes] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -359,9 +360,32 @@ export const AnalyticsPage: React.FC = () => {
     () => sortRouteAnalytics(routeAnalytics, routeAnalyticsSort),
     [routeAnalytics, routeAnalyticsSort]
   );
+  const clientPlanFilterOptions = useMemo<DropdownOption[]>(() => {
+    const optionsByPlanName = new Map<string, DropdownOption>();
+
+    clientAnalytics.forEach((client) => {
+      const planName = client.planName?.trim();
+      if (!planName || optionsByPlanName.has(planName)) return;
+
+      optionsByPlanName.set(planName, {
+        value: planName,
+        label: getPlanLabel(planName)
+      });
+    });
+
+    return [
+      { value: '', label: 'All plans' },
+      ...[...optionsByPlanName.values()].sort((first, second) => first.label.localeCompare(second.label))
+    ];
+  }, [clientAnalytics]);
+  const filteredClientAnalytics = useMemo(() => (
+    clientPlanFilter
+      ? clientAnalytics.filter((client) => client.planName?.trim() === clientPlanFilter)
+      : clientAnalytics
+  ), [clientAnalytics, clientPlanFilter]);
   const sortedClientAnalytics = useMemo(
-    () => sortClientAnalytics(clientAnalytics, clientAnalyticsSort),
-    [clientAnalytics, clientAnalyticsSort]
+    () => sortClientAnalytics(filteredClientAnalytics, clientAnalyticsSort),
+    [clientAnalyticsSort, filteredClientAnalytics]
   );
   const planFilterOptions = useMemo<DropdownOption[]>(() => [
     { value: '', label: 'All plans' },
@@ -378,6 +402,8 @@ export const AnalyticsPage: React.FC = () => {
       ? 'Add another route...'
       : 'Search routes...';
   const selectedPlanLabel = planFilterOptions.find((option) => option.value === selectedPlanName)?.label ?? 'All plans';
+  const selectedClientPlanLabel = clientPlanFilterOptions.find((option) => option.value === clientPlanFilter)?.label ?? 'All';
+  const hasClientRowsForPlanFilter = clientAnalytics.length > 0 && sortedClientAnalytics.length === 0;
 
   return (
     <div>
@@ -722,7 +748,18 @@ export const AnalyticsPage: React.FC = () => {
               <h2 className="text-sm font-semibold text-slate-100">Clients</h2>
               <p className="mt-1 text-sm text-slate-500">Usage grouped by API consumer.</p>
             </div>
-            <div className="flex items-center gap-3">
+            <div className="flex flex-wrap items-center gap-2">
+              <AppDropdown
+                value={clientPlanFilter}
+                onChange={setClientPlanFilter}
+                options={clientPlanFilterOptions}
+                ariaLabel="Filter client analytics by plan"
+                fullWidth={false}
+                align="right"
+                displayValue={`Plan: ${clientPlanFilter ? selectedClientPlanLabel : 'All'}`}
+                buttonClassName="h-8 min-w-28 border-slate-800/70 bg-slate-950/45 px-2.5 text-xs text-slate-500 hover:bg-slate-900/55 hover:text-slate-300"
+                menuClassName="w-44"
+              />
               <AppDropdown
                 value={clientAnalyticsSort}
                 onChange={(value) => setClientAnalyticsSort(value as AnalyticsSortKey)}
@@ -748,17 +785,23 @@ export const AnalyticsPage: React.FC = () => {
               title="No client analytics recorded yet"
               description="Client usage will appear here after gateway requests are logged."
             />
+          ) : hasClientRowsForPlanFilter ? (
+            <EmptyState
+              icon={Users}
+              title="No clients match this plan"
+              description="Choose another plan or return to All plans."
+            />
           ) : (
             <div className="max-h-[400px] overflow-auto">
               <table className="w-full min-w-[720px]">
                 <thead className="border-b border-slate-800/40">
                   <tr>
                     <th className="px-4 py-3 text-left text-xs font-medium text-slate-500">Client</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-slate-500">Plan</th>
                     <th className="px-4 py-3 text-right text-xs font-medium text-slate-500">Total</th>
                     <th className="px-4 py-3 text-right text-xs font-medium text-slate-500">Allowed</th>
                     <th className="px-4 py-3 text-right text-xs font-medium text-slate-500">Blocked</th>
                     <th className="px-4 py-3 text-right text-xs font-medium text-slate-500">Block rate</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-slate-500">Plan</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-800/35">
@@ -767,13 +810,13 @@ export const AnalyticsPage: React.FC = () => {
                       <td className="px-4 py-4 text-sm font-medium text-slate-100">
                         {client.clientName || `Client #${client.clientId ?? index + 1}`}
                       </td>
-                      <td className="px-4 py-4 text-sm text-slate-400">{getPlanLabel(client.planName)}</td>
                       <td className="px-4 py-4 text-right text-sm text-slate-300">{formatNumber(client.totalRequests)}</td>
                       <td className="px-4 py-4 text-right text-sm text-slate-400">{formatNumber(client.allowedRequests)}</td>
                       <td className="px-4 py-4 text-right text-sm text-slate-400">{formatNumber(client.blockedRequests)}</td>
                       <td className="px-4 py-4 text-right text-sm text-slate-400">
                         {formatBlockRate(client.totalRequests, client.blockedRequests)}
                       </td>
+                      <td className="px-4 py-4 text-sm text-slate-400">{getPlanLabel(client.planName)}</td>
                     </tr>
                   ))}
                 </tbody>
