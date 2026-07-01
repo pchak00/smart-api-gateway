@@ -123,6 +123,7 @@ Use the root `.env.example` as the source of truth for variable names. Do not co
 | `SPRING_DATASOURCE_URL` | JDBC URL used by `gateway-service`. | `jdbc:postgresql://postgres:5432/gateway_db` | Use the managed PostgreSQL internal/private connection URL when available. |
 | `SPRING_DATASOURCE_USERNAME` | Database username used by `gateway-service`. | `postgres` | Match the managed database credential. |
 | `SPRING_DATASOURCE_PASSWORD` | Database password used by `gateway-service`. | `change-me` | Store as a secret in the deployment platform. |
+| `SPRING_JPA_SHOW_SQL` | Opt-in Hibernate SQL statement logging. | `false` | Keep disabled for public deployments; enable locally only when debugging database queries. |
 
 ### Redis
 
