@@ -118,7 +118,7 @@ const topRoutes = (routes: RouteAnalyticsDto[]) => (
 );
 
 const clampPercent = (value: number) => Math.min(Math.max(value, 0), 100);
-const allowedRouteSegmentClass = 'bg-cyan-300/45';
+const allowedRouteSegmentClass = 'bg-cyan-300/80';
 const blockedRouteSegmentClass = 'bg-slate-400/65';
 
 interface GatewayHealthPanelProps {

@@ -23,7 +23,7 @@ const permissionMessage = 'You need Admin access to perform this action.';
 const statusLabelClass = (status: AbuseAlertStatus | string | null | undefined) => {
   if (status === 'RESOLVED') return 'bg-slate-900/70 text-slate-400';
   if (status === 'ACKNOWLEDGED') return 'bg-sky-950/25 text-sky-300/80';
-  return 'bg-slate-800/65 text-slate-200';
+  return 'bg-amber-950/25 text-amber-300/85';
 };
 
 const getLifecycleLabel = (alert: AbuseAlertDto) => {
