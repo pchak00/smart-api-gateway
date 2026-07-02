@@ -23,10 +23,10 @@ const permissionMessage = 'You need Admin access to perform this action.';
 const statusLabelClass = (status: AbuseAlertStatus | string | null | undefined) => {
   if (status === 'RESOLVED') return 'bg-slate-900/70 text-slate-400';
   if (status === 'ACKNOWLEDGED') return 'bg-sky-950/25 text-sky-300/80';
-  return 'bg-amber-950/25 text-amber-300/85';
+  return 'bg-rose-950/25 text-rose-300/85';
 };
 
-const getTimelineLabel = (alert: AbuseAlertDto) => {
+const getLifecycleLabel = (alert: AbuseAlertDto) => {
   if (alert.status === 'RESOLVED') {
     return `Resolved ${formatDateTime(alert.resolvedAt)}${alert.resolvedBy ? ` by ${alert.resolvedBy}` : ''}`;
   }
@@ -37,6 +37,17 @@ const getTimelineLabel = (alert: AbuseAlertDto) => {
 
   return `Created ${formatDateTime(alert.createdAt ?? alert.alertedAt)}`;
 };
+
+const getPrimaryTimeline = (alert: AbuseAlertDto) => {
+  if (alert.status === 'RESOLVED') return formatDateTime(alert.resolvedAt ?? alert.lastStatusChangedAt ?? alert.lastUpdatedAt);
+  if (alert.status === 'ACKNOWLEDGED') return formatDateTime(alert.acknowledgedAt ?? alert.lastStatusChangedAt ?? alert.lastUpdatedAt);
+
+  return formatDateTime(alert.createdAt ?? alert.alertedAt);
+};
+
+const getWindowLabel = (alert: AbuseAlertDto) => (
+  alert.windowStart ? `Window started ${formatDateTime(alert.windowStart)}` : 'Abuse window unavailable'
+);
 
 const getEmptyCopy = (filter: AlertFilter) => {
   if (filter === 'OPEN') {
@@ -162,10 +173,10 @@ export const AbuseAlertsPage: React.FC = () => {
             <table className="w-full min-w-[760px]">
               <thead className="border-b border-slate-800/40">
                 <tr>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-slate-500">Client</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-slate-500">Status</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-slate-500">Blocked</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-slate-500">Timeline</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-slate-400">Client</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-slate-400">Status</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-slate-400">Blocked</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-slate-400">Timeline</th>
                   <th className="px-4 py-3 text-right text-xs font-medium text-slate-500">
                     <span className="sr-only">Lifecycle actions</span>
                   </th>
@@ -175,15 +186,10 @@ export const AbuseAlertsPage: React.FC = () => {
                 {alerts.map((alert, index) => {
                   const status = alert.status ?? 'OPEN';
                   const blockedCount = alert.blockedCount ?? alert.blockedRequestCount ?? 0;
+                  const isOpen = status === 'OPEN';
+                  const alertContext = alert.message || 'Blocked request threshold reached.';
                   const actions = canMutate && status !== 'RESOLVED'
                     ? [
-                        ...(status === 'OPEN'
-                          ? [{
-                              label: 'Acknowledge',
-                              disabled: actionAlertId === alert.id,
-                              onClick: () => handleLifecycleAction(alert, 'acknowledge')
-                            }]
-                          : []),
                         {
                           label: 'Resolve',
                           disabled: actionAlertId === alert.id,
@@ -198,6 +204,9 @@ export const AbuseAlertsPage: React.FC = () => {
                         <p className="text-sm font-medium text-slate-100">
                           {alert.clientName ?? `Client #${alert.clientId ?? index + 1}`}
                         </p>
+                        <p className="mt-1 max-w-md truncate text-xs text-slate-400" title={alertContext}>
+                          {alert.severity ? `${alert.severity} · ` : ''}{alertContext}
+                        </p>
                       </td>
                       <td className="px-4 py-4">
                         <span className={`inline-flex rounded-md px-2 py-0.5 text-xs font-medium ${statusLabelClass(status)}`}>
@@ -205,23 +214,34 @@ export const AbuseAlertsPage: React.FC = () => {
                         </span>
                       </td>
                       <td className="px-4 py-4">
-                        <p className="text-sm text-slate-300">{formatNumber(blockedCount)}</p>
-                        <p className="mt-1 text-xs text-slate-500">
-                          Window from {formatDateTime(alert.windowStart)}
+                        <p className={`text-sm font-medium ${isOpen ? 'text-rose-200/80' : 'text-slate-300'}`}>
+                          {formatNumber(blockedCount)}
                         </p>
+                        <p className="mt-1 text-xs text-slate-400">{getWindowLabel(alert)}</p>
                       </td>
                       <td className="px-4 py-4">
-                        <p className="text-sm text-slate-300">
-                          {formatDateTime(alert.lastStatusChangedAt ?? alert.lastUpdatedAt ?? alert.createdAt ?? alert.alertedAt)}
-                        </p>
-                        <p className="mt-1 text-xs text-slate-500">{getTimelineLabel(alert)}</p>
+                        <p className="text-sm text-slate-300">{getPrimaryTimeline(alert)}</p>
+                        <p className="mt-1 text-xs text-slate-400">{getLifecycleLabel(alert)}</p>
                       </td>
                       <td className="px-4 py-4 text-right text-sm">
-                        {actions.length > 0 ? (
-                          <RowActions actions={actions} label="Alert lifecycle actions" />
-                        ) : (
-                          <span className="text-xs text-slate-600">No actions</span>
-                        )}
+                        <div className="inline-flex items-center gap-2">
+                          {isOpen && (
+                            <button
+                              type="button"
+                              disabled={!canMutate || actionAlertId === alert.id}
+                              title={!canMutate ? 'Admin required' : undefined}
+                              onClick={() => handleLifecycleAction(alert, 'acknowledge')}
+                              className="rounded-md bg-slate-900/55 px-2.5 py-1.5 text-xs font-medium text-slate-300 transition-colors hover:bg-slate-800/70 hover:text-slate-100 focus:outline-none focus:ring-2 focus:ring-slate-700/35 disabled:cursor-not-allowed disabled:text-slate-600 disabled:opacity-60"
+                            >
+                              Acknowledge
+                            </button>
+                          )}
+                          {actions.length > 0 ? (
+                            <RowActions actions={actions} label="Alert lifecycle actions" />
+                          ) : (
+                            <span className="text-xs text-slate-600">No actions</span>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   );

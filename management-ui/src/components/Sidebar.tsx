@@ -143,7 +143,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isSuperAdmin }) => {
               className={`mb-1 flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition-colors ${
                 isActive
                   ? 'bg-slate-900/65 text-slate-100'
-                  : 'text-slate-500 hover:bg-slate-900/45 hover:text-slate-300'
+                  : 'text-slate-400 hover:bg-slate-900/45 hover:text-slate-200'
               }`}
             >
               <Icon size={17} aria-hidden="true" />
@@ -168,7 +168,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isSuperAdmin }) => {
               className={`mb-1 flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition-colors ${
                 isActive
                   ? 'bg-slate-900/65 text-slate-100'
-                  : 'text-slate-500 hover:bg-slate-900/45 hover:text-slate-300'
+                  : 'text-slate-400 hover:bg-slate-900/45 hover:text-slate-200'
               }`}
             >
               <Icon size={17} aria-hidden="true" />

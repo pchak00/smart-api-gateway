@@ -9,6 +9,7 @@ import { useAuth } from '../hooks/useAuth';
 import { useToast } from '../hooks/useToast';
 import { getApiErrorMessage } from '../utils/apiError';
 import { PrimaryButton, SecondaryButton } from '../components/Button';
+import { SensitiveValue } from '../components/SensitiveValue';
 import {
   ClientApiKeyLifecycleDialogs,
   PendingClientLifecycleAction
@@ -28,6 +29,7 @@ export const ClientDetailPage: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [pendingLifecycleAction, setPendingLifecycleAction] = useState<PendingClientLifecycleAction | null>(null);
   const [rotatedKey, setRotatedKey] = useState<ClientApiKeyRotationResponse | null>(null);
+  const [isApiKeyRevealed, setIsApiKeyRevealed] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(
     hasClientId ? null : 'A backend client id is required to load live client activity.'
   );
@@ -207,7 +209,7 @@ export const ClientDetailPage: React.FC = () => {
             <Server className="text-slate-600" size={18} aria-hidden="true" />
             <div>
               <h2 className="text-sm font-semibold text-slate-100">Client identity</h2>
-              <p className="mt-1 text-sm text-slate-500">
+              <p className="mt-1 text-sm text-slate-400">
                 {client
                   ? `${client.active ? 'Active' : 'Inactive'} on ${getPlanLabel(client.planName ?? client.plan?.planName)}`
                   : hasClientId
@@ -220,11 +222,16 @@ export const ClientDetailPage: React.FC = () => {
         <Panel className="p-5 transition-colors hover:bg-slate-900/45">
           <div className="flex items-center gap-3">
             <KeyRound className="text-slate-600" size={18} aria-hidden="true" />
-            <div>
+            <div className="min-w-0">
               <h2 className="text-sm font-semibold text-slate-100">API key</h2>
-              <p className="mt-1 break-all font-mono text-sm text-slate-500">
-                {client?.apiKey ?? 'Not returned by the per-client activity endpoints.'}
-              </p>
+              <SensitiveValue
+                value={client?.apiKey}
+                revealed={isApiKeyRevealed}
+                onRevealedChange={setIsApiKeyRevealed}
+                copyMessage="API key copied"
+                missingLabel="Not returned by the per-client activity endpoints."
+                className="mt-1"
+              />
             </div>
           </div>
         </Panel>
@@ -256,7 +263,7 @@ export const ClientDetailPage: React.FC = () => {
               <div className="mb-5 flex items-center justify-between">
                 <div>
                   <h2 className="text-sm font-semibold text-slate-100">Usage logs</h2>
-                  <p className="mt-1 text-sm text-slate-500">
+                  <p className="mt-1 text-sm text-slate-400">
                     {stats
                       ? `${stats.allowedRequests ?? 0} allowed, ${stats.blockedRequests} blocked.`
                       : 'Recent gateway requests.'}
@@ -276,10 +283,10 @@ export const ClientDetailPage: React.FC = () => {
                   <table className="w-full min-w-[720px]">
                     <thead className="border-b border-slate-800/40">
                       <tr>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-slate-500">Path</th>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-slate-500">Method</th>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-slate-500">Status</th>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-slate-500">Time</th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-slate-400">Path</th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-slate-400">Method</th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-slate-400">Status</th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-slate-400">Time</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-800/35">
@@ -299,7 +306,7 @@ export const ClientDetailPage: React.FC = () => {
                                 {allowed ? 'Allowed' : 'Blocked'} {log.statusCode}
                               </span>
                             </td>
-                            <td className="px-4 py-4 text-sm text-slate-400">{formatDateTime(log.timestamp)}</td>
+                            <td className="px-4 py-4 text-sm text-slate-300">{formatDateTime(log.timestamp)}</td>
                           </tr>
                         );
                       })}
@@ -313,7 +320,7 @@ export const ClientDetailPage: React.FC = () => {
               <div className="mb-5 flex items-center justify-between">
                 <div>
                   <h2 className="text-sm font-semibold text-slate-100">Abuse signals</h2>
-                  <p className="mt-1 text-sm text-slate-500">Alerts returned for this client.</p>
+                  <p className="mt-1 text-sm text-slate-400">Alerts returned for this client.</p>
                 </div>
                 <ShieldAlert className="text-slate-600" size={18} aria-hidden="true" />
               </div>
@@ -332,12 +339,12 @@ export const ClientDetailPage: React.FC = () => {
                         <span className="text-sm font-medium text-slate-100">
                           {getSeverityLabel(alert.severity)}
                         </span>
-                        <span className="text-xs text-slate-500">
+                        <span className="text-xs text-slate-400">
                           {formatDateTime(alert.createdAt ?? alert.alertedAt)}
                         </span>
                       </div>
-                      <p className="mt-2 text-sm text-slate-400">{alert.message ?? 'Blocked request threshold reached.'}</p>
-                      <p className="mt-2 text-xs text-slate-500">
+                      <p className="mt-2 text-sm text-slate-300">{alert.message ?? 'Blocked request threshold reached.'}</p>
+                      <p className="mt-2 text-xs text-slate-400">
                         {formatNumber(alert.blockedCount ?? alert.blockedRequestCount ?? 0)} blocked requests
                       </p>
                     </div>

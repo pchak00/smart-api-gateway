@@ -9,6 +9,7 @@ import { ListSearch } from '../components/ListSearch';
 import { EmptyState, PageHeader } from '../components/PageShell';
 import { RowActions } from '../components/RowActions';
 import { AppDropdown, DropdownOption } from '../components/AppDropdown';
+import { SensitiveValue } from '../components/SensitiveValue';
 import {
   ClientApiKeyLifecycleDialogs,
   PendingClientLifecycleAction
@@ -35,6 +36,7 @@ export const ClientsListPage: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [pendingLifecycleAction, setPendingLifecycleAction] = useState<PendingClientLifecycleAction | null>(null);
   const [rotatedKey, setRotatedKey] = useState<ClientApiKeyRotationResponse | null>(null);
+  const [revealedApiKeyRow, setRevealedApiKeyRow] = useState<string | null>(null);
 
   const loadClients = async () => {
     try {
@@ -248,7 +250,7 @@ export const ClientsListPage: React.FC = () => {
           Some client rows are missing ids, so detail and mutation actions stay disabled for those rows.
         </span>
       )}
-      {errorMessage && <span className="text-xs text-slate-500">{errorMessage}</span>}
+      {errorMessage && <span className="text-xs text-slate-400">{errorMessage}</span>}
     </div>
   ) : undefined;
   const planOptions = useMemo<DropdownOption[]>(() => (
@@ -386,10 +388,10 @@ export const ClientsListPage: React.FC = () => {
             <table className="w-full min-w-[760px]">
               <thead className="border-b border-slate-800/40">
                 <tr>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-slate-500">Client</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-slate-500">API Key</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-slate-500">Plan</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-slate-500">Status</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-slate-400">Client</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-slate-400">API Key</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-slate-400">Plan</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-slate-400">Status</th>
                   <th className="px-4 py-3 text-right text-xs font-medium text-slate-500">
                     <span className="sr-only">Row actions</span>
                   </th>
@@ -399,16 +401,24 @@ export const ClientsListPage: React.FC = () => {
                 {filteredClients.map((client) => {
                   const hasBackendId = typeof client.id === 'number';
                   const planName = client.plan?.planName ?? client.planName ?? 'Unknown';
+                  const rowKey = String(client.id ?? client.apiKey);
 
                   return (
-                    <tr key={client.id ?? client.apiKey} className="transition-colors hover:bg-slate-900/35">
+                    <tr key={rowKey} className="transition-colors hover:bg-slate-900/35">
                       <td className="px-4 py-4">
                         <div className="flex items-center gap-3">
                           <Server className="text-slate-600" size={16} aria-hidden="true" />
                           <span className="text-sm font-medium text-slate-100">{client.clientName}</span>
                         </div>
                       </td>
-                      <td className="px-4 py-4 font-mono text-xs text-slate-400">{client.apiKey}</td>
+                      <td className="px-4 py-4">
+                        <SensitiveValue
+                          value={client.apiKey}
+                          revealed={revealedApiKeyRow === rowKey}
+                          onRevealedChange={(revealed) => setRevealedApiKeyRow(revealed ? rowKey : null)}
+                          copyMessage="API key copied"
+                        />
+                      </td>
                       <td className="px-4 py-4 text-sm text-slate-300">
                         {getPlanLabel(planName)}
                       </td>

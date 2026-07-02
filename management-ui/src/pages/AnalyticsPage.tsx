@@ -127,6 +127,31 @@ const formatBlockRate = (totalRequests: number | null | undefined, blockedReques
   `${(getBlockRate(totalRequests, blockedRequests) * 100).toFixed(1)}%`
 );
 
+const getAnalyticsWindowLabel = (buckets: Array<string | undefined>) => {
+  const sortedBuckets = [...new Set(buckets.filter((bucket): bucket is string => Boolean(bucket)))]
+    .sort((first, second) => first.localeCompare(second));
+
+  if (sortedBuckets.length === 0) return 'Current analytics window';
+  if (sortedBuckets.length === 1) return formatBucket(sortedBuckets[0]);
+
+  return `${formatBucket(sortedBuckets[0])} - ${formatBucket(sortedBuckets[sortedBuckets.length - 1])}`;
+};
+
+const getRouteTrendCountLabel = (
+  mode: RouteTrendDisplayMode,
+  visibleCount: number,
+  totalCount: number
+) => {
+  if (mode === 'custom') {
+    return `Comparing ${visibleCount} ${visibleCount === 1 ? 'route' : 'routes'}`;
+  }
+
+  const limit = getTopRouteLimit(mode);
+  if (totalCount <= limit) return `Showing ${visibleCount} of ${totalCount} routes`;
+
+  return `Showing top ${limit} routes`;
+};
+
 const compareMetricDescending = (first: number, second: number) => {
   const difference = second - first;
   return difference === 0 ? 0 : difference;
@@ -293,6 +318,10 @@ export const AnalyticsPage: React.FC = () => {
   }, [routeTrendMode, routeTrendRouteOptions, selectedCustomRoutes, selectedRouteMetric]);
 
   const routeTrendRouteCount = routeTrendRouteOptions.length;
+  const analyticsWindowLabel = useMemo(() => getAnalyticsWindowLabel([
+    ...trafficAnalytics.map((point) => point.bucket),
+    ...routeTrafficAnalytics.map((point) => point.bucket)
+  ]), [routeTrafficAnalytics, trafficAnalytics]);
 
   const routeSearchResults = useMemo(() => {
     const query = routeSearch.trim().toLowerCase();
@@ -418,8 +447,8 @@ export const AnalyticsPage: React.FC = () => {
             ariaLabel="Filter analytics by plan"
             fullWidth={false}
             align="right"
-            displayValue={selectedPlanLabel}
-            buttonClassName="min-w-32 border-slate-800/80 bg-slate-950/50 px-2.5 text-xs text-slate-400 hover:bg-slate-900/55"
+            displayValue={`Global plan: ${selectedPlanLabel}`}
+            buttonClassName="min-w-40 border-slate-800/80 bg-slate-950/50 px-2.5 text-xs text-slate-300 hover:bg-slate-900/55"
             menuClassName="w-44"
           />
         }
@@ -430,7 +459,8 @@ export const AnalyticsPage: React.FC = () => {
           <div className="mb-5 flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
             <div className="min-w-0">
               <h2 className="text-sm font-semibold text-slate-100">Route trends</h2>
-              <p className="mt-1 text-sm text-slate-500">Traffic over time by gateway route.</p>
+              <p className="mt-1 text-sm text-slate-400">Traffic over time by gateway route.</p>
+              <p className="mt-1 text-xs text-slate-400">{analyticsWindowLabel}</p>
             </div>
             <div className="flex flex-wrap items-center gap-3">
               <div className="flex rounded-md border border-slate-800/70 bg-slate-950/40 p-1">
@@ -442,7 +472,7 @@ export const AnalyticsPage: React.FC = () => {
                     className={`rounded px-2.5 py-1 text-xs font-medium transition-colors ${
                       selectedRouteMetric === option.key
                         ? 'bg-slate-800/80 text-slate-100'
-                        : 'text-slate-500 hover:bg-slate-900/60 hover:text-slate-300'
+                        : 'text-slate-400 hover:bg-slate-900/60 hover:text-slate-200'
                     }`}
                   >
                     {option.label}
@@ -458,7 +488,7 @@ export const AnalyticsPage: React.FC = () => {
                     className={`rounded px-2.5 py-1 text-xs font-medium transition-colors ${
                       routeTrendMode === option.key
                         ? 'bg-slate-800/80 text-slate-100'
-                        : 'text-slate-500 hover:bg-slate-900/60 hover:text-slate-300'
+                        : 'text-slate-400 hover:bg-slate-900/60 hover:text-slate-200'
                     }`}
                   >
                     {option.label}
@@ -585,8 +615,8 @@ export const AnalyticsPage: React.FC = () => {
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={routeTrendData} margin={{ top: 8, right: 8, left: -16, bottom: 0 }}>
                   <CartesianGrid stroke="#1e293b" strokeOpacity={0.55} vertical={false} />
-                  <XAxis dataKey="bucketLabel" tick={{ fill: '#64748b', fontSize: 12 }} tickLine={false} axisLine={false} />
-                  <YAxis tick={{ fill: '#64748b', fontSize: 12 }} tickLine={false} axisLine={false} />
+                  <XAxis dataKey="bucketLabel" tick={{ fill: '#94a3b8', fontSize: 12 }} tickLine={false} axisLine={false} />
+                  <YAxis tick={{ fill: '#94a3b8', fontSize: 12 }} tickLine={false} axisLine={false} />
                   <Tooltip
                     contentStyle={{
                       background: '#020617',
@@ -600,7 +630,7 @@ export const AnalyticsPage: React.FC = () => {
                     labelFormatter={(label) => `Bucket: ${String(label)}`}
                     formatter={(value, name) => [
                       formatNumber(typeof value === 'number' ? value : Number(value)),
-                      routeTrendRoutes.find((route) => route.route === name)?.route ?? String(name)
+                      routeTrendRoutes.find((route) => route.key === name)?.route ?? String(name)
                     ]}
                   />
                   {routeTrendRoutes.map((route) => (
@@ -624,14 +654,12 @@ export const AnalyticsPage: React.FC = () => {
 
           {!isLoading && !errorMessage && routeTrendRoutes.length > 0 && (
             <div className="mt-4 flex flex-col gap-3">
-              <p className="text-xs text-slate-600">
-                {routeTrendMode === 'custom'
-                  ? `Comparing ${routeTrendRoutes.length} ${routeTrendRoutes.length === 1 ? 'route' : 'routes'}`
-                  : `Showing top ${Math.min(getTopRouteLimit(routeTrendMode), routeTrendRoutes.length)}${routeTrendRouteCount > routeTrendRoutes.length ? ` of ${routeTrendRouteCount}` : ''} routes`}
+              <p className="text-xs text-slate-400">
+                {getRouteTrendCountLabel(routeTrendMode, routeTrendRoutes.length, routeTrendRouteCount)}
               </p>
               <div className="grid gap-x-4 gap-y-2 sm:grid-cols-2 xl:grid-cols-3">
                 {routeTrendRoutes.map((route) => (
-                  <div key={route.key} className="flex min-w-0 items-center gap-2 text-xs text-slate-500">
+                  <div key={route.key} className="flex min-w-0 items-center gap-2 text-xs text-slate-300">
                     <svg className="h-2 w-5 shrink-0 overflow-visible" viewBox="0 0 20 8" aria-hidden="true">
                       <line
                         x1="1"
@@ -669,10 +697,10 @@ export const AnalyticsPage: React.FC = () => {
               <p className="mt-2 text-3xl font-semibold text-slate-50">{isLoading ? '...' : formatNumber(totalAllowed)}</p>
             </div>
             <div className="py-4">
-              <p className="text-sm text-slate-400">Blocked</p>
-              <p className="mt-2 text-3xl font-semibold text-slate-50">{isLoading ? '...' : formatNumber(totalBlocked)}</p>
+              <p className="text-sm text-rose-300/70">Blocked</p>
+              <p className="mt-2 text-3xl font-semibold text-rose-200/90">{isLoading ? '...' : formatNumber(totalBlocked)}</p>
             </div>
-            <p className="pt-4 text-xs leading-5 text-slate-500">
+            <p className="pt-4 text-xs leading-5 text-slate-400">
               {errorMessage ?? 'All-time totals from daily traffic buckets.'}
             </p>
           </div>
@@ -684,7 +712,7 @@ export const AnalyticsPage: React.FC = () => {
           <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
             <div>
               <h2 className="text-sm font-semibold text-slate-100">Routes</h2>
-              <p className="mt-1 text-sm text-slate-500">Usage grouped by gateway path.</p>
+              <p className="mt-1 text-sm text-slate-400">Usage grouped by gateway path.</p>
             </div>
             <div className="flex items-center gap-3">
               <AppDropdown
@@ -695,7 +723,7 @@ export const AnalyticsPage: React.FC = () => {
                 fullWidth={false}
                 align="right"
                 displayValue="Sort"
-                buttonClassName="h-8 border-slate-800/70 bg-slate-950/45 px-2.5 text-xs text-slate-500 hover:bg-slate-900/55 hover:text-slate-300"
+                buttonClassName="h-8 border-slate-800/70 bg-slate-950/45 px-2.5 text-xs text-slate-400 hover:bg-slate-900/55 hover:text-slate-200"
                 menuClassName="w-48"
               />
               <Route className="text-slate-600" size={18} aria-hidden="true" />
@@ -717,11 +745,11 @@ export const AnalyticsPage: React.FC = () => {
               <table className="w-full min-w-[640px]">
                 <thead className="border-b border-slate-800/40">
                   <tr>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-slate-500">Route</th>
-                    <th className="px-4 py-3 text-right text-xs font-medium text-slate-500">Total</th>
-                    <th className="px-4 py-3 text-right text-xs font-medium text-slate-500">Allowed</th>
-                    <th className="px-4 py-3 text-right text-xs font-medium text-slate-500">Blocked</th>
-                    <th className="px-4 py-3 text-right text-xs font-medium text-slate-500">Block rate</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-slate-400">Route</th>
+                    <th className="px-4 py-3 text-right text-xs font-medium text-slate-400">Total</th>
+                    <th className="px-4 py-3 text-right text-xs font-medium text-slate-400">Allowed</th>
+                    <th className="px-4 py-3 text-right text-xs font-medium text-slate-400">Blocked</th>
+                    <th className="px-4 py-3 text-right text-xs font-medium text-slate-400">Block rate</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-800/35">
@@ -730,8 +758,8 @@ export const AnalyticsPage: React.FC = () => {
                       <td className="px-4 py-4 font-mono text-xs text-slate-300">{route.route ?? 'Unknown route'}</td>
                       <td className="px-4 py-4 text-right text-sm text-slate-300">{formatNumber(route.totalRequests)}</td>
                       <td className="px-4 py-4 text-right text-sm text-slate-400">{formatNumber(route.allowedRequests)}</td>
-                      <td className="px-4 py-4 text-right text-sm text-slate-400">{formatNumber(route.blockedRequests)}</td>
-                      <td className="px-4 py-4 text-right text-sm text-slate-400">
+                      <td className="px-4 py-4 text-right text-sm text-rose-200/75">{formatNumber(route.blockedRequests)}</td>
+                      <td className="px-4 py-4 text-right text-sm text-slate-300">
                         {formatBlockRate(route.totalRequests, route.blockedRequests)}
                       </td>
                     </tr>
@@ -746,7 +774,7 @@ export const AnalyticsPage: React.FC = () => {
           <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
             <div>
               <h2 className="text-sm font-semibold text-slate-100">Clients</h2>
-              <p className="mt-1 text-sm text-slate-500">Usage grouped by API consumer.</p>
+              <p className="mt-1 text-sm text-slate-400">Usage grouped by API consumer.</p>
             </div>
             <div className="flex flex-wrap items-center gap-2">
               <AppDropdown
@@ -757,7 +785,7 @@ export const AnalyticsPage: React.FC = () => {
                 fullWidth={false}
                 align="right"
                 displayValue={`Plan: ${clientPlanFilter ? selectedClientPlanLabel : 'All'}`}
-                buttonClassName="h-8 min-w-28 border-slate-800/70 bg-slate-950/45 px-2.5 text-xs text-slate-500 hover:bg-slate-900/55 hover:text-slate-300"
+                buttonClassName="h-8 min-w-28 border-slate-800/70 bg-slate-950/45 px-2.5 text-xs text-slate-400 hover:bg-slate-900/55 hover:text-slate-200"
                 menuClassName="w-44"
               />
               <AppDropdown
@@ -768,7 +796,7 @@ export const AnalyticsPage: React.FC = () => {
                 fullWidth={false}
                 align="right"
                 displayValue="Sort"
-                buttonClassName="h-8 border-slate-800/70 bg-slate-950/45 px-2.5 text-xs text-slate-500 hover:bg-slate-900/55 hover:text-slate-300"
+                buttonClassName="h-8 border-slate-800/70 bg-slate-950/45 px-2.5 text-xs text-slate-400 hover:bg-slate-900/55 hover:text-slate-200"
                 menuClassName="w-48"
               />
               <Users className="text-slate-600" size={18} aria-hidden="true" />
@@ -796,12 +824,12 @@ export const AnalyticsPage: React.FC = () => {
               <table className="w-full min-w-[720px]">
                 <thead className="border-b border-slate-800/40">
                   <tr>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-slate-500">Client</th>
-                    <th className="px-4 py-3 text-right text-xs font-medium text-slate-500">Total</th>
-                    <th className="px-4 py-3 text-right text-xs font-medium text-slate-500">Allowed</th>
-                    <th className="px-4 py-3 text-right text-xs font-medium text-slate-500">Blocked</th>
-                    <th className="px-4 py-3 text-right text-xs font-medium text-slate-500">Block rate</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-slate-500">Plan</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-slate-400">Client</th>
+                    <th className="px-4 py-3 text-right text-xs font-medium text-slate-400">Total</th>
+                    <th className="px-4 py-3 text-right text-xs font-medium text-slate-400">Allowed</th>
+                    <th className="px-4 py-3 text-right text-xs font-medium text-slate-400">Blocked</th>
+                    <th className="px-4 py-3 text-right text-xs font-medium text-slate-400">Block rate</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-slate-400">Plan</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-800/35">
@@ -812,11 +840,11 @@ export const AnalyticsPage: React.FC = () => {
                       </td>
                       <td className="px-4 py-4 text-right text-sm text-slate-300">{formatNumber(client.totalRequests)}</td>
                       <td className="px-4 py-4 text-right text-sm text-slate-400">{formatNumber(client.allowedRequests)}</td>
-                      <td className="px-4 py-4 text-right text-sm text-slate-400">{formatNumber(client.blockedRequests)}</td>
-                      <td className="px-4 py-4 text-right text-sm text-slate-400">
+                      <td className="px-4 py-4 text-right text-sm text-rose-200/75">{formatNumber(client.blockedRequests)}</td>
+                      <td className="px-4 py-4 text-right text-sm text-slate-300">
                         {formatBlockRate(client.totalRequests, client.blockedRequests)}
                       </td>
-                      <td className="px-4 py-4 text-sm text-slate-400">{getPlanLabel(client.planName)}</td>
+                      <td className="px-4 py-4 text-sm text-slate-300">{getPlanLabel(client.planName)}</td>
                     </tr>
                   ))}
                 </tbody>

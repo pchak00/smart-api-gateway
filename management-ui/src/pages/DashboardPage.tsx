@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
+  Copy,
   KeyRound,
   Plus,
   SlidersHorizontal,
@@ -10,6 +11,7 @@ import { api } from '../api/client';
 import { AbuseAlertDto, DashboardSummaryDto, GatewaySettingsDto, RouteAnalyticsDto } from '../types';
 import { PageHeader } from '../components/PageShell';
 import { useAuth } from '../hooks/useAuth';
+import { useToast } from '../hooks/useToast';
 import { formatDateTime, formatNumber, getStatusLabel } from '../utils/display';
 
 interface DashboardSectionProps {
@@ -52,17 +54,40 @@ const valueOrLoading = (value: number | null | undefined, isLoading: boolean) =>
   return formatNumber(value);
 };
 
+const getBlockRateValue = (summary: DashboardSummaryDto | null) => {
+  if (!summary) return null;
+
+  const totalRequests = safeCount(summary.totalRequests);
+  const allowedRequests = safeCount(summary.allowedRequests);
+  const blockedRequests = safeCount(summary.blockedRequests);
+  const denominator = totalRequests > 0 ? totalRequests : allowedRequests + blockedRequests;
+
+  if (denominator === 0) return 0;
+
+  return blockedRequests / denominator;
+};
+
 const GatewaySummaryStrip: React.FC<{ summary: DashboardSummaryDto | null; isLoading: boolean }> = ({
   summary,
   isLoading
 }) => {
+  const blockedRequests = safeCount(summary?.blockedRequests);
+  const openAlertCount = safeCount(summary?.openAlertCount);
   const metrics = [
     { label: 'Clients', value: valueOrLoading(summary?.clientCount, isLoading) },
     { label: 'Plans', value: valueOrLoading(summary?.planCount, isLoading) },
     { label: 'Route limits', value: valueOrLoading(summary?.routeLimitCount, isLoading) },
     { label: 'Requests', value: valueOrLoading(summary?.totalRequests, isLoading) },
-    { label: 'Blocked', value: valueOrLoading(summary?.blockedRequests, isLoading) },
-    { label: 'Open alerts', value: valueOrLoading(summary?.openAlertCount, isLoading) }
+    {
+      label: 'Blocked',
+      value: valueOrLoading(summary?.blockedRequests, isLoading),
+      risk: blockedRequests > 0
+    },
+    {
+      label: 'Open alerts',
+      value: valueOrLoading(summary?.openAlertCount, isLoading),
+      risk: openAlertCount > 0
+    }
   ];
 
   return (
@@ -70,9 +95,14 @@ const GatewaySummaryStrip: React.FC<{ summary: DashboardSummaryDto | null; isLoa
       <h2 className="text-sm font-semibold text-slate-100">Gateway summary</h2>
       <dl className="mt-5 grid grid-cols-2 gap-x-8 gap-y-5 md:grid-cols-3 xl:grid-cols-6">
         {metrics.map((metric) => (
-          <div key={metric.label} className="min-w-0">
-            <dt className="truncate text-xs font-medium text-slate-500">{metric.label}</dt>
-            <dd className="mt-2 truncate text-2xl font-semibold leading-none text-slate-50">
+          <div
+            key={metric.label}
+            className={`min-w-0 rounded-md ${metric.risk ? 'bg-rose-950/10 px-3 py-2 ring-1 ring-rose-900/10' : ''}`}
+          >
+            <dt className={`truncate text-xs font-medium ${metric.risk ? 'text-rose-300/70' : 'text-slate-400'}`}>
+              {metric.label}
+            </dt>
+            <dd className={`mt-2 truncate text-2xl font-semibold leading-none ${metric.risk ? 'text-rose-200/90' : 'text-slate-50'}`}>
               {metric.value}
             </dd>
           </div>
@@ -84,16 +114,10 @@ const GatewaySummaryStrip: React.FC<{ summary: DashboardSummaryDto | null; isLoa
 
 const percentOrLoading = (summary: DashboardSummaryDto | null, isLoading: boolean) => {
   if (isLoading) return '...';
-  if (!summary) return 'Unavailable';
+  const blockRate = getBlockRateValue(summary);
+  if (blockRate === null) return 'Unavailable';
 
-  const totalRequests = safeCount(summary.totalRequests);
-  const allowedRequests = safeCount(summary.allowedRequests);
-  const blockedRequests = safeCount(summary.blockedRequests);
-  const denominator = totalRequests > 0 ? totalRequests : allowedRequests + blockedRequests;
-
-  if (denominator === 0) return '0%';
-
-  return `${((blockedRequests / denominator) * 100).toFixed(1)}%`;
+  return `${(blockRate * 100).toFixed(1)}%`;
 };
 
 const topRoutes = (routes: RouteAnalyticsDto[]) => (
@@ -104,8 +128,8 @@ const topRoutes = (routes: RouteAnalyticsDto[]) => (
 );
 
 const clampPercent = (value: number) => Math.min(Math.max(value, 0), 100);
-const allowedRouteSegmentClass = 'bg-slate-500/60';
-const blockedRouteSegmentClass = 'bg-slate-300/55';
+const allowedRouteSegmentClass = 'bg-cyan-300/45';
+const blockedRouteSegmentClass = 'bg-rose-300/60';
 
 interface GatewayHealthPanelProps {
   settings: GatewaySettingsDto | null;
@@ -114,6 +138,7 @@ interface GatewayHealthPanelProps {
   isSummaryLoading: boolean;
   isOperationalLoading: boolean;
   settingsError: string | null;
+  onCopyUpstream: (upstreamUrl: string) => void;
 }
 
 interface TopRoutesPanelProps {
@@ -134,7 +159,8 @@ const GatewayHealthPanel: React.FC<GatewayHealthPanelProps> = ({
   mostActiveRoute,
   isSummaryLoading,
   isOperationalLoading,
-  settingsError
+  settingsError,
+  onCopyUpstream
 }) => {
   const allowedRequests = valueOrLoading(summary?.allowedRequests, isSummaryLoading);
   const blockedRequests = valueOrLoading(summary?.blockedRequests, isSummaryLoading);
@@ -146,6 +172,10 @@ const GatewayHealthPanel: React.FC<GatewayHealthPanelProps> = ({
   const mostActiveRouteLabel = isOperationalLoading
     ? '...'
     : mostActiveRoute?.route || 'No route traffic yet';
+  const hasConfiguredUpstream = Boolean(settings?.upstreamBaseUrl && !settingsError && !isOperationalLoading);
+  const upstreamCopyValue = hasConfiguredUpstream ? settings?.upstreamBaseUrl : undefined;
+  const blockRateValue = getBlockRateValue(summary);
+  const isHighBlockRate = typeof blockRateValue === 'number' && blockRateValue >= 0.05 && safeCount(summary?.blockedRequests) > 0;
 
   return (
     <DashboardSection
@@ -158,19 +188,36 @@ const GatewayHealthPanel: React.FC<GatewayHealthPanelProps> = ({
     >
       <dl className="grid gap-3 sm:grid-cols-2">
         <div className="min-w-0 rounded-md bg-slate-950/30 px-4 py-3">
-          <dt className="text-xs font-medium text-slate-600">Configured upstream</dt>
-          <dd className={healthValueClass} title={upstreamValue}>{upstreamValue}</dd>
+          <dt className="text-xs font-medium text-slate-400">Configured upstream</dt>
+          <dd className="mt-1 flex min-w-0 items-center gap-2">
+            <span className="min-w-0 truncate text-sm font-medium text-slate-100" title={upstreamValue}>
+              {upstreamValue}
+            </span>
+            {upstreamCopyValue && (
+              <button
+                type="button"
+                onClick={() => onCopyUpstream(upstreamCopyValue)}
+                className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-slate-500 transition-colors hover:bg-slate-900/70 hover:text-slate-200 focus:outline-none focus:ring-2 focus:ring-slate-700/35"
+                aria-label="Copy configured upstream URL"
+                title="Copy upstream URL"
+              >
+                <Copy size={14} aria-hidden="true" />
+              </button>
+            )}
+          </dd>
         </div>
         <div className="rounded-md bg-slate-950/30 px-4 py-3">
-          <dt className="text-xs font-medium text-slate-600">Allowed / blocked</dt>
+          <dt className="text-xs font-medium text-slate-400">Allowed / blocked</dt>
           <dd className={healthValueClass}>{allowedRequests} / {blockedRequests}</dd>
         </div>
-        <div className="rounded-md bg-slate-950/30 px-4 py-3">
-          <dt className="text-xs font-medium text-slate-600">Block rate</dt>
-          <dd className={healthValueClass}>{percentOrLoading(summary, isSummaryLoading)}</dd>
+        <div className={`rounded-md px-4 py-3 ${isHighBlockRate ? 'bg-rose-950/10 ring-1 ring-rose-900/10' : 'bg-slate-950/30'}`}>
+          <dt className={`text-xs font-medium ${isHighBlockRate ? 'text-rose-300/70' : 'text-slate-400'}`}>Block rate</dt>
+          <dd className={`mt-1 min-w-0 truncate text-sm font-medium ${isHighBlockRate ? 'text-rose-200/90' : 'text-slate-100'}`}>
+            {percentOrLoading(summary, isSummaryLoading)}
+          </dd>
         </div>
         <div className="min-w-0 rounded-md bg-slate-950/30 px-4 py-3">
-          <dt className="text-xs font-medium text-slate-600">Most active route</dt>
+          <dt className="text-xs font-medium text-slate-400">Most active route</dt>
           <dd className={healthValueClass} title={mostActiveRouteLabel}>{mostActiveRouteLabel}</dd>
         </div>
       </dl>
@@ -252,6 +299,7 @@ const quickActions: QuickAction[] = [
 
 export const DashboardPage: React.FC = () => {
   const { canMutate } = useAuth();
+  const { showToast } = useToast();
   const [summary, setSummary] = useState<DashboardSummaryDto | null>(null);
   const [routeAnalytics, setRouteAnalytics] = useState<RouteAnalyticsDto[]>([]);
   const [gatewaySettings, setGatewaySettings] = useState<GatewaySettingsDto | null>(null);
@@ -330,6 +378,15 @@ export const DashboardPage: React.FC = () => {
     .filter((alert) => alert.status === 'OPEN')
     .slice(0, 3);
 
+  const handleCopyUpstream = async (upstreamUrl: string) => {
+    try {
+      await navigator.clipboard.writeText(upstreamUrl);
+      showToast({ message: 'Upstream URL copied', type: 'success' });
+    } catch {
+      showToast({ message: 'Could not copy upstream URL.', type: 'error' });
+    }
+  };
+
   return (
     <div>
       <PageHeader
@@ -347,6 +404,7 @@ export const DashboardPage: React.FC = () => {
           isSummaryLoading={isLoading}
           isOperationalLoading={isOperationalLoading}
           settingsError={settingsError}
+          onCopyUpstream={handleCopyUpstream}
         />
 
         <DashboardSection
@@ -381,10 +439,10 @@ export const DashboardPage: React.FC = () => {
                     <p className="truncate text-sm font-medium text-slate-100">
                       {alert.clientName ?? `Client #${alert.clientId}`}
                     </p>
-                    <span className="text-xs text-amber-300/80">{getStatusLabel(alert.status)}</span>
+                    <span className="text-xs text-rose-300/75">{getStatusLabel(alert.status)}</span>
                   </div>
-                  <div className="mt-1 flex items-center justify-between gap-3 text-xs text-slate-500">
-                    <span>{formatNumber(alert.blockedCount ?? alert.blockedRequestCount)} blocked</span>
+                  <div className="mt-1 flex items-center justify-between gap-3 text-xs text-slate-400">
+                    <span className="text-rose-200/75">{formatNumber(alert.blockedCount ?? alert.blockedRequestCount)} blocked</span>
                     <span>{formatDateTime(alert.createdAt ?? alert.alertedAt)}</span>
                   </div>
                 </Link>
@@ -399,7 +457,7 @@ export const DashboardPage: React.FC = () => {
           title="Top routes"
           action={
             <div className="flex items-center gap-4">
-              <div className="hidden items-center gap-3 text-xs text-slate-600 sm:flex" aria-hidden="true">
+              <div className="hidden items-center gap-3 text-xs text-slate-400 sm:flex" aria-hidden="true">
                 <span className="inline-flex items-center gap-1.5">
                   <span className={`h-1.5 w-3 rounded-full ${allowedRouteSegmentClass}`} />
                   Allowed
