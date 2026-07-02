@@ -301,7 +301,7 @@ export const ClientDetailPage: React.FC = () => {
                               <span className={`inline-flex items-center rounded-md px-2 py-0.5 text-xs font-medium ${
                                 allowed
                                   ? 'bg-emerald-950/30 text-emerald-300/90'
-                                  : 'bg-amber-950/30 text-amber-300/90'
+                                  : 'bg-slate-800/65 text-slate-200'
                               }`}>
                                 {allowed ? 'Allowed' : 'Blocked'} {log.statusCode}
                               </span>

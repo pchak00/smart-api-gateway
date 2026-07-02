@@ -697,8 +697,8 @@ export const AnalyticsPage: React.FC = () => {
               <p className="mt-2 text-3xl font-semibold text-slate-50">{isLoading ? '...' : formatNumber(totalAllowed)}</p>
             </div>
             <div className="py-4">
-              <p className="text-sm text-rose-300/70">Blocked</p>
-              <p className="mt-2 text-3xl font-semibold text-rose-200/90">{isLoading ? '...' : formatNumber(totalBlocked)}</p>
+              <p className="text-sm text-slate-400">Blocked</p>
+              <p className="mt-2 text-3xl font-semibold text-slate-100">{isLoading ? '...' : formatNumber(totalBlocked)}</p>
             </div>
             <p className="pt-4 text-xs leading-5 text-slate-400">
               {errorMessage ?? 'All-time totals from daily traffic buckets.'}
@@ -758,7 +758,7 @@ export const AnalyticsPage: React.FC = () => {
                       <td className="px-4 py-4 font-mono text-xs text-slate-300">{route.route ?? 'Unknown route'}</td>
                       <td className="px-4 py-4 text-right text-sm text-slate-300">{formatNumber(route.totalRequests)}</td>
                       <td className="px-4 py-4 text-right text-sm text-slate-400">{formatNumber(route.allowedRequests)}</td>
-                      <td className="px-4 py-4 text-right text-sm text-rose-200/75">{formatNumber(route.blockedRequests)}</td>
+                      <td className="px-4 py-4 text-right text-sm text-slate-300">{formatNumber(route.blockedRequests)}</td>
                       <td className="px-4 py-4 text-right text-sm text-slate-300">
                         {formatBlockRate(route.totalRequests, route.blockedRequests)}
                       </td>
@@ -840,7 +840,7 @@ export const AnalyticsPage: React.FC = () => {
                       </td>
                       <td className="px-4 py-4 text-right text-sm text-slate-300">{formatNumber(client.totalRequests)}</td>
                       <td className="px-4 py-4 text-right text-sm text-slate-400">{formatNumber(client.allowedRequests)}</td>
-                      <td className="px-4 py-4 text-right text-sm text-rose-200/75">{formatNumber(client.blockedRequests)}</td>
+                      <td className="px-4 py-4 text-right text-sm text-slate-300">{formatNumber(client.blockedRequests)}</td>
                       <td className="px-4 py-4 text-right text-sm text-slate-300">
                         {formatBlockRate(client.totalRequests, client.blockedRequests)}
                       </td>

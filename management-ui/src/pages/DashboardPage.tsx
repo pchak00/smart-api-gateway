@@ -71,23 +71,13 @@ const GatewaySummaryStrip: React.FC<{ summary: DashboardSummaryDto | null; isLoa
   summary,
   isLoading
 }) => {
-  const blockedRequests = safeCount(summary?.blockedRequests);
-  const openAlertCount = safeCount(summary?.openAlertCount);
   const metrics = [
     { label: 'Clients', value: valueOrLoading(summary?.clientCount, isLoading) },
     { label: 'Plans', value: valueOrLoading(summary?.planCount, isLoading) },
     { label: 'Route limits', value: valueOrLoading(summary?.routeLimitCount, isLoading) },
     { label: 'Requests', value: valueOrLoading(summary?.totalRequests, isLoading) },
-    {
-      label: 'Blocked',
-      value: valueOrLoading(summary?.blockedRequests, isLoading),
-      risk: blockedRequests > 0
-    },
-    {
-      label: 'Open alerts',
-      value: valueOrLoading(summary?.openAlertCount, isLoading),
-      risk: openAlertCount > 0
-    }
+    { label: 'Blocked', value: valueOrLoading(summary?.blockedRequests, isLoading) },
+    { label: 'Open alerts', value: valueOrLoading(summary?.openAlertCount, isLoading) }
   ];
 
   return (
@@ -97,12 +87,12 @@ const GatewaySummaryStrip: React.FC<{ summary: DashboardSummaryDto | null; isLoa
         {metrics.map((metric) => (
           <div
             key={metric.label}
-            className={`min-w-0 rounded-md ${metric.risk ? 'bg-rose-950/10 px-3 py-2 ring-1 ring-rose-900/10' : ''}`}
+            className="min-w-0 rounded-md"
           >
-            <dt className={`truncate text-xs font-medium ${metric.risk ? 'text-rose-300/70' : 'text-slate-400'}`}>
+            <dt className="truncate text-xs font-medium text-slate-400">
               {metric.label}
             </dt>
-            <dd className={`mt-2 truncate text-2xl font-semibold leading-none ${metric.risk ? 'text-rose-200/90' : 'text-slate-50'}`}>
+            <dd className="mt-2 truncate text-2xl font-semibold leading-none text-slate-50">
               {metric.value}
             </dd>
           </div>
@@ -129,7 +119,7 @@ const topRoutes = (routes: RouteAnalyticsDto[]) => (
 
 const clampPercent = (value: number) => Math.min(Math.max(value, 0), 100);
 const allowedRouteSegmentClass = 'bg-cyan-300/45';
-const blockedRouteSegmentClass = 'bg-rose-300/60';
+const blockedRouteSegmentClass = 'bg-slate-400/65';
 
 interface GatewayHealthPanelProps {
   settings: GatewaySettingsDto | null;
@@ -174,8 +164,6 @@ const GatewayHealthPanel: React.FC<GatewayHealthPanelProps> = ({
     : mostActiveRoute?.route || 'No route traffic yet';
   const hasConfiguredUpstream = Boolean(settings?.upstreamBaseUrl && !settingsError && !isOperationalLoading);
   const upstreamCopyValue = hasConfiguredUpstream ? settings?.upstreamBaseUrl : undefined;
-  const blockRateValue = getBlockRateValue(summary);
-  const isHighBlockRate = typeof blockRateValue === 'number' && blockRateValue >= 0.05 && safeCount(summary?.blockedRequests) > 0;
 
   return (
     <DashboardSection
@@ -210,9 +198,9 @@ const GatewayHealthPanel: React.FC<GatewayHealthPanelProps> = ({
           <dt className="text-xs font-medium text-slate-400">Allowed / blocked</dt>
           <dd className={healthValueClass}>{allowedRequests} / {blockedRequests}</dd>
         </div>
-        <div className={`rounded-md px-4 py-3 ${isHighBlockRate ? 'bg-rose-950/10 ring-1 ring-rose-900/10' : 'bg-slate-950/30'}`}>
-          <dt className={`text-xs font-medium ${isHighBlockRate ? 'text-rose-300/70' : 'text-slate-400'}`}>Block rate</dt>
-          <dd className={`mt-1 min-w-0 truncate text-sm font-medium ${isHighBlockRate ? 'text-rose-200/90' : 'text-slate-100'}`}>
+        <div className="rounded-md bg-slate-950/30 px-4 py-3">
+          <dt className="text-xs font-medium text-slate-400">Block rate</dt>
+          <dd className="mt-1 min-w-0 truncate text-sm font-medium text-slate-100">
             {percentOrLoading(summary, isSummaryLoading)}
           </dd>
         </div>
@@ -439,10 +427,10 @@ export const DashboardPage: React.FC = () => {
                     <p className="truncate text-sm font-medium text-slate-100">
                       {alert.clientName ?? `Client #${alert.clientId}`}
                     </p>
-                    <span className="text-xs text-rose-300/75">{getStatusLabel(alert.status)}</span>
+                    <span className="text-xs text-slate-300">{getStatusLabel(alert.status)}</span>
                   </div>
                   <div className="mt-1 flex items-center justify-between gap-3 text-xs text-slate-400">
-                    <span className="text-rose-200/75">{formatNumber(alert.blockedCount ?? alert.blockedRequestCount)} blocked</span>
+                    <span className="text-slate-300">{formatNumber(alert.blockedCount ?? alert.blockedRequestCount)} blocked</span>
                     <span>{formatDateTime(alert.createdAt ?? alert.alertedAt)}</span>
                   </div>
                 </Link>

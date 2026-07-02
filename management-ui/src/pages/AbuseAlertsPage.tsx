@@ -23,7 +23,7 @@ const permissionMessage = 'You need Admin access to perform this action.';
 const statusLabelClass = (status: AbuseAlertStatus | string | null | undefined) => {
   if (status === 'RESOLVED') return 'bg-slate-900/70 text-slate-400';
   if (status === 'ACKNOWLEDGED') return 'bg-sky-950/25 text-sky-300/80';
-  return 'bg-rose-950/25 text-rose-300/85';
+  return 'bg-slate-800/65 text-slate-200';
 };
 
 const getLifecycleLabel = (alert: AbuseAlertDto) => {
@@ -187,7 +187,6 @@ export const AbuseAlertsPage: React.FC = () => {
                   const status = alert.status ?? 'OPEN';
                   const blockedCount = alert.blockedCount ?? alert.blockedRequestCount ?? 0;
                   const isOpen = status === 'OPEN';
-                  const alertContext = alert.message || 'Blocked request threshold reached.';
                   const actions = canMutate && status !== 'RESOLVED'
                     ? [
                         {
@@ -204,9 +203,6 @@ export const AbuseAlertsPage: React.FC = () => {
                         <p className="text-sm font-medium text-slate-100">
                           {alert.clientName ?? `Client #${alert.clientId ?? index + 1}`}
                         </p>
-                        <p className="mt-1 max-w-md truncate text-xs text-slate-400" title={alertContext}>
-                          {alert.severity ? `${alert.severity} · ` : ''}{alertContext}
-                        </p>
                       </td>
                       <td className="px-4 py-4">
                         <span className={`inline-flex rounded-md px-2 py-0.5 text-xs font-medium ${statusLabelClass(status)}`}>
@@ -214,7 +210,7 @@ export const AbuseAlertsPage: React.FC = () => {
                         </span>
                       </td>
                       <td className="px-4 py-4">
-                        <p className={`text-sm font-medium ${isOpen ? 'text-rose-200/80' : 'text-slate-300'}`}>
+                        <p className={`text-sm font-medium ${isOpen ? 'text-slate-100' : 'text-slate-300'}`}>
                           {formatNumber(blockedCount)}
                         </p>
                         <p className="mt-1 text-xs text-slate-400">{getWindowLabel(alert)}</p>
