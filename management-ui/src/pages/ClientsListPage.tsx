@@ -25,11 +25,6 @@ type ActivityFilter = 'all' | 'stale';
 const staleInactivityDays = 30;
 const staleInactivityMs = staleInactivityDays * 24 * 60 * 60 * 1000;
 
-const activityFilterOptions: DropdownOption[] = [
-  { value: 'all', label: 'All clients' },
-  { value: 'stale', label: 'Stale 30d', description: 'Active clients with no recent traffic' }
-];
-
 const getLastActiveDate = (client: ClientDto) => getServerTimestampDate(client.lastActiveAt);
 
 const isStaleClient = (client: ClientDto) => {
@@ -325,15 +320,20 @@ export const ClientsListPage: React.FC = () => {
             placeholder="Search clients..."
             resultLabel={!isLoading && !errorMessage ? clientResultLabel : undefined}
           />
-          <AppDropdown
-            value={activityFilter}
-            onChange={(value) => setActivityFilter(value as ActivityFilter)}
-            options={activityFilterOptions}
-            ariaLabel="Filter clients by activity"
-            fullWidth={false}
-            className="w-full sm:w-40"
-            buttonClassName="w-full"
-          />
+          <label
+            className="inline-flex h-9 w-full cursor-pointer items-center justify-between gap-3 rounded-md border border-slate-800 bg-slate-950/75 px-3 text-sm text-slate-300 transition-colors hover:border-slate-700 hover:bg-slate-900/70 sm:w-auto"
+            title="Show active clients with no traffic for 30+ days, including never-active clients."
+          >
+            <input
+              type="checkbox"
+              checked={activityFilter === 'stale'}
+              onChange={(event) => setActivityFilter(event.target.checked ? 'stale' : 'all')}
+              className="peer sr-only"
+              aria-label="Show stale clients only"
+            />
+            <span className="relative h-4 w-8 shrink-0 rounded-full bg-slate-800/85 transition-colors after:absolute after:left-0.5 after:top-0.5 after:h-3 after:w-3 after:rounded-full after:bg-slate-500 after:transition-transform peer-checked:bg-cyan-950/70 peer-checked:after:translate-x-4 peer-checked:after:bg-cyan-300/80 peer-focus-visible:ring-2 peer-focus-visible:ring-slate-600/50" />
+            <span className="whitespace-nowrap text-xs font-medium">Stale 30d</span>
+          </label>
         </div>
         <div className="flex shrink-0">
           <PrimaryButton

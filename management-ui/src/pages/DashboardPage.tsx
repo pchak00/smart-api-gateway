@@ -219,8 +219,8 @@ interface SummaryMetric {
 
 const trendToneClass: Record<TrendTone, Record<TrendDirection, string>> = {
   traffic: {
-    up: 'text-cyan-200/85',
-    down: 'text-slate-400',
+    up: 'text-emerald-300/85',
+    down: 'text-red-300/80',
     flat: 'text-slate-400',
     none: 'text-slate-500'
   },
@@ -352,8 +352,8 @@ const topRoutes = (routes: RouteAnalyticsDto[]) => (
 );
 
 const clampPercent = (value: number) => Math.min(Math.max(value, 0), 100);
-const allowedRouteSegmentClass = 'bg-cyan-300/80';
-const blockedRouteSegmentClass = 'bg-slate-400/65';
+const allowedRouteSegmentClass = 'bg-sky-400/75';
+const blockedRouteSegmentClass = 'bg-slate-400/60';
 
 interface GatewayHealthPanelProps {
   settings: GatewaySettingsDto | null;
@@ -496,11 +496,11 @@ const TopRoutesPanel: React.FC<TopRoutesPanelProps> = ({ routes }) => {
               </p>
             </div>
             <div
-              className="mt-2 h-2 overflow-hidden rounded-full bg-slate-950/15"
+              className="mt-2 h-1.5 overflow-hidden rounded-full bg-slate-950/20"
               title="Bar length is relative to the busiest route."
             >
               <div
-                className="flex h-full overflow-hidden rounded-full bg-slate-900/35"
+                className="flex h-full overflow-hidden rounded-full bg-slate-900/25"
                 style={{ width: `${totalWidth}%` }}
                 aria-hidden="true"
               >
