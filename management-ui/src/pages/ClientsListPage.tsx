@@ -321,7 +321,7 @@ export const ClientsListPage: React.FC = () => {
             resultLabel={!isLoading && !errorMessage ? clientResultLabel : undefined}
           />
           <label
-            className="inline-flex h-9 w-full cursor-pointer items-center justify-between gap-3 rounded-md border border-slate-800 bg-slate-950/75 px-3 text-sm text-slate-300 transition-colors hover:border-slate-700 hover:bg-slate-900/70 sm:w-auto"
+            className="inline-flex h-9 w-full cursor-pointer items-center gap-2 text-sm text-slate-400 transition-colors hover:text-slate-200 sm:w-auto"
             title="Show active clients with no traffic for 30+ days, including never-active clients."
           >
             <input
@@ -332,7 +332,7 @@ export const ClientsListPage: React.FC = () => {
               aria-label="Show stale clients only"
             />
             <span className="relative h-4 w-8 shrink-0 rounded-full bg-slate-800/85 transition-colors after:absolute after:left-0.5 after:top-0.5 after:h-3 after:w-3 after:rounded-full after:bg-slate-500 after:transition-transform peer-checked:bg-cyan-950/70 peer-checked:after:translate-x-4 peer-checked:after:bg-cyan-300/80 peer-focus-visible:ring-2 peer-focus-visible:ring-slate-600/50" />
-            <span className="whitespace-nowrap text-xs font-medium">Stale 30d</span>
+            <span className="whitespace-nowrap text-xs font-medium">Stale</span>
           </label>
         </div>
         <div className="flex shrink-0">
@@ -353,7 +353,7 @@ export const ClientsListPage: React.FC = () => {
       </div>
 
       {isCreateOpen && (
-        <form onSubmit={handleCreateClient} className="mb-8 grid gap-4 border-y border-slate-800/40 py-5 md:grid-cols-[minmax(0,1fr)_12rem_8rem_auto] md:items-end">
+        <form onSubmit={handleCreateClient} className="mb-8 grid gap-4 py-2 md:grid-cols-[minmax(0,1fr)_12rem_8rem_auto] md:items-end">
           <label className="block text-sm text-slate-500">
             Client name
             <input
