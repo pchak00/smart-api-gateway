@@ -4,6 +4,7 @@ import {
   ArrowDown,
   ArrowUp,
   Copy,
+  Info,
   KeyRound,
   Minus,
   Plus,
@@ -111,12 +112,12 @@ type TrendTone = 'traffic' | 'neutral';
 
 interface TrendDelta {
   direction: TrendDirection;
-  label: string;
+  valueLabel: string;
 }
 
 const noComparisonDelta: TrendDelta = {
   direction: 'none',
-  label: 'No comparison yet'
+  valueLabel: 'No comparison yet'
 };
 
 const formatTrendPercent = (value: number) => {
@@ -137,22 +138,22 @@ const getCountDelta = (current: number | null | undefined, previous: number | nu
   const previousValue = safePositiveCount(previous);
 
   if (currentValue === 0 && previousValue === 0) {
-    return { direction: 'flat', label: 'No change' };
+    return { direction: 'flat', valueLabel: 'No change' };
   }
 
   if (previousValue === 0) {
-    return { direction: 'none', label: 'No prior baseline' };
+    return { direction: 'none', valueLabel: 'New activity' };
   }
 
   const delta = ((currentValue - previousValue) / previousValue) * 100;
 
   if (delta === 0) {
-    return { direction: 'flat', label: 'No change' };
+    return { direction: 'flat', valueLabel: '0%' };
   }
 
   return {
     direction: delta > 0 ? 'up' : 'down',
-    label: `${formatTrendPercent(delta)} vs previous bucket`
+    valueLabel: formatTrendPercent(delta)
   };
 };
 
@@ -162,12 +163,12 @@ const getRateDelta = (currentRate: number | null | undefined, previousRate: numb
   const deltaPoints = (safeCount(currentRate) - safeCount(previousRate)) * 100;
 
   if (Math.abs(deltaPoints) < 0.05) {
-    return { direction: 'flat', label: 'No change' };
+    return { direction: 'flat', valueLabel: 'No change' };
   }
 
   return {
     direction: deltaPoints > 0 ? 'up' : 'down',
-    label: `${formatPointDelta(deltaPoints)} vs previous bucket`
+    valueLabel: formatPointDelta(deltaPoints)
   };
 };
 
@@ -218,16 +219,16 @@ interface SummaryMetric {
 
 const trendToneClass: Record<TrendTone, Record<TrendDirection, string>> = {
   traffic: {
-    up: 'bg-cyan-950/15 text-cyan-200/85',
-    down: 'bg-slate-950/25 text-slate-400',
-    flat: 'bg-slate-950/25 text-slate-400',
-    none: 'bg-slate-950/20 text-slate-500'
+    up: 'text-cyan-200/85',
+    down: 'text-slate-400',
+    flat: 'text-slate-400',
+    none: 'text-slate-500'
   },
   neutral: {
-    up: 'bg-slate-950/25 text-slate-400',
-    down: 'bg-slate-950/25 text-slate-400',
-    flat: 'bg-slate-950/25 text-slate-400',
-    none: 'bg-slate-950/20 text-slate-500'
+    up: 'text-slate-400',
+    down: 'text-slate-400',
+    flat: 'text-slate-400',
+    none: 'text-slate-500'
   }
 };
 
@@ -244,10 +245,34 @@ const TrendIndicator: React.FC<{ delta: TrendDelta; tone?: TrendTone }> = ({
   const Icon = trendIcon[delta.direction];
 
   return (
-    <p className={`mt-3 inline-flex h-6 max-w-full items-center gap-1.5 rounded-full px-2 text-xs font-medium ${trendToneClass[tone][delta.direction]}`}>
+    <span className={`inline-flex min-w-0 max-w-full items-center gap-1 text-xs font-medium ${trendToneClass[tone][delta.direction]}`}>
       {Icon && <Icon size={12} strokeWidth={2.2} aria-hidden="true" />}
-      <span className="truncate">{delta.label}</span>
-    </p>
+      <span className="truncate">{delta.valueLabel}</span>
+    </span>
+  );
+};
+
+const TrendHelpTooltip: React.FC = () => {
+  const tooltipId = 'dashboard-trend-help';
+
+  return (
+    <span className="group relative inline-flex">
+      <button
+        type="button"
+        className="inline-flex h-6 w-6 items-center justify-center rounded-md text-slate-600 transition-colors hover:bg-slate-950/40 hover:text-slate-300 focus:outline-none focus:ring-2 focus:ring-slate-700/35"
+        aria-label="Traffic trend comparison details"
+        aria-describedby={tooltipId}
+      >
+        <Info size={14} aria-hidden="true" />
+      </button>
+      <span
+        id={tooltipId}
+        role="tooltip"
+        className="pointer-events-none absolute right-0 top-full z-20 mt-2 w-64 rounded-md border border-slate-800/80 bg-slate-950 px-3 py-2 text-xs leading-5 text-slate-400 opacity-0 shadow-xl shadow-black/25 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100"
+      >
+        Trends compare the latest analytics bucket with the previous bucket. Block rate changes are shown in percentage points.
+      </span>
+    </span>
   );
 };
 
@@ -294,7 +319,10 @@ const GatewaySummaryStrip: React.FC<{
     <section className="rounded-lg bg-slate-900/25 px-5 py-5">
       <div className="flex flex-col gap-1 sm:flex-row sm:items-baseline sm:justify-between">
         <h2 className="text-sm font-semibold text-slate-100">Gateway summary</h2>
-        <p className="text-xs text-slate-500">{trafficTrend.windowLabel}</p>
+        <div className="flex items-center gap-2">
+          <p className="text-xs text-slate-500">{trafficTrend.windowLabel}</p>
+          <TrendHelpTooltip />
+        </div>
       </div>
       <dl className="mt-5 grid grid-cols-2 gap-x-8 gap-y-5 md:grid-cols-3 xl:grid-cols-6">
         {metrics.map((metric) => (
@@ -305,10 +333,10 @@ const GatewaySummaryStrip: React.FC<{
             <dt className="truncate text-xs font-medium text-slate-400">
               {metric.label}
             </dt>
-            <dd className="mt-2 truncate text-2xl font-semibold leading-none text-slate-50">
-              {metric.value}
+            <dd className="mt-2 flex min-w-0 items-baseline gap-2 leading-none">
+              <span className="truncate text-2xl font-semibold text-slate-50">{metric.value}</span>
+              {!isTrafficLoading && metric.trend}
             </dd>
-            {!isTrafficLoading && metric.trend}
           </div>
         ))}
       </dl>
@@ -411,15 +439,17 @@ const GatewayHealthPanel: React.FC<GatewayHealthPanelProps> = ({
         </div>
         <div className="rounded-md bg-slate-950/30 px-4 py-3">
           <dt className="text-xs font-medium text-slate-400">Block rate</dt>
-          <dd className="mt-1 min-w-0 truncate text-sm font-medium text-slate-100">
-            {blockRateValueOrLoading(trafficTrend.blockRate, hasTrafficTrend, isTrafficLoading)}
+          <dd className="mt-1 flex min-w-0 items-baseline gap-2">
+            <span className="truncate text-sm font-medium text-slate-100">
+              {blockRateValueOrLoading(trafficTrend.blockRate, hasTrafficTrend, isTrafficLoading)}
+            </span>
+            {!isTrafficLoading && (
+              <TrendIndicator
+                delta={trafficTrend.blockRateDelta}
+                tone="neutral"
+              />
+            )}
           </dd>
-          {!isTrafficLoading && (
-            <TrendIndicator
-              delta={trafficTrend.blockRateDelta}
-              tone="neutral"
-            />
-          )}
         </div>
         <div className="min-w-0 rounded-md bg-slate-950/30 px-4 py-3">
           <dt className="text-xs font-medium text-slate-400">Most active route</dt>

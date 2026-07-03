@@ -76,6 +76,8 @@ const parseServerTimestamp = (value: string | null | undefined) => {
   return Number.isNaN(date.getTime()) ? null : date;
 };
 
+export const getServerTimestampDate = (value: string | null | undefined) => parseServerTimestamp(value);
+
 export const formatDateTime = (value: string | null | undefined) => {
   if (!value) return 'Pending';
 
@@ -88,6 +90,23 @@ export const formatDateTime = (value: string | null | undefined) => {
     hour: 'numeric',
     minute: '2-digit'
   }).format(date);
+};
+
+export const formatRelativeDateTime = (value: string | null | undefined) => {
+  if (!value) return 'Never';
+
+  const date = parseServerTimestamp(value);
+  if (!date) return value;
+
+  const now = new Date();
+  const ageMs = now.getTime() - date.getTime();
+  const ageDays = Math.floor(ageMs / 86_400_000);
+
+  if (ageDays <= 0) return 'Today';
+  if (ageDays === 1) return 'Yesterday';
+  if (ageDays <= 90) return `${ageDays} days ago`;
+
+  return formatShortDate(value);
 };
 
 export const formatShortDate = (value: string | null | undefined) => {

@@ -53,6 +53,7 @@ export interface ClientDto {
   plan?: PlanDto;
   planName?: string;
   createdAt?: string;
+  lastActiveAt?: string | null;
 }
 
 export interface CreateClientRequest {

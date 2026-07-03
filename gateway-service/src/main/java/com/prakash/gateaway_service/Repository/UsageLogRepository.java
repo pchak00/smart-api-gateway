@@ -12,6 +12,13 @@ import java.util.List;
 public interface UsageLogRepository extends JpaRepository<UsageLog, Long> {
     public List<UsageLog> findByClientIdOrderByTimestampDesc(Long clientId);
 
+    @Query("""
+            SELECT u.client.id, MAX(u.timestamp)
+            FROM UsageLog u
+            WHERE u.client.id IN :clientIds
+            GROUP BY u.client.id
+            """)
+    List<Object[]> findLastActiveAtByClientIds(@Param("clientIds") List<Long> clientIds);
 
     long countByClientId(Long clientId);
     long countByClientIdAndAllowed(Long clientId, Boolean allowed);

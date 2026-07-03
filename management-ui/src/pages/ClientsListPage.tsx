@@ -15,10 +15,36 @@ import {
   ClientApiKeyLifecycleDialogs,
   PendingClientLifecycleAction
 } from '../components/ClientApiKeyLifecycleDialogs';
-import { getPlanLabel } from '../utils/display';
+import { formatDateTime, formatRelativeDateTime, getPlanLabel, getServerTimestampDate } from '../utils/display';
 import { getApiErrorMessage } from '../utils/apiError';
 import { matchesSearch, normalizeSearch } from '../utils/search';
 import { ClientApiKeyRotationResponse } from '../types';
+
+type ActivityFilter = 'all' | 'stale';
+
+const staleInactivityDays = 30;
+const staleInactivityMs = staleInactivityDays * 24 * 60 * 60 * 1000;
+
+const activityFilterOptions: DropdownOption[] = [
+  { value: 'all', label: 'All clients' },
+  { value: 'stale', label: 'Stale 30d', description: 'Active clients with no recent traffic' }
+];
+
+const getLastActiveDate = (client: ClientDto) => getServerTimestampDate(client.lastActiveAt);
+
+const isStaleClient = (client: ClientDto) => {
+  if (!client.active) return false;
+  if (!client.lastActiveAt) return true;
+
+  const lastActiveDate = getLastActiveDate(client);
+  if (!lastActiveDate) return false;
+
+  return Date.now() - lastActiveDate.getTime() >= staleInactivityMs;
+};
+
+const getLastActiveLabel = (client: ClientDto) => (
+  client.lastActiveAt ? formatRelativeDateTime(client.lastActiveAt) : 'Never'
+);
 
 export const ClientsListPage: React.FC = () => {
   const navigate = useNavigate();
@@ -36,6 +62,7 @@ export const ClientsListPage: React.FC = () => {
   const [newClientActive, setNewClientActive] = useState(true);
   const [selectedPlanId, setSelectedPlanId] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
+  const [activityFilter, setActivityFilter] = useState<ActivityFilter>('all');
   const [pendingLifecycleAction, setPendingLifecycleAction] = useState<PendingClientLifecycleAction | null>(null);
   const [rotatedKey, setRotatedKey] = useState<ClientApiKeyRotationResponse | null>(null);
   const [revealedApiKeyRow, setRevealedApiKeyRow] = useState<string | null>(null);
@@ -242,19 +269,28 @@ export const ClientsListPage: React.FC = () => {
     clients.filter((client) => {
       const planName = client.plan?.planName ?? client.planName ?? '';
       const statusLabel = client.active ? 'active' : 'inactive';
+      const lastActiveLabel = getLastActiveLabel(client);
+      const staleLabel = isStaleClient(client) ? 'stale' : '';
+      const matchesActivityFilter = activityFilter === 'all' || isStaleClient(client);
+
+      if (!matchesActivityFilter) return false;
 
       return matchesSearch([
         client.clientName,
         client.apiKey,
         planName,
         getPlanLabel(planName),
-        statusLabel
+        statusLabel,
+        lastActiveLabel,
+        staleLabel
       ], trimmedSearchQuery);
     })
-  ), [clients, trimmedSearchQuery]);
+  ), [activityFilter, clients, trimmedSearchQuery]);
   const clientResultLabel = trimmedSearchQuery
     ? `${filteredClients.length} ${filteredClients.length === 1 ? 'result' : 'results'}`
-    : `${clients.length} ${clients.length === 1 ? 'client' : 'clients'}`;
+    : activityFilter === 'stale'
+      ? `${filteredClients.length} stale ${filteredClients.length === 1 ? 'client' : 'clients'}`
+      : `${clients.length} ${clients.length === 1 ? 'client' : 'clients'}`;
   const clientsMeta = hasRowsWithoutIds || errorMessage ? (
     <div className="flex flex-wrap items-center gap-3">
       {hasRowsWithoutIds && (
@@ -282,12 +318,23 @@ export const ClientsListPage: React.FC = () => {
       />
 
       <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-        <ListSearch
-          value={searchQuery}
-          onChange={setSearchQuery}
-          placeholder="Search clients..."
-          resultLabel={!isLoading && !errorMessage ? clientResultLabel : undefined}
-        />
+        <div className="flex w-full flex-col gap-3 sm:max-w-2xl sm:flex-row sm:items-start">
+          <ListSearch
+            value={searchQuery}
+            onChange={setSearchQuery}
+            placeholder="Search clients..."
+            resultLabel={!isLoading && !errorMessage ? clientResultLabel : undefined}
+          />
+          <AppDropdown
+            value={activityFilter}
+            onChange={(value) => setActivityFilter(value as ActivityFilter)}
+            options={activityFilterOptions}
+            ariaLabel="Filter clients by activity"
+            fullWidth={false}
+            className="w-full sm:w-40"
+            buttonClassName="w-full"
+          />
+        </div>
         <div className="flex shrink-0">
           <PrimaryButton
             type="button"
@@ -392,17 +439,30 @@ export const ClientsListPage: React.FC = () => {
         ) : filteredClients.length === 0 ? (
           <EmptyState
             icon={Users}
-            title="No clients match this search."
-            description="Clear the search to show all clients."
+            title={
+              activityFilter === 'stale'
+                ? trimmedSearchQuery
+                  ? 'No stale clients match this search.'
+                  : 'No stale clients'
+                : 'No clients match this search.'
+            }
+            description={
+              activityFilter === 'stale'
+                ? trimmedSearchQuery
+                  ? 'Clear the search or switch back to all clients.'
+                  : 'All active clients have recent traffic.'
+                : 'Clear the search to show all clients.'
+            }
           />
         ) : (
           <div className="overflow-x-auto pb-16">
-            <table className="w-full min-w-[760px]">
+            <table className="w-full min-w-[900px]">
               <thead className="border-b border-slate-800/40">
                 <tr>
                   <th className="px-4 py-3 text-left text-xs font-medium text-slate-400">Client</th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-slate-400">API Key</th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-slate-400">Plan</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-slate-400">Last active</th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-slate-400">Status</th>
                   <th className="px-4 py-3 text-right text-xs font-medium text-slate-500">
                     <span className="sr-only">Row actions</span>
@@ -414,6 +474,9 @@ export const ClientsListPage: React.FC = () => {
                   const hasBackendId = typeof client.id === 'number';
                   const planName = client.plan?.planName ?? client.planName ?? 'Unknown';
                   const rowKey = String(client.id ?? client.apiKey);
+                  const lastActiveLabel = getLastActiveLabel(client);
+                  const lastActiveExact = client.lastActiveAt ? formatDateTime(client.lastActiveAt) : undefined;
+                  const isStale = isStaleClient(client);
 
                   return (
                     <tr
@@ -452,6 +515,23 @@ export const ClientsListPage: React.FC = () => {
                       </td>
                       <td className="px-4 py-4 text-sm text-slate-300">
                         {getPlanLabel(planName)}
+                      </td>
+                      <td className="px-4 py-4">
+                        <div className="flex flex-col gap-1">
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm text-slate-300" title={lastActiveExact}>
+                              {lastActiveLabel}
+                            </span>
+                            {isStale && (
+                              <span className="inline-flex rounded-md bg-slate-950/35 px-2 py-0.5 text-xs font-medium text-slate-500">
+                                Stale
+                              </span>
+                            )}
+                          </div>
+                          {lastActiveExact && (
+                            <span className="text-xs text-slate-600">{lastActiveExact}</span>
+                          )}
+                        </div>
                       </td>
                       <td className="px-4 py-4">
                         <span className={`inline-flex items-center rounded-md px-2 py-0.5 text-xs font-medium ${

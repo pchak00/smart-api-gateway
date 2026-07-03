@@ -22,7 +22,9 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 public class ClientService {
@@ -55,8 +57,20 @@ public class ClientService {
     public List<ClientResponseDto> showAllClients() {
         List<ClientResponseDto> clientResponseDtoList = new ArrayList<>();
         List<Client>  clients = clientRepository.findAll();
+
+        List<Long> clientIds = clients.stream()
+                .map(Client::getId)
+                .toList();
+        Map<Long, LocalDateTime> lastActiveByClientId = clientIds.isEmpty()
+                ? Map.of()
+                : usageLogRepository.findLastActiveAtByClientIds(clientIds).stream()
+                        .collect(Collectors.toMap(
+                                row -> (Long) row[0],
+                                row -> (LocalDateTime) row[1]
+                        ));
+
         for( Client client : clients ) {
-            clientResponseDtoList.add(ClientResponseDto.from(client));
+            clientResponseDtoList.add(ClientResponseDto.from(client, lastActiveByClientId.get(client.getId())));
         }
         return clientResponseDtoList;
     }
