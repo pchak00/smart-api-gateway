@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Activity, BarChart3, Route, Search, Users, X } from 'lucide-react';
+import { Activity, ArrowDown, ArrowUp, BarChart3, Minus, Route, Search, Users, X } from 'lucide-react';
 import {
   CartesianGrid,
   Line,
@@ -19,6 +19,7 @@ import {
 } from '../types';
 import { EmptyState, PageHeader, Panel } from '../components/PageShell';
 import { AppDropdown, DropdownOption } from '../components/AppDropdown';
+import { InfoTooltip } from '../components/InfoTooltip';
 import { formatBucket, formatNumber, getPlanLabel } from '../utils/display';
 import { useToast } from '../hooks/useToast';
 
@@ -50,6 +51,8 @@ type RouteTrendRoute = {
 const safeCount = (value: number | null | undefined) => (
   typeof value === 'number' && !Number.isNaN(value) ? value : 0
 );
+
+const safePositiveCount = (value: number | null | undefined) => Math.max(safeCount(value), 0);
 
 const getBlockRate = (totalRequests: number | null | undefined, blockedRequests: number | null | undefined) => {
   const total = safeCount(totalRequests);
@@ -135,6 +138,140 @@ const getAnalyticsWindowLabel = (buckets: Array<string | undefined>) => {
   if (sortedBuckets.length === 1) return formatBucket(sortedBuckets[0]);
 
   return `${formatBucket(sortedBuckets[0])} - ${formatBucket(sortedBuckets[sortedBuckets.length - 1])}`;
+};
+
+type TrendDirection = 'up' | 'down' | 'flat' | 'none';
+type TrendTone = 'traffic' | 'neutral';
+
+interface TrendDelta {
+  direction: TrendDirection;
+  valueLabel: string;
+}
+
+interface SummaryTrend {
+  points: TrafficAnalyticsDto[];
+  totalRequests: number;
+  totalAllowed: number;
+  totalBlocked: number;
+  requestDelta: TrendDelta;
+  allowedDelta: TrendDelta;
+  blockedDelta: TrendDelta;
+}
+
+const noComparisonDelta: TrendDelta = {
+  direction: 'none',
+  valueLabel: 'No comparison yet'
+};
+
+const formatTrendPercent = (value: number) => {
+  const absolute = Math.abs(value);
+  const formatted = absolute >= 10
+    ? Math.round(absolute).toString()
+    : absolute.toFixed(1).replace(/\.0$/, '');
+
+  return `${formatted}%`;
+};
+
+const getCountDelta = (current: number | null | undefined, previous: number | null | undefined): TrendDelta => {
+  if (typeof previous !== 'number') return noComparisonDelta;
+
+  const currentValue = safePositiveCount(current);
+  const previousValue = safePositiveCount(previous);
+
+  if (currentValue === 0 && previousValue === 0) {
+    return { direction: 'flat', valueLabel: 'No change' };
+  }
+
+  if (previousValue === 0) {
+    return { direction: 'none', valueLabel: 'New activity' };
+  }
+
+  const delta = ((currentValue - previousValue) / previousValue) * 100;
+
+  if (delta === 0) {
+    return { direction: 'flat', valueLabel: '0%' };
+  }
+
+  return {
+    direction: delta > 0 ? 'up' : 'down',
+    valueLabel: formatTrendPercent(delta)
+  };
+};
+
+const sortedTrafficBuckets = (traffic: TrafficAnalyticsDto[]) => {
+  const buckets = new Map<string, TrafficAnalyticsDto>();
+
+  traffic.forEach((point) => {
+    if (!point.bucket) return;
+
+    const existing = buckets.get(point.bucket) ?? {
+      bucket: point.bucket,
+      totalRequests: 0,
+      allowedRequests: 0,
+      blockedRequests: 0
+    };
+
+    buckets.set(point.bucket, {
+      bucket: point.bucket,
+      totalRequests: safePositiveCount(existing.totalRequests) + safePositiveCount(point.totalRequests),
+      allowedRequests: safePositiveCount(existing.allowedRequests) + safePositiveCount(point.allowedRequests),
+      blockedRequests: safePositiveCount(existing.blockedRequests) + safePositiveCount(point.blockedRequests)
+    });
+  });
+
+  return [...buckets.values()]
+    .sort((first, second) => String(first.bucket).localeCompare(String(second.bucket)));
+};
+
+const getSummaryTrend = (traffic: TrafficAnalyticsDto[]): SummaryTrend => {
+  const points = sortedTrafficBuckets(traffic);
+  const currentBucket = points.length >= 2 ? points[points.length - 1] : null;
+  const previousBucket = points.length >= 2 ? points[points.length - 2] : null;
+
+  return {
+    points,
+    totalRequests: points.reduce((sum, point) => sum + safePositiveCount(point.totalRequests), 0),
+    totalAllowed: points.reduce((sum, point) => sum + safePositiveCount(point.allowedRequests), 0),
+    totalBlocked: points.reduce((sum, point) => sum + safePositiveCount(point.blockedRequests), 0),
+    requestDelta: getCountDelta(currentBucket?.totalRequests, previousBucket?.totalRequests),
+    allowedDelta: getCountDelta(currentBucket?.allowedRequests, previousBucket?.allowedRequests),
+    blockedDelta: getCountDelta(currentBucket?.blockedRequests, previousBucket?.blockedRequests)
+  };
+};
+
+const trendToneClass: Record<TrendTone, Record<TrendDirection, string>> = {
+  traffic: {
+    up: 'text-emerald-300/85',
+    down: 'text-red-300/80',
+    flat: 'text-slate-400',
+    none: 'text-slate-500'
+  },
+  neutral: {
+    up: 'text-slate-400',
+    down: 'text-slate-400',
+    flat: 'text-slate-400',
+    none: 'text-slate-500'
+  }
+};
+
+const trendIcon: Partial<Record<TrendDirection, React.ElementType>> = {
+  up: ArrowUp,
+  down: ArrowDown,
+  flat: Minus
+};
+
+const TrendIndicator: React.FC<{ delta: TrendDelta; tone?: TrendTone }> = ({
+  delta,
+  tone = 'neutral'
+}) => {
+  const Icon = trendIcon[delta.direction];
+
+  return (
+    <span className={`inline-flex min-w-0 max-w-full items-center gap-1 text-xs font-medium ${trendToneClass[tone][delta.direction]}`}>
+      {Icon && <Icon size={12} strokeWidth={2.2} aria-hidden="true" />}
+      <span className="truncate">{delta.valueLabel}</span>
+    </span>
+  );
 };
 
 const getRouteTrendCountLabel = (
@@ -382,9 +519,7 @@ export const AnalyticsPage: React.FC = () => {
       });
   }, [routeTrafficAnalytics, routeTrendRoutes, selectedRouteMetric]);
 
-  const totalRequests = trafficAnalytics.reduce((sum, point) => sum + safeCount(point.totalRequests), 0);
-  const totalAllowed = trafficAnalytics.reduce((sum, point) => sum + safeCount(point.allowedRequests), 0);
-  const totalBlocked = trafficAnalytics.reduce((sum, point) => sum + safeCount(point.blockedRequests), 0);
+  const summaryTrend = useMemo(() => getSummaryTrend(trafficAnalytics), [trafficAnalytics]);
   const sortedRouteAnalytics = useMemo(
     () => sortRouteAnalytics(routeAnalytics, routeAnalyticsSort),
     [routeAnalytics, routeAnalyticsSort]
@@ -459,7 +594,6 @@ export const AnalyticsPage: React.FC = () => {
           <div className="mb-5 flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
             <div className="min-w-0">
               <h2 className="text-sm font-semibold text-slate-100">Route trends</h2>
-              <p className="mt-1 text-sm text-slate-400">Traffic over time by gateway route.</p>
               <p className="mt-1 text-xs text-slate-400">{analyticsWindowLabel}</p>
             </div>
             <div className="flex flex-wrap items-center gap-3">
@@ -684,25 +818,36 @@ export const AnalyticsPage: React.FC = () => {
         <Panel className="p-5">
           <div className="flex items-center justify-between">
             <h2 className="text-sm font-semibold text-slate-100">Summary</h2>
-            <Activity className="text-slate-600" size={18} aria-hidden="true" />
+            <div className="flex items-center gap-2">
+              <InfoTooltip label="Analytics summary trend details" align="right">
+                Trend compares the latest analytics bucket with the previous bucket.
+              </InfoTooltip>
+              <Activity className="text-slate-600" size={18} aria-hidden="true" />
+            </div>
           </div>
 
           <div className="mt-5 divide-y divide-slate-800/35">
             <div className="pb-4">
               <p className="text-sm text-slate-400">Requests</p>
-              <p className="mt-2 text-3xl font-semibold text-slate-50">{isLoading ? '...' : formatNumber(totalRequests)}</p>
+              <div className="mt-2 flex min-w-0 items-baseline gap-2">
+                <p className="truncate text-3xl font-semibold text-slate-50">{isLoading ? '...' : formatNumber(summaryTrend.totalRequests)}</p>
+                {!isLoading && <TrendIndicator delta={summaryTrend.requestDelta} tone="traffic" />}
+              </div>
             </div>
             <div className="py-4">
               <p className="text-sm text-slate-400">Allowed</p>
-              <p className="mt-2 text-3xl font-semibold text-slate-50">{isLoading ? '...' : formatNumber(totalAllowed)}</p>
+              <div className="mt-2 flex min-w-0 items-baseline gap-2">
+                <p className="truncate text-3xl font-semibold text-slate-50">{isLoading ? '...' : formatNumber(summaryTrend.totalAllowed)}</p>
+                {!isLoading && <TrendIndicator delta={summaryTrend.allowedDelta} tone="traffic" />}
+              </div>
             </div>
             <div className="py-4">
               <p className="text-sm text-slate-400">Blocked</p>
-              <p className="mt-2 text-3xl font-semibold text-slate-100">{isLoading ? '...' : formatNumber(totalBlocked)}</p>
+              <div className="mt-2 flex min-w-0 items-baseline gap-2">
+                <p className="truncate text-3xl font-semibold text-slate-100">{isLoading ? '...' : formatNumber(summaryTrend.totalBlocked)}</p>
+                {!isLoading && <TrendIndicator delta={summaryTrend.blockedDelta} tone="neutral" />}
+              </div>
             </div>
-            <p className="pt-4 text-xs leading-5 text-slate-400">
-              {errorMessage ?? 'All-time totals from daily traffic buckets.'}
-            </p>
           </div>
         </Panel>
       </div>
@@ -712,7 +857,6 @@ export const AnalyticsPage: React.FC = () => {
           <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
             <div>
               <h2 className="text-sm font-semibold text-slate-100">Routes</h2>
-              <p className="mt-1 text-sm text-slate-400">Usage grouped by gateway path.</p>
             </div>
             <div className="flex items-center gap-3">
               <AppDropdown
@@ -774,7 +918,6 @@ export const AnalyticsPage: React.FC = () => {
           <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
             <div>
               <h2 className="text-sm font-semibold text-slate-100">Clients</h2>
-              <p className="mt-1 text-sm text-slate-400">Usage grouped by API consumer.</p>
             </div>
             <div className="flex flex-wrap items-center gap-2">
               <AppDropdown

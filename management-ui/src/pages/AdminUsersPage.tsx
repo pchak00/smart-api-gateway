@@ -143,7 +143,6 @@ export const AdminUsersPage: React.FC = () => {
     <div>
       <PageHeader
         title="Admin Users"
-        description="Manage platform operators and their access level."
         meta={errorMessage ? <span className="text-xs text-slate-500">{errorMessage}</span> : undefined}
         actions={
           <PrimaryButton

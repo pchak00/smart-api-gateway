@@ -4,6 +4,7 @@ import { LucideIcon } from 'lucide-react';
 interface PageHeaderProps {
   eyebrow?: string;
   title: string;
+  titleAccessory?: React.ReactNode;
   description?: string;
   actions?: React.ReactNode;
   meta?: React.ReactNode;
@@ -27,6 +28,7 @@ interface DemoBadgeProps {
 export const PageHeader: React.FC<PageHeaderProps> = ({
   eyebrow,
   title,
+  titleAccessory,
   description,
   actions,
   meta
@@ -38,7 +40,10 @@ export const PageHeader: React.FC<PageHeaderProps> = ({
           {eyebrow}
         </p>
       )}
-      <h1 className="text-2xl font-semibold text-slate-100">{title}</h1>
+      <div className="flex items-center gap-2">
+        <h1 className="text-2xl font-semibold text-slate-100">{title}</h1>
+        {titleAccessory}
+      </div>
       {description && <p className="mt-2 text-sm leading-6 text-slate-500">{description}</p>}
       {meta && <div className="mt-3">{meta}</div>}
     </div>

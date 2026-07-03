@@ -8,6 +8,7 @@ import { PrimaryButton, SecondaryButton } from '../components/Button';
 import { RowActions } from '../components/RowActions';
 import { SettingsTabs } from '../components/SettingsTabs';
 import { AppDropdown, DropdownOption } from '../components/AppDropdown';
+import { InfoTooltip } from '../components/InfoTooltip';
 import { PlanDto, ProvisioningTokenDto } from '../types';
 import { formatDateTime, getPlanLabel } from '../utils/display';
 import { getApiErrorMessage } from '../utils/apiError';
@@ -161,7 +162,11 @@ export const ProvisioningPage: React.FC = () => {
 
       <PageHeader
         title="Provisioning"
-        description="Trusted tokens for server-to-server client onboarding."
+        titleAccessory={
+          <InfoTooltip label="Provisioning token details">
+            Provisioning tokens are trusted server-to-server credentials used to create API clients without using the browser UI. Use them from backend services only, not frontend code.
+          </InfoTooltip>
+        }
         meta={errorMessage ? <span className="text-xs text-slate-500">{errorMessage}</span> : undefined}
         actions={
           <PrimaryButton

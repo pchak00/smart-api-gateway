@@ -10,6 +10,7 @@ import { EmptyState, PageHeader } from '../components/PageShell';
 import { RowActions } from '../components/RowActions';
 import { AppDropdown, DropdownOption } from '../components/AppDropdown';
 import { NumberField } from '../components/NumberField';
+import { InfoTooltip } from '../components/InfoTooltip';
 import { getPlanLabel } from '../utils/display';
 import { getApiErrorMessage } from '../utils/apiError';
 import { matchesSearch, normalizeSearch } from '../utils/search';
@@ -179,7 +180,11 @@ export const RouteLimitsPage: React.FC = () => {
     <div>
       <PageHeader
         title="Route Limits"
-        description="Review route-level overrides for endpoints that need different request quotas than their plan default."
+        titleAccessory={
+          <InfoTooltip label="Route limits details">
+            Route limits override a plan&apos;s default quota for specific API paths.
+          </InfoTooltip>
+        }
         meta={errorMessage ? <span className="text-xs text-slate-500">{errorMessage}</span> : undefined}
       />
 
@@ -234,15 +239,21 @@ export const RouteLimitsPage: React.FC = () => {
                 </p>
               </div>
             )}
-            <label className="block text-sm text-slate-500">
-              Route pattern
+            <div className="block text-sm text-slate-500">
+              <div className="inline-flex items-center gap-1.5">
+                <label htmlFor="route-pattern">Route pattern</label>
+                <InfoTooltip label="Route pattern examples">
+                  Examples: /api/products exact, /api/users/* one segment, /api/users/** nested routes.
+                </InfoTooltip>
+              </div>
               <input
+                id="route-pattern"
                 value={routePattern}
                 onChange={(event) => setRoutePattern(event.target.value)}
                 className="mt-2 w-full rounded-md border border-slate-800 bg-slate-950 px-3 py-2 font-mono text-sm text-slate-100 outline-none focus:border-slate-600"
                 required
               />
-            </label>
+            </div>
             <label className="block text-sm text-slate-500">
               Requests/min
               <NumberField
@@ -268,9 +279,6 @@ export const RouteLimitsPage: React.FC = () => {
               </SecondaryButton>
             </div>
           </div>
-          <p className="mt-3 text-xs leading-5 text-slate-600">
-            Examples: /api/products exact, /api/users/* one segment, /api/users/** nested routes.
-          </p>
         </form>
       )}
 

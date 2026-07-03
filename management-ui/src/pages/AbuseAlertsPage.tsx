@@ -165,7 +165,6 @@ export const AbuseAlertsPage: React.FC = () => {
     <div>
       <PageHeader
         title="Abuse Alerts"
-        description="Review clients that repeatedly exceeded rate limits or triggered suspicious gateway behavior."
         meta={errorMessage ? <span className="text-xs text-slate-500">{errorMessage}</span> : undefined}
         actions={
           <div className="flex rounded-md border border-slate-800/70 bg-slate-950/40 p-1">
