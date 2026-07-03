@@ -8,11 +8,12 @@ import {
   Users
 } from 'lucide-react';
 import { api } from '../api/client';
-import { AbuseAlertDto, DashboardSummaryDto, GatewaySettingsDto, RouteAnalyticsDto } from '../types';
+import { AbuseAlertDto, DashboardSummaryDto, GatewaySettingsDto, RouteAnalyticsDto, TrafficAnalyticsDto } from '../types';
 import { PageHeader } from '../components/PageShell';
+import { Sparkline } from '../components/Sparkline';
 import { useAuth } from '../hooks/useAuth';
 import { useToast } from '../hooks/useToast';
-import { formatDateTime, formatNumber, getStatusLabel } from '../utils/display';
+import { formatBucket, formatDateTime, formatNumber, getStatusLabel } from '../utils/display';
 
 interface DashboardSectionProps {
   children: React.ReactNode;
@@ -54,35 +55,139 @@ const valueOrLoading = (value: number | null | undefined, isLoading: boolean) =>
   return formatNumber(value);
 };
 
-const getBlockRateValue = (summary: DashboardSummaryDto | null) => {
-  if (!summary) return null;
+const getTrafficBlockRate = (totalRequests: number, blockedRequests: number) => (
+  totalRequests > 0 ? blockedRequests / totalRequests : 0
+);
 
-  const totalRequests = safeCount(summary.totalRequests);
-  const allowedRequests = safeCount(summary.allowedRequests);
-  const blockedRequests = safeCount(summary.blockedRequests);
-  const denominator = totalRequests > 0 ? totalRequests : allowedRequests + blockedRequests;
+const sortedTrafficBuckets = (traffic: TrafficAnalyticsDto[]) => {
+  const buckets = new Map<string, TrafficAnalyticsDto>();
 
-  if (denominator === 0) return 0;
+  traffic.forEach((point) => {
+    if (!point.bucket) return;
 
-  return blockedRequests / denominator;
+    const existing = buckets.get(point.bucket) ?? {
+      bucket: point.bucket,
+      totalRequests: 0,
+      allowedRequests: 0,
+      blockedRequests: 0
+    };
+
+    buckets.set(point.bucket, {
+      bucket: point.bucket,
+      totalRequests: safePositiveCount(existing.totalRequests) + safePositiveCount(point.totalRequests),
+      allowedRequests: safePositiveCount(existing.allowedRequests) + safePositiveCount(point.allowedRequests),
+      blockedRequests: safePositiveCount(existing.blockedRequests) + safePositiveCount(point.blockedRequests)
+    });
+  });
+
+  return [...buckets.values()]
+    .sort((first, second) => String(first.bucket).localeCompare(String(second.bucket)));
 };
 
-const GatewaySummaryStrip: React.FC<{ summary: DashboardSummaryDto | null; isLoading: boolean }> = ({
+const getTrafficWindowLabel = (traffic: TrafficAnalyticsDto[]) => {
+  const buckets = sortedTrafficBuckets(traffic).map((point) => point.bucket).filter((bucket): bucket is string => Boolean(bucket));
+
+  if (buckets.length === 0) return 'Recent traffic window';
+  if (buckets.length === 1) return formatBucket(buckets[0]);
+
+  return `${formatBucket(buckets[0])} - ${formatBucket(buckets[buckets.length - 1])}`;
+};
+
+interface TrafficTrend {
+  points: TrafficAnalyticsDto[];
+  totalRequests: number;
+  blockedRequests: number;
+  blockRate: number;
+  requestSeries: number[];
+  blockedSeries: number[];
+  blockRateSeries: number[];
+  windowLabel: string;
+}
+
+const getTrafficTrend = (traffic: TrafficAnalyticsDto[]): TrafficTrend => {
+  const points = sortedTrafficBuckets(traffic);
+  const totalRequests = points.reduce((sum, point) => sum + safePositiveCount(point.totalRequests), 0);
+  const blockedRequests = points.reduce((sum, point) => sum + safePositiveCount(point.blockedRequests), 0);
+
+  return {
+    points,
+    totalRequests,
+    blockedRequests,
+    blockRate: getTrafficBlockRate(totalRequests, blockedRequests),
+    requestSeries: points.map((point) => safePositiveCount(point.totalRequests)),
+    blockedSeries: points.map((point) => safePositiveCount(point.blockedRequests)),
+    blockRateSeries: points.map((point) => getTrafficBlockRate(safePositiveCount(point.totalRequests), safePositiveCount(point.blockedRequests)) * 100),
+    windowLabel: getTrafficWindowLabel(points)
+  };
+};
+
+const trafficValueOrLoading = (value: number, hasTrend: boolean, isLoading: boolean) => {
+  if (isLoading) return '...';
+  if (!hasTrend) return 'No data';
+
+  return formatNumber(value);
+};
+
+const blockRateValueOrLoading = (value: number, hasTrend: boolean, isLoading: boolean) => {
+  if (isLoading) return '...';
+  if (!hasTrend) return 'No data';
+
+  return `${(value * 100).toFixed(1)}%`;
+};
+
+interface SummaryMetric {
+  label: string;
+  value: string;
+  sparkline?: React.ReactNode;
+}
+
+const GatewaySummaryStrip: React.FC<{
+  summary: DashboardSummaryDto | null;
+  isLoading: boolean;
+  trafficTrend: TrafficTrend;
+  isTrafficLoading: boolean;
+}> = ({
   summary,
-  isLoading
+  isLoading,
+  trafficTrend,
+  isTrafficLoading
 }) => {
-  const metrics = [
+  const hasTrafficTrend = trafficTrend.points.length > 0;
+  const metrics: SummaryMetric[] = [
     { label: 'Clients', value: valueOrLoading(summary?.clientCount, isLoading) },
     { label: 'Plans', value: valueOrLoading(summary?.planCount, isLoading) },
     { label: 'Route limits', value: valueOrLoading(summary?.routeLimitCount, isLoading) },
-    { label: 'Requests', value: valueOrLoading(summary?.totalRequests, isLoading) },
-    { label: 'Blocked', value: valueOrLoading(summary?.blockedRequests, isLoading) },
+    {
+      label: 'Requests',
+      value: trafficValueOrLoading(trafficTrend.totalRequests, hasTrafficTrend, isTrafficLoading),
+      sparkline: (
+        <Sparkline
+          values={trafficTrend.requestSeries}
+          color="#67e8f9"
+          label={`Requests trend, ${trafficTrend.windowLabel}`}
+        />
+      )
+    },
+    {
+      label: 'Blocked',
+      value: trafficValueOrLoading(trafficTrend.blockedRequests, hasTrafficTrend, isTrafficLoading),
+      sparkline: (
+        <Sparkline
+          values={trafficTrend.blockedSeries}
+          color="#94a3b8"
+          label={`Blocked requests trend, ${trafficTrend.windowLabel}`}
+        />
+      )
+    },
     { label: 'Open alerts', value: valueOrLoading(summary?.openAlertCount, isLoading) }
   ];
 
   return (
     <section className="rounded-lg bg-slate-900/25 px-5 py-5">
-      <h2 className="text-sm font-semibold text-slate-100">Gateway summary</h2>
+      <div className="flex flex-col gap-1 sm:flex-row sm:items-baseline sm:justify-between">
+        <h2 className="text-sm font-semibold text-slate-100">Gateway summary</h2>
+        <p className="text-xs text-slate-500">{trafficTrend.windowLabel}</p>
+      </div>
       <dl className="mt-5 grid grid-cols-2 gap-x-8 gap-y-5 md:grid-cols-3 xl:grid-cols-6">
         {metrics.map((metric) => (
           <div
@@ -95,19 +200,12 @@ const GatewaySummaryStrip: React.FC<{ summary: DashboardSummaryDto | null; isLoa
             <dd className="mt-2 truncate text-2xl font-semibold leading-none text-slate-50">
               {metric.value}
             </dd>
+            {!isTrafficLoading && metric.sparkline}
           </div>
         ))}
       </dl>
     </section>
   );
-};
-
-const percentOrLoading = (summary: DashboardSummaryDto | null, isLoading: boolean) => {
-  if (isLoading) return '...';
-  const blockRate = getBlockRateValue(summary);
-  if (blockRate === null) return 'Unavailable';
-
-  return `${(blockRate * 100).toFixed(1)}%`;
 };
 
 const topRoutes = (routes: RouteAnalyticsDto[]) => (
@@ -127,7 +225,9 @@ interface GatewayHealthPanelProps {
   mostActiveRoute: RouteAnalyticsDto | null;
   isSummaryLoading: boolean;
   isOperationalLoading: boolean;
+  isTrafficLoading: boolean;
   settingsError: string | null;
+  trafficTrend: TrafficTrend;
   onCopyUpstream: (upstreamUrl: string) => void;
 }
 
@@ -149,7 +249,9 @@ const GatewayHealthPanel: React.FC<GatewayHealthPanelProps> = ({
   mostActiveRoute,
   isSummaryLoading,
   isOperationalLoading,
+  isTrafficLoading,
   settingsError,
+  trafficTrend,
   onCopyUpstream
 }) => {
   const allowedRequests = valueOrLoading(summary?.allowedRequests, isSummaryLoading);
@@ -164,6 +266,7 @@ const GatewayHealthPanel: React.FC<GatewayHealthPanelProps> = ({
     : mostActiveRoute?.route || 'No route traffic yet';
   const hasConfiguredUpstream = Boolean(settings?.upstreamBaseUrl && !settingsError && !isOperationalLoading);
   const upstreamCopyValue = hasConfiguredUpstream ? settings?.upstreamBaseUrl : undefined;
+  const hasTrafficTrend = trafficTrend.points.length > 0;
 
   return (
     <DashboardSection
@@ -201,8 +304,16 @@ const GatewayHealthPanel: React.FC<GatewayHealthPanelProps> = ({
         <div className="rounded-md bg-slate-950/30 px-4 py-3">
           <dt className="text-xs font-medium text-slate-400">Block rate</dt>
           <dd className="mt-1 min-w-0 truncate text-sm font-medium text-slate-100">
-            {percentOrLoading(summary, isSummaryLoading)}
+            {blockRateValueOrLoading(trafficTrend.blockRate, hasTrafficTrend, isTrafficLoading)}
           </dd>
+          {!isTrafficLoading && (
+            <Sparkline
+              values={trafficTrend.blockRateSeries}
+              color="#cbd5e1"
+              label={`Block rate trend, ${trafficTrend.windowLabel}`}
+              className="max-w-full"
+            />
+          )}
         </div>
         <div className="min-w-0 rounded-md bg-slate-950/30 px-4 py-3">
           <dt className="text-xs font-medium text-slate-400">Most active route</dt>
@@ -290,10 +401,12 @@ export const DashboardPage: React.FC = () => {
   const { showToast } = useToast();
   const [summary, setSummary] = useState<DashboardSummaryDto | null>(null);
   const [routeAnalytics, setRouteAnalytics] = useState<RouteAnalyticsDto[]>([]);
+  const [trafficAnalytics, setTrafficAnalytics] = useState<TrafficAnalyticsDto[]>([]);
   const [gatewaySettings, setGatewaySettings] = useState<GatewaySettingsDto | null>(null);
   const [openAlerts, setOpenAlerts] = useState<AbuseAlertDto[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isOperationalLoading, setIsOperationalLoading] = useState(true);
+  const [isTrafficLoading, setIsTrafficLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [routeError, setRouteError] = useState<string | null>(null);
   const [settingsError, setSettingsError] = useState<string | null>(null);
@@ -360,7 +473,26 @@ export const DashboardPage: React.FC = () => {
     loadOperationalSections();
   }, []);
 
+  useEffect(() => {
+    const loadTrafficAnalytics = async () => {
+      setIsTrafficLoading(true);
+
+      try {
+        const data = await api.getTrafficAnalytics();
+        setTrafficAnalytics(Array.isArray(data) ? data : []);
+      } catch (error) {
+        console.error('Failed to load traffic analytics:', error);
+        setTrafficAnalytics([]);
+      } finally {
+        setIsTrafficLoading(false);
+      }
+    };
+
+    loadTrafficAnalytics();
+  }, []);
+
   const visibleRoutes = useMemo(() => topRoutes(routeAnalytics), [routeAnalytics]);
+  const trafficTrend = useMemo(() => getTrafficTrend(trafficAnalytics), [trafficAnalytics]);
   const mostActiveRoute = visibleRoutes[0] ?? null;
   const visibleAlerts = openAlerts
     .filter((alert) => alert.status === 'OPEN')
@@ -382,7 +514,12 @@ export const DashboardPage: React.FC = () => {
         meta={errorMessage ? <span className="text-xs text-slate-500">{errorMessage}</span> : undefined}
       />
 
-      <GatewaySummaryStrip summary={summary} isLoading={isLoading} />
+      <GatewaySummaryStrip
+        summary={summary}
+        isLoading={isLoading}
+        trafficTrend={trafficTrend}
+        isTrafficLoading={isTrafficLoading}
+      />
 
       <div className="mt-5 grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1.35fr)_minmax(22rem,0.65fr)]">
         <GatewayHealthPanel
@@ -391,7 +528,9 @@ export const DashboardPage: React.FC = () => {
           mostActiveRoute={mostActiveRoute}
           isSummaryLoading={isLoading}
           isOperationalLoading={isOperationalLoading}
+          isTrafficLoading={isTrafficLoading}
           settingsError={settingsError}
+          trafficTrend={trafficTrend}
           onCopyUpstream={handleCopyUpstream}
         />
 
