@@ -46,7 +46,8 @@ export const SensitiveValue: React.FC<SensitiveValueProps> = ({
     return () => window.clearTimeout(timeoutId);
   }, [autoHideMs, hasValue, onRevealedChange, revealed]);
 
-  const handleCopy = async () => {
+  const handleCopy = async (event: React.MouseEvent<HTMLButtonElement>) => {
+    event.stopPropagation();
     if (!value) return;
 
     try {
@@ -75,7 +76,10 @@ export const SensitiveValue: React.FC<SensitiveValueProps> = ({
           </button>
           <button
             type="button"
-            onClick={() => onRevealedChange(!revealed)}
+            onClick={(event) => {
+              event.stopPropagation();
+              onRevealedChange(!revealed);
+            }}
             className="inline-flex h-7 w-7 items-center justify-center rounded-md text-slate-500 transition-colors hover:bg-slate-900/70 hover:text-slate-200 focus:outline-none focus:ring-2 focus:ring-slate-700/35"
             aria-label={revealed ? 'Hide API key' : 'Reveal API key'}
             title={revealed ? 'Hide API key' : 'Reveal API key'}

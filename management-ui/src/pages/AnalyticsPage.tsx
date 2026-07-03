@@ -25,7 +25,16 @@ import { useToast } from '../hooks/useToast';
 
 type RouteTrendMetric = 'totalRequests' | 'allowedRequests' | 'blockedRequests';
 type RouteTrendDisplayMode = 'top5' | 'top10' | 'custom';
-type AnalyticsSortKey = 'totalRequests' | 'allowedRequests' | 'blockedRequests' | 'blockRate' | 'name';
+type NumericAnalyticsSortField = 'totalRequests' | 'allowedRequests' | 'blockedRequests' | 'blockRate';
+type TextAnalyticsSortField = 'name' | 'planName';
+type AnalyticsSortField = NumericAnalyticsSortField | TextAnalyticsSortField;
+type AnalyticsSortDirection = 'asc' | 'desc';
+type AnalyticsSortValue = `${AnalyticsSortField}:${AnalyticsSortDirection}`;
+
+interface AnalyticsSortSelection {
+  field: AnalyticsSortField;
+  direction: AnalyticsSortDirection;
+}
 
 type RouteTrendChartPoint = {
   bucketLabel: string;
@@ -82,17 +91,33 @@ const routeTrendDisplayOptions: Array<{ key: RouteTrendDisplayMode; label: strin
   { key: 'custom', label: 'Custom' }
 ];
 
-const analyticsSortOptions: Array<{ key: AnalyticsSortKey; label: string }> = [
-  { key: 'totalRequests', label: 'Total requests' },
-  { key: 'allowedRequests', label: 'Allowed requests' },
-  { key: 'blockedRequests', label: 'Blocked requests' },
-  { key: 'blockRate', label: 'Block rate' },
-  { key: 'name', label: 'Name A-Z' }
+const routeAnalyticsSortDropdownOptions: DropdownOption[] = [
+  { value: 'totalRequests:desc', label: 'Total requests: High to low' },
+  { value: 'totalRequests:asc', label: 'Total requests: Low to high' },
+  { value: 'allowedRequests:desc', label: 'Allowed requests: High to low' },
+  { value: 'allowedRequests:asc', label: 'Allowed requests: Low to high' },
+  { value: 'blockedRequests:desc', label: 'Blocked requests: High to low' },
+  { value: 'blockedRequests:asc', label: 'Blocked requests: Low to high' },
+  { value: 'blockRate:desc', label: 'Block rate: High to low' },
+  { value: 'blockRate:asc', label: 'Block rate: Low to high' },
+  { value: 'name:asc', label: 'Name A-Z' },
+  { value: 'name:desc', label: 'Name Z-A' }
 ];
-const analyticsSortDropdownOptions: DropdownOption[] = analyticsSortOptions.map((option) => ({
-  value: option.key,
-  label: option.label
-}));
+
+const clientAnalyticsSortDropdownOptions: DropdownOption[] = [
+  { value: 'totalRequests:desc', label: 'Total requests: High to low' },
+  { value: 'totalRequests:asc', label: 'Total requests: Low to high' },
+  { value: 'allowedRequests:desc', label: 'Allowed requests: High to low' },
+  { value: 'allowedRequests:asc', label: 'Allowed requests: Low to high' },
+  { value: 'blockedRequests:desc', label: 'Blocked requests: High to low' },
+  { value: 'blockedRequests:asc', label: 'Blocked requests: Low to high' },
+  { value: 'blockRate:desc', label: 'Block rate: High to low' },
+  { value: 'blockRate:asc', label: 'Block rate: Low to high' },
+  { value: 'name:asc', label: 'Client name A-Z' },
+  { value: 'name:desc', label: 'Client name Z-A' },
+  { value: 'planName:asc', label: 'Plan name A-Z' },
+  { value: 'planName:desc', label: 'Plan name Z-A' }
+];
 
 const getTopRouteLimit = (mode: RouteTrendDisplayMode) => (
   mode === 'top10' ? 10 : 5
@@ -289,50 +314,98 @@ const getRouteTrendCountLabel = (
   return `Showing top ${limit} routes`;
 };
 
-const compareMetricDescending = (first: number, second: number) => {
-  const difference = second - first;
+const parseAnalyticsSortValue = (value: AnalyticsSortValue): AnalyticsSortSelection => {
+  const [field, direction] = value.split(':') as [AnalyticsSortField, AnalyticsSortDirection];
+
+  return { field, direction };
+};
+
+const compareMetric = (first: number, second: number, direction: AnalyticsSortDirection) => {
+  const difference = direction === 'desc' ? second - first : first - second;
   return difference === 0 ? 0 : difference;
 };
 
-const sortRouteAnalytics = (routes: RouteAnalyticsDto[], sortKey: AnalyticsSortKey) => (
-  [...routes].sort((first, second) => {
-    const firstRoute = getRouteName(first.route);
-    const secondRoute = getRouteName(second.route);
+const compareText = (
+  first: string | null | undefined,
+  second: string | null | undefined,
+  direction: AnalyticsSortDirection
+) => {
+  const firstText = first?.trim() ?? '';
+  const secondText = second?.trim() ?? '';
+  const isFirstMissing = firstText.length === 0;
+  const isSecondMissing = secondText.length === 0;
 
-    if (sortKey === 'name') {
-      return firstRoute.localeCompare(secondRoute);
+  if (isFirstMissing && isSecondMissing) return 0;
+  if (isFirstMissing) return 1;
+  if (isSecondMissing) return -1;
+
+  return direction === 'asc'
+    ? firstText.localeCompare(secondText)
+    : secondText.localeCompare(firstText);
+};
+
+const getRouteMetricSortValue = (route: RouteAnalyticsDto, field: NumericAnalyticsSortField) => (
+  field === 'blockRate'
+    ? getBlockRate(route.totalRequests, route.blockedRequests)
+    : safeCount(route[field])
+);
+
+const getClientMetricSortValue = (client: ClientAnalyticsDto, field: NumericAnalyticsSortField) => (
+  field === 'blockRate'
+    ? getBlockRate(client.totalRequests, client.blockedRequests)
+    : safeCount(client[field])
+);
+
+const getClientSortName = (client: ClientAnalyticsDto) => {
+  const clientName = client.clientName?.trim();
+  if (clientName) return clientName;
+
+  return client.clientId === undefined ? '' : `Client #${client.clientId}`;
+};
+
+const sortRouteAnalytics = (routes: RouteAnalyticsDto[], sortValue: AnalyticsSortValue) => (
+  [...routes].sort((first, second) => {
+    const { field, direction } = parseAnalyticsSortValue(sortValue);
+
+    if (field === 'name') {
+      return compareText(first.route, second.route, direction);
     }
 
-    const firstValue = sortKey === 'blockRate'
-      ? getBlockRate(first.totalRequests, first.blockedRequests)
-      : safeCount(first[sortKey]);
-    const secondValue = sortKey === 'blockRate'
-      ? getBlockRate(second.totalRequests, second.blockedRequests)
-      : safeCount(second[sortKey]);
-    const metricDifference = compareMetricDescending(firstValue, secondValue);
+    const sortField = field === 'planName' ? 'totalRequests' : field;
+    const metricDifference = compareMetric(
+      getRouteMetricSortValue(first, sortField),
+      getRouteMetricSortValue(second, sortField),
+      direction
+    );
 
-    return metricDifference || firstRoute.localeCompare(secondRoute);
+    return metricDifference || compareText(first.route, second.route, 'asc');
   })
 );
 
-const sortClientAnalytics = (clients: ClientAnalyticsDto[], sortKey: AnalyticsSortKey) => (
+const sortClientAnalytics = (clients: ClientAnalyticsDto[], sortValue: AnalyticsSortValue) => (
   [...clients].sort((first, second) => {
-    const firstName = getClientName(first, 0);
-    const secondName = getClientName(second, 0);
+    const { field, direction } = parseAnalyticsSortValue(sortValue);
 
-    if (sortKey === 'name') {
-      return firstName.localeCompare(secondName);
+    if (field === 'name') {
+      return compareText(getClientSortName(first), getClientSortName(second), direction);
     }
 
-    const firstValue = sortKey === 'blockRate'
-      ? getBlockRate(first.totalRequests, first.blockedRequests)
-      : safeCount(first[sortKey]);
-    const secondValue = sortKey === 'blockRate'
-      ? getBlockRate(second.totalRequests, second.blockedRequests)
-      : safeCount(second[sortKey]);
-    const metricDifference = compareMetricDescending(firstValue, secondValue);
+    if (field === 'planName') {
+      return compareText(
+        first.planName ? getPlanLabel(first.planName) : '',
+        second.planName ? getPlanLabel(second.planName) : '',
+        direction
+      )
+        || compareText(getClientSortName(first), getClientSortName(second), 'asc');
+    }
 
-    return metricDifference || firstName.localeCompare(secondName);
+    const metricDifference = compareMetric(
+      getClientMetricSortValue(first, field),
+      getClientMetricSortValue(second, field),
+      direction
+    );
+
+    return metricDifference || compareText(getClientSortName(first), getClientSortName(second), 'asc');
   })
 );
 
@@ -346,8 +419,8 @@ export const AnalyticsPage: React.FC = () => {
   const [selectedPlanName, setSelectedPlanName] = useState('');
   const [selectedRouteMetric, setSelectedRouteMetric] = useState<RouteTrendMetric>('totalRequests');
   const [routeTrendMode, setRouteTrendMode] = useState<RouteTrendDisplayMode>('top5');
-  const [routeAnalyticsSort, setRouteAnalyticsSort] = useState<AnalyticsSortKey>('totalRequests');
-  const [clientAnalyticsSort, setClientAnalyticsSort] = useState<AnalyticsSortKey>('totalRequests');
+  const [routeAnalyticsSort, setRouteAnalyticsSort] = useState<AnalyticsSortValue>('totalRequests:desc');
+  const [clientAnalyticsSort, setClientAnalyticsSort] = useState<AnalyticsSortValue>('totalRequests:desc');
   const [clientPlanFilter, setClientPlanFilter] = useState('');
   const [routeSearch, setRouteSearch] = useState('');
   const [selectedCustomRoutes, setSelectedCustomRoutes] = useState<string[]>([]);
@@ -861,8 +934,8 @@ export const AnalyticsPage: React.FC = () => {
             <div className="flex items-center gap-3">
               <AppDropdown
                 value={routeAnalyticsSort}
-                onChange={(value) => setRouteAnalyticsSort(value as AnalyticsSortKey)}
-                options={analyticsSortDropdownOptions}
+                onChange={(value) => setRouteAnalyticsSort(value as AnalyticsSortValue)}
+                options={routeAnalyticsSortDropdownOptions}
                 ariaLabel="Sort route analytics"
                 fullWidth={false}
                 align="right"
@@ -933,8 +1006,8 @@ export const AnalyticsPage: React.FC = () => {
               />
               <AppDropdown
                 value={clientAnalyticsSort}
-                onChange={(value) => setClientAnalyticsSort(value as AnalyticsSortKey)}
-                options={analyticsSortDropdownOptions}
+                onChange={(value) => setClientAnalyticsSort(value as AnalyticsSortValue)}
+                options={clientAnalyticsSortDropdownOptions}
                 ariaLabel="Sort client analytics"
                 fullWidth={false}
                 align="right"

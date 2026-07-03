@@ -62,7 +62,10 @@ export const RowActions: React.FC<RowActionsProps> = ({ actions, label = 'Row ac
         aria-label={label}
         aria-haspopup="menu"
         aria-expanded={isOpen}
-        onClick={() => setIsOpen((open) => !open)}
+        onClick={(event) => {
+          event.stopPropagation();
+          setIsOpen((open) => !open);
+        }}
         className="inline-flex h-8 w-8 items-center justify-center rounded-md text-slate-500 transition-colors hover:bg-slate-900/70 hover:text-slate-200 focus:outline-none focus:ring-2 focus:ring-slate-700/40"
       >
         <MoreHorizontal size={18} aria-hidden="true" />
@@ -71,6 +74,7 @@ export const RowActions: React.FC<RowActionsProps> = ({ actions, label = 'Row ac
       {isOpen && (
         <div
           role="menu"
+          onClick={(event) => event.stopPropagation()}
           className="absolute right-0 top-9 z-30 min-w-36 rounded-lg bg-slate-900/95 p-1 shadow-xl shadow-black/20 ring-1 ring-slate-800/60 backdrop-blur"
         >
           {actions.map((action) => {
@@ -83,7 +87,10 @@ export const RowActions: React.FC<RowActionsProps> = ({ actions, label = 'Row ac
                   to={action.to}
                   role="menuitem"
                   className={className}
-                  onClick={() => setIsOpen(false)}
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    setIsOpen(false);
+                  }}
                 >
                   {action.label}
                 </Link>
@@ -97,7 +104,8 @@ export const RowActions: React.FC<RowActionsProps> = ({ actions, label = 'Row ac
                 role="menuitem"
                 disabled={action.disabled}
                 title={action.title}
-                onClick={() => {
+                onClick={(event) => {
+                  event.stopPropagation();
                   action.onClick?.();
                   setIsOpen(false);
                 }}
