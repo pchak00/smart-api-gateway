@@ -210,7 +210,7 @@ export const RouteLimitsPage: React.FC = () => {
       {(isCreateOpen || editingLimit) && (
         <form
           onSubmit={editingLimit ? handleUpdateRouteLimit : handleCreateRouteLimit}
-          className="mb-8 border-y border-slate-800/40 py-5"
+          className="mb-8 py-2"
         >
           <div className="grid gap-4 md:grid-cols-[12rem_minmax(0,1fr)_10rem_auto] md:items-end">
             {!editingLimit && (

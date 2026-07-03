@@ -163,7 +163,7 @@ export const AdminUsersPage: React.FC = () => {
       />
 
       {isCreateOpen && (
-        <form onSubmit={handleCreateAdmin} className="mb-8 grid gap-4 border-y border-slate-800/40 py-5 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_12rem_auto] md:items-end">
+        <form onSubmit={handleCreateAdmin} className="mb-8 grid gap-4 py-2 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_12rem_auto] md:items-end">
           <label className="block text-sm text-slate-500">
             Username
             <input
@@ -209,7 +209,7 @@ export const AdminUsersPage: React.FC = () => {
       )}
 
       {editingAdmin && (
-        <form onSubmit={handleUpdateRole} className="mb-8 flex flex-wrap items-end gap-4 border-y border-slate-800/40 py-5">
+        <form onSubmit={handleUpdateRole} className="mb-8 flex flex-wrap items-end gap-4 py-2">
           <div className="min-w-56 flex-1">
             <p className="text-sm font-medium text-slate-100">{editingAdmin.username}</p>
             <p className="mt-1 text-xs text-slate-500">Update access level</p>

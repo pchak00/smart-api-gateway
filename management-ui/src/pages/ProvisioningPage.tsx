@@ -182,7 +182,7 @@ export const ProvisioningPage: React.FC = () => {
       {isCreateOpen && (
         <form
           onSubmit={handleCreateToken}
-          className="mb-8 grid gap-4 border-y border-slate-800/40 py-5 md:grid-cols-[minmax(0,1fr)_14rem_auto] md:items-end"
+          className="mb-8 grid gap-4 py-2 md:grid-cols-[minmax(0,1fr)_14rem_auto] md:items-end"
         >
           <label className="block text-sm text-slate-500">
             Token name

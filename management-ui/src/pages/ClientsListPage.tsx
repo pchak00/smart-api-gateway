@@ -396,7 +396,7 @@ export const ClientsListPage: React.FC = () => {
       )}
 
       {editingClient && (
-        <form onSubmit={handleUpdateClientPlan} className="mb-8 flex flex-wrap items-end gap-4 border-y border-slate-800/40 py-5">
+        <form onSubmit={handleUpdateClientPlan} className="mb-8 flex flex-wrap items-end gap-4 py-2">
           <div className="min-w-56 flex-1">
             <p className="text-sm font-medium text-slate-100">{editingClient.clientName}</p>
             <p className="mt-1 text-xs text-slate-500">Change assigned plan</p>
