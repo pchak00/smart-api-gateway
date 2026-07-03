@@ -3,8 +3,8 @@ import { useParams } from 'react-router-dom';
 import { Activity, KeyRound, Power, RotateCw, Server, ShieldAlert } from 'lucide-react';
 import { api } from '../api/client';
 import { EmptyState, PageHeader, Panel } from '../components/PageShell';
-import { AbuseAlertDto, ClientApiKeyRotationResponse, ClientDto, ClientStatsDto, UsageLogDto } from '../types';
-import { formatDateTime, formatNumber, getPlanLabel, getSeverityLabel } from '../utils/display';
+import { AbuseAlertDto, AbuseAlertStatus, ClientApiKeyRotationResponse, ClientDto, ClientStatsDto, UsageLogDto } from '../types';
+import { formatDateTime, formatNumber, getPlanLabel, getStatusLabel } from '../utils/display';
 import { useAuth } from '../hooks/useAuth';
 import { useToast } from '../hooks/useToast';
 import { getApiErrorMessage } from '../utils/apiError';
@@ -14,6 +14,19 @@ import {
   ClientApiKeyLifecycleDialogs,
   PendingClientLifecycleAction
 } from '../components/ClientApiKeyLifecycleDialogs';
+
+const alertStatusClass = (status: AbuseAlertStatus | string | null | undefined) => {
+  if (status === 'RESOLVED') return 'bg-slate-900/70 text-slate-400';
+  if (status === 'ACKNOWLEDGED') return 'bg-sky-950/25 text-sky-300/80';
+  return 'bg-amber-950/25 text-amber-300/85';
+};
+
+const getAlertTimeline = (alert: AbuseAlertDto) => {
+  if (alert.status === 'RESOLVED') return formatDateTime(alert.resolvedAt ?? alert.lastStatusChangedAt ?? alert.lastUpdatedAt);
+  if (alert.status === 'ACKNOWLEDGED') return formatDateTime(alert.acknowledgedAt ?? alert.lastStatusChangedAt ?? alert.lastUpdatedAt);
+
+  return formatDateTime(alert.createdAt ?? alert.alertedAt);
+};
 
 export const ClientDetailPage: React.FC = () => {
   const { id } = useParams();
@@ -192,15 +205,7 @@ export const ClientDetailPage: React.FC = () => {
     <div>
       <PageHeader
         title={client?.clientName ?? `Client ${id ?? ''}`.trim()}
-        description="Inspect live per-client activity and identity fields available from the current admin read APIs."
         actions={actionButtons}
-        meta={
-          <span className="text-xs text-slate-500">
-            {hasClientId
-              ? errorMessage ?? 'Using /admin/clients plus /stats, /usage, and /abuse for this client id.'
-              : 'Open a client URL with a numeric backend id to load live activity.'}
-          </span>
-        }
       />
 
       <div className="grid grid-cols-1 gap-3 lg:grid-cols-3">
@@ -279,9 +284,9 @@ export const ClientDetailPage: React.FC = () => {
                   description="Requests for this client will appear here after gateway traffic is recorded."
                 />
               ) : (
-                <div className="overflow-x-auto">
+                <div className="max-h-[480px] overflow-auto">
                   <table className="w-full min-w-[720px]">
-                    <thead className="border-b border-slate-800/40">
+                    <thead className="sticky top-0 z-10 border-b border-slate-800/40 bg-slate-900">
                       <tr>
                         <th className="px-4 py-3 text-left text-xs font-medium text-slate-400">Path</th>
                         <th className="px-4 py-3 text-left text-xs font-medium text-slate-400">Method</th>
@@ -319,8 +324,7 @@ export const ClientDetailPage: React.FC = () => {
             <Panel className="p-5">
               <div className="mb-5 flex items-center justify-between">
                 <div>
-                  <h2 className="text-sm font-semibold text-slate-100">Abuse signals</h2>
-                  <p className="mt-1 text-sm text-slate-400">Alerts returned for this client.</p>
+                  <h2 className="text-sm font-semibold text-slate-100">Recent alerts</h2>
                 </div>
                 <ShieldAlert className="text-slate-600" size={18} aria-hidden="true" />
               </div>
@@ -333,22 +337,28 @@ export const ClientDetailPage: React.FC = () => {
                 />
               ) : (
                 <div className="space-y-3">
-                  {abuseAlerts.map((alert, index) => (
-                    <div key={`${alert.createdAt ?? 'alert'}-${index}`} className="rounded-lg bg-slate-950/35 p-4">
-                      <div className="flex items-center justify-between gap-3">
-                        <span className="text-sm font-medium text-slate-100">
-                          {getSeverityLabel(alert.severity)}
-                        </span>
-                        <span className="text-xs text-slate-400">
-                          {formatDateTime(alert.createdAt ?? alert.alertedAt)}
-                        </span>
+                  {abuseAlerts.map((alert, index) => {
+                    const blockedCount = alert.blockedCount ?? alert.blockedRequestCount ?? 0;
+
+                    return (
+                      <div key={`${alert.createdAt ?? 'alert'}-${index}`} className="rounded-lg bg-slate-950/35 p-4">
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="min-w-0">
+                            <p className="text-sm font-medium text-slate-100">
+                              {formatNumber(blockedCount)} blocked
+                            </p>
+                            <p className="mt-1 text-xs text-slate-400">
+                              {alert.windowStart ? `Window started ${formatDateTime(alert.windowStart)}` : 'Window unavailable'}
+                            </p>
+                          </div>
+                          <span className={`shrink-0 rounded-md px-2 py-0.5 text-xs font-medium ${alertStatusClass(alert.status)}`}>
+                            {getStatusLabel(alert.status)}
+                          </span>
+                        </div>
+                        <p className="mt-3 text-xs text-slate-400">{getAlertTimeline(alert)}</p>
                       </div>
-                      <p className="mt-2 text-sm text-slate-300">{alert.message ?? 'Blocked request threshold reached.'}</p>
-                      <p className="mt-2 text-xs text-slate-400">
-                        {formatNumber(alert.blockedCount ?? alert.blockedRequestCount ?? 0)} blocked requests
-                      </p>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
             </Panel>

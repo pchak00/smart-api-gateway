@@ -3,7 +3,7 @@ import { CreditCard, Plus } from 'lucide-react';
 import { api } from '../api/client';
 import { useAuth } from '../hooks/useAuth';
 import { useToast } from '../hooks/useToast';
-import { PlanDto } from '../types';
+import { ClientDto, PlanDto } from '../types';
 import { PrimaryButton, SecondaryButton } from '../components/Button';
 import { ListSearch } from '../components/ListSearch';
 import { EmptyState, PageHeader } from '../components/PageShell';
@@ -17,6 +17,7 @@ export const PlansPage: React.FC = () => {
   const { canMutate } = useAuth();
   const { showToast } = useToast();
   const [plans, setPlans] = useState<PlanDto[]>([]);
+  const [clients, setClients] = useState<ClientDto[] | null | undefined>(undefined);
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -46,6 +47,19 @@ export const PlansPage: React.FC = () => {
 
   useEffect(() => {
     loadPlans();
+  }, []);
+
+  useEffect(() => {
+    const loadClients = async () => {
+      try {
+        setClients(await api.getClients());
+      } catch (error) {
+        console.error('Failed to load clients for plan enrollment counts:', error);
+        setClients(null);
+      }
+    };
+
+    loadClients();
   }, []);
 
   const resetForm = () => {
@@ -137,6 +151,27 @@ export const PlansPage: React.FC = () => {
     }
   };
 
+  const clientCountByPlan = useMemo(() => {
+    if (clients === undefined) return undefined;
+    if (clients === null) return null;
+
+    return clients.reduce<Record<string, number>>((counts, client) => {
+      const planName = client.plan?.planName ?? client.planName;
+      if (!planName) return counts;
+
+      counts[planName] = (counts[planName] ?? 0) + 1;
+      return counts;
+    }, {});
+  }, [clients]);
+
+  const getClientCountLabel = (planName: string) => {
+    if (clientCountByPlan === undefined) return '...';
+    if (!clientCountByPlan) return 'Unavailable';
+
+    const count = clientCountByPlan[planName] ?? 0;
+    return `${count} ${count === 1 ? 'client' : 'clients'}`;
+  };
+
   const trimmedSearchQuery = normalizeSearch(searchQuery);
   const filteredPlans = useMemo(() => (
     plans.filter((plan) => {
@@ -151,10 +186,11 @@ export const PlansPage: React.FC = () => {
         getPlanLabel(plan.planName),
         plan.requestsPerMinute,
         plan.price,
-        priceLabel
+        priceLabel,
+        getClientCountLabel(plan.planName)
       ], trimmedSearchQuery);
     })
-  ), [plans, trimmedSearchQuery]);
+  ), [clientCountByPlan, plans, trimmedSearchQuery]);
   const planResultLabel = trimmedSearchQuery
     ? `${filteredPlans.length} ${filteredPlans.length === 1 ? 'result' : 'results'}`
     : `${plans.length} ${plans.length === 1 ? 'plan' : 'plans'}`;
@@ -163,7 +199,6 @@ export const PlansPage: React.FC = () => {
     <div>
       <PageHeader
         title="Plans"
-        description="Manage the plan tiers that define default request quotas for API consumers."
         meta={errorMessage ? <span className="text-xs text-slate-500">{errorMessage}</span> : undefined}
       />
 
@@ -266,6 +301,7 @@ export const PlansPage: React.FC = () => {
                 <tr>
                   <th className="px-4 py-3 text-left text-xs font-medium text-slate-500">Plan</th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-slate-500">Requests/min</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-slate-500">Clients</th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-slate-500">Price</th>
                   <th className="px-4 py-3 text-right text-xs font-medium text-slate-500">
                     <span className="sr-only">Row actions</span>
@@ -282,6 +318,7 @@ export const PlansPage: React.FC = () => {
                       </div>
                     </td>
                     <td className="px-4 py-4 text-sm text-slate-300">{plan.requestsPerMinute}</td>
+                    <td className="px-4 py-4 text-sm text-slate-400">{getClientCountLabel(plan.planName)}</td>
                     <td className="px-4 py-4 text-sm text-slate-400">
                       {typeof plan.price === 'number'
                         ? plan.price === 0

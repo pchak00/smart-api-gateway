@@ -427,7 +427,9 @@ export const DashboardPage: React.FC = () => {
                     <p className="truncate text-sm font-medium text-slate-100">
                       {alert.clientName ?? `Client #${alert.clientId}`}
                     </p>
-                    <span className="text-xs text-slate-300">{getStatusLabel(alert.status)}</span>
+                    <span className="inline-flex rounded-md bg-amber-950/25 px-2 py-0.5 text-xs font-medium text-amber-300/85">
+                      {getStatusLabel(alert.status)}
+                    </span>
                   </div>
                   <div className="mt-1 flex items-center justify-between gap-3 text-xs text-slate-400">
                     <span className="text-slate-300">{formatNumber(alert.blockedCount ?? alert.blockedRequestCount)} blocked</span>

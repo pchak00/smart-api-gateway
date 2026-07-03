@@ -1,4 +1,5 @@
 import React, { FormEvent, useEffect, useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Plus, Server, Users } from 'lucide-react';
 import { api } from '../api/client';
 import { ClientDto, PlanDto } from '../types';
@@ -20,6 +21,7 @@ import { matchesSearch, normalizeSearch } from '../utils/search';
 import { ClientApiKeyRotationResponse } from '../types';
 
 export const ClientsListPage: React.FC = () => {
+  const navigate = useNavigate();
   const { canMutate } = useAuth();
   const { showToast } = useToast();
   const [clients, setClients] = useState<ClientDto[]>([]);
@@ -224,6 +226,16 @@ export const ClientsListPage: React.FC = () => {
     setRotatedKey(null);
   };
 
+  const openClientDetail = (client: ClientDto) => {
+    if (typeof client.id !== 'number') return;
+    navigate(`/clients/${client.id}`);
+  };
+
+  const shouldIgnoreRowNavigation = (target: EventTarget | null) => (
+    target instanceof HTMLElement &&
+    Boolean(target.closest('button, a, input, select, textarea, [role="menu"], [role="listbox"]'))
+  );
+
   const hasRowsWithoutIds = clients.some((client) => client.id === undefined);
   const trimmedSearchQuery = normalizeSearch(searchQuery);
   const filteredClients = useMemo(() => (
@@ -266,7 +278,6 @@ export const ClientsListPage: React.FC = () => {
     <div>
       <PageHeader
         title="Clients"
-        description="Review API consumers, their keys, assigned plans, and current activation state."
         meta={clientsMeta}
       />
 
@@ -316,13 +327,14 @@ export const ClientsListPage: React.FC = () => {
               disabled={plans.length === 0}
             />
           </div>
-          <label className="flex items-center gap-2 pb-2 text-sm text-slate-400">
+          <label className="flex items-center gap-3 pb-2 text-sm text-slate-300">
             <input
               type="checkbox"
               checked={newClientActive}
               onChange={(event) => setNewClientActive(event.target.checked)}
-              className="h-4 w-4 rounded border-slate-700 bg-slate-950"
+              className="peer sr-only"
             />
+            <span className="relative h-5 w-9 rounded-full bg-slate-800/80 transition-colors after:absolute after:left-0.5 after:top-0.5 after:h-4 after:w-4 after:rounded-full after:bg-slate-500 after:transition-transform peer-checked:bg-cyan-950/70 peer-checked:after:translate-x-4 peer-checked:after:bg-cyan-300/80 peer-focus-visible:ring-2 peer-focus-visible:ring-slate-600/50" />
             Active
           </label>
           <div className="flex gap-2">
@@ -404,7 +416,26 @@ export const ClientsListPage: React.FC = () => {
                   const rowKey = String(client.id ?? client.apiKey);
 
                   return (
-                    <tr key={rowKey} className="transition-colors hover:bg-slate-900/35">
+                    <tr
+                      key={rowKey}
+                      role={hasBackendId ? 'link' : undefined}
+                      tabIndex={hasBackendId ? 0 : undefined}
+                      aria-label={hasBackendId ? `Open ${client.clientName}` : undefined}
+                      onClick={(event) => {
+                        if (shouldIgnoreRowNavigation(event.target)) return;
+                        openClientDetail(client);
+                      }}
+                      onKeyDown={(event) => {
+                        if (!hasBackendId || shouldIgnoreRowNavigation(event.target)) return;
+                        if (event.key === 'Enter' || event.key === ' ') {
+                          event.preventDefault();
+                          openClientDetail(client);
+                        }
+                      }}
+                      className={`transition-colors hover:bg-slate-900/35 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-slate-700/40 ${
+                        hasBackendId ? 'cursor-pointer' : ''
+                      }`}
+                    >
                       <td className="px-4 py-4">
                         <div className="flex items-center gap-3">
                           <Server className="text-slate-600" size={16} aria-hidden="true" />
@@ -434,13 +465,6 @@ export const ClientsListPage: React.FC = () => {
                       <td className="px-4 py-4 text-right text-sm">
                         <RowActions
                           actions={[
-                            hasBackendId
-                              ? { label: 'View', to: `/clients/${client.id}` }
-                              : {
-                                  label: 'View',
-                                  disabled: true,
-                                  title: 'Client response does not include an id'
-                            },
                             ...(canMutate ? [
                               {
                                 label: 'Rotate API key',
