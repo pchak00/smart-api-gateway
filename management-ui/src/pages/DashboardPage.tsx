@@ -1,8 +1,11 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
+  ArrowDown,
+  ArrowUp,
   Copy,
   KeyRound,
+  Minus,
   Plus,
   SlidersHorizontal,
   Users
@@ -10,7 +13,6 @@ import {
 import { api } from '../api/client';
 import { AbuseAlertDto, DashboardSummaryDto, GatewaySettingsDto, RouteAnalyticsDto, TrafficAnalyticsDto } from '../types';
 import { PageHeader } from '../components/PageShell';
-import { Sparkline } from '../components/Sparkline';
 import { useAuth } from '../hooks/useAuth';
 import { useToast } from '../hooks/useToast';
 import { formatBucket, formatDateTime, formatNumber, getStatusLabel } from '../utils/display';
@@ -98,25 +100,98 @@ interface TrafficTrend {
   totalRequests: number;
   blockedRequests: number;
   blockRate: number;
-  requestSeries: number[];
-  blockedSeries: number[];
-  blockRateSeries: number[];
+  requestDelta: TrendDelta;
+  blockedDelta: TrendDelta;
+  blockRateDelta: TrendDelta;
   windowLabel: string;
 }
+
+type TrendDirection = 'up' | 'down' | 'flat' | 'none';
+type TrendTone = 'traffic' | 'neutral';
+
+interface TrendDelta {
+  direction: TrendDirection;
+  label: string;
+}
+
+const noComparisonDelta: TrendDelta = {
+  direction: 'none',
+  label: 'No comparison yet'
+};
+
+const formatTrendPercent = (value: number) => {
+  const absolute = Math.abs(value);
+  const formatted = absolute >= 10
+    ? Math.round(absolute).toString()
+    : absolute.toFixed(1).replace(/\.0$/, '');
+
+  return `${formatted}%`;
+};
+
+const formatPointDelta = (value: number) => `${Math.abs(value).toFixed(1)} pts`;
+
+const getCountDelta = (current: number | null | undefined, previous: number | null | undefined): TrendDelta => {
+  if (typeof previous !== 'number') return noComparisonDelta;
+
+  const currentValue = safePositiveCount(current);
+  const previousValue = safePositiveCount(previous);
+
+  if (currentValue === 0 && previousValue === 0) {
+    return { direction: 'flat', label: 'No change' };
+  }
+
+  if (previousValue === 0) {
+    return { direction: 'none', label: 'No prior baseline' };
+  }
+
+  const delta = ((currentValue - previousValue) / previousValue) * 100;
+
+  if (delta === 0) {
+    return { direction: 'flat', label: 'No change' };
+  }
+
+  return {
+    direction: delta > 0 ? 'up' : 'down',
+    label: `${formatTrendPercent(delta)} vs previous bucket`
+  };
+};
+
+const getRateDelta = (currentRate: number | null | undefined, previousRate: number | null | undefined): TrendDelta => {
+  if (typeof previousRate !== 'number') return noComparisonDelta;
+
+  const deltaPoints = (safeCount(currentRate) - safeCount(previousRate)) * 100;
+
+  if (Math.abs(deltaPoints) < 0.05) {
+    return { direction: 'flat', label: 'No change' };
+  }
+
+  return {
+    direction: deltaPoints > 0 ? 'up' : 'down',
+    label: `${formatPointDelta(deltaPoints)} vs previous bucket`
+  };
+};
 
 const getTrafficTrend = (traffic: TrafficAnalyticsDto[]): TrafficTrend => {
   const points = sortedTrafficBuckets(traffic);
   const totalRequests = points.reduce((sum, point) => sum + safePositiveCount(point.totalRequests), 0);
   const blockedRequests = points.reduce((sum, point) => sum + safePositiveCount(point.blockedRequests), 0);
+  const currentBucket = points.length >= 2 ? points[points.length - 1] : null;
+  const previousBucket = points.length >= 2 ? points[points.length - 2] : null;
+  const currentBlockRate = currentBucket
+    ? getTrafficBlockRate(safePositiveCount(currentBucket.totalRequests), safePositiveCount(currentBucket.blockedRequests))
+    : null;
+  const previousBlockRate = previousBucket
+    ? getTrafficBlockRate(safePositiveCount(previousBucket.totalRequests), safePositiveCount(previousBucket.blockedRequests))
+    : null;
 
   return {
     points,
     totalRequests,
     blockedRequests,
     blockRate: getTrafficBlockRate(totalRequests, blockedRequests),
-    requestSeries: points.map((point) => safePositiveCount(point.totalRequests)),
-    blockedSeries: points.map((point) => safePositiveCount(point.blockedRequests)),
-    blockRateSeries: points.map((point) => getTrafficBlockRate(safePositiveCount(point.totalRequests), safePositiveCount(point.blockedRequests)) * 100),
+    requestDelta: getCountDelta(currentBucket?.totalRequests, previousBucket?.totalRequests),
+    blockedDelta: getCountDelta(currentBucket?.blockedRequests, previousBucket?.blockedRequests),
+    blockRateDelta: getRateDelta(currentBlockRate, previousBlockRate),
     windowLabel: getTrafficWindowLabel(points)
   };
 };
@@ -138,8 +213,43 @@ const blockRateValueOrLoading = (value: number, hasTrend: boolean, isLoading: bo
 interface SummaryMetric {
   label: string;
   value: string;
-  sparkline?: React.ReactNode;
+  trend?: React.ReactNode;
 }
+
+const trendToneClass: Record<TrendTone, Record<TrendDirection, string>> = {
+  traffic: {
+    up: 'bg-cyan-950/15 text-cyan-200/85',
+    down: 'bg-slate-950/25 text-slate-400',
+    flat: 'bg-slate-950/25 text-slate-400',
+    none: 'bg-slate-950/20 text-slate-500'
+  },
+  neutral: {
+    up: 'bg-slate-950/25 text-slate-400',
+    down: 'bg-slate-950/25 text-slate-400',
+    flat: 'bg-slate-950/25 text-slate-400',
+    none: 'bg-slate-950/20 text-slate-500'
+  }
+};
+
+const trendIcon: Partial<Record<TrendDirection, React.ElementType>> = {
+  up: ArrowUp,
+  down: ArrowDown,
+  flat: Minus
+};
+
+const TrendIndicator: React.FC<{ delta: TrendDelta; tone?: TrendTone }> = ({
+  delta,
+  tone = 'neutral'
+}) => {
+  const Icon = trendIcon[delta.direction];
+
+  return (
+    <p className={`mt-3 inline-flex h-6 max-w-full items-center gap-1.5 rounded-full px-2 text-xs font-medium ${trendToneClass[tone][delta.direction]}`}>
+      {Icon && <Icon size={12} strokeWidth={2.2} aria-hidden="true" />}
+      <span className="truncate">{delta.label}</span>
+    </p>
+  );
+};
 
 const GatewaySummaryStrip: React.FC<{
   summary: DashboardSummaryDto | null;
@@ -160,22 +270,20 @@ const GatewaySummaryStrip: React.FC<{
     {
       label: 'Requests',
       value: trafficValueOrLoading(trafficTrend.totalRequests, hasTrafficTrend, isTrafficLoading),
-      sparkline: (
-        <Sparkline
-          values={trafficTrend.requestSeries}
-          color="#67e8f9"
-          label={`Requests trend, ${trafficTrend.windowLabel}`}
+      trend: (
+        <TrendIndicator
+          delta={trafficTrend.requestDelta}
+          tone="traffic"
         />
       )
     },
     {
       label: 'Blocked',
       value: trafficValueOrLoading(trafficTrend.blockedRequests, hasTrafficTrend, isTrafficLoading),
-      sparkline: (
-        <Sparkline
-          values={trafficTrend.blockedSeries}
-          color="#94a3b8"
-          label={`Blocked requests trend, ${trafficTrend.windowLabel}`}
+      trend: (
+        <TrendIndicator
+          delta={trafficTrend.blockedDelta}
+          tone="neutral"
         />
       )
     },
@@ -200,7 +308,7 @@ const GatewaySummaryStrip: React.FC<{
             <dd className="mt-2 truncate text-2xl font-semibold leading-none text-slate-50">
               {metric.value}
             </dd>
-            {!isTrafficLoading && metric.sparkline}
+            {!isTrafficLoading && metric.trend}
           </div>
         ))}
       </dl>
@@ -307,11 +415,9 @@ const GatewayHealthPanel: React.FC<GatewayHealthPanelProps> = ({
             {blockRateValueOrLoading(trafficTrend.blockRate, hasTrafficTrend, isTrafficLoading)}
           </dd>
           {!isTrafficLoading && (
-            <Sparkline
-              values={trafficTrend.blockRateSeries}
-              color="#cbd5e1"
-              label={`Block rate trend, ${trafficTrend.windowLabel}`}
-              className="max-w-full"
+            <TrendIndicator
+              delta={trafficTrend.blockRateDelta}
+              tone="neutral"
             />
           )}
         </div>
