@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { ShieldAlert } from 'lucide-react';
 import { api } from '../api/client';
 import { AbuseAlertDto, AbuseAlertStatus } from '../types';
@@ -19,6 +20,15 @@ const statusFilters: Array<{ label: string; value: AlertFilter }> = [
 ];
 
 const permissionMessage = 'You need Admin access to perform this action.';
+
+const parseStatusFilter = (value: string | null): AlertFilter => {
+  const normalizedValue = value?.trim().toUpperCase();
+  if (normalizedValue === 'OPEN' || normalizedValue === 'ACKNOWLEDGED' || normalizedValue === 'RESOLVED') {
+    return normalizedValue;
+  }
+
+  return 'ALL';
+};
 
 const statusLabelClass = (status: AbuseAlertStatus | string | null | undefined) => {
   if (status === 'RESOLVED') return 'bg-slate-900/70 text-slate-400';
@@ -68,11 +78,14 @@ const getEmptyCopy = (filter: AlertFilter) => {
 export const AbuseAlertsPage: React.FC = () => {
   const { canMutate } = useAuth();
   const { showToast } = useToast();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [alerts, setAlerts] = useState<AbuseAlertDto[]>([]);
-  const [selectedStatus, setSelectedStatus] = useState<AlertFilter>('ALL');
+  const [selectedStatus, setSelectedStatus] = useState<AlertFilter>(() => parseStatusFilter(searchParams.get('status')));
   const [isLoading, setIsLoading] = useState(true);
   const [actionAlertId, setActionAlertId] = useState<number | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const clientIdParam = Number(searchParams.get('clientId'));
+  const selectedClientId = Number.isInteger(clientIdParam) && clientIdParam > 0 ? clientIdParam : null;
 
   const loadAlerts = useCallback(async (showLoading = true) => {
     if (showLoading) {
@@ -97,6 +110,23 @@ export const AbuseAlertsPage: React.FC = () => {
   useEffect(() => {
     loadAlerts();
   }, [loadAlerts]);
+
+  useEffect(() => {
+    setSelectedStatus(parseStatusFilter(searchParams.get('status')));
+  }, [searchParams]);
+
+  const handleStatusFilterChange = (filter: AlertFilter) => {
+    setSelectedStatus(filter);
+    const nextSearchParams = new URLSearchParams(searchParams);
+
+    if (filter === 'ALL') {
+      nextSearchParams.delete('status');
+    } else {
+      nextSearchParams.set('status', filter.toLowerCase());
+    }
+
+    setSearchParams(nextSearchParams, { replace: true });
+  };
 
   const handleLifecycleAction = async (alert: AbuseAlertDto, action: 'acknowledge' | 'resolve') => {
     if (!canMutate) {
@@ -127,6 +157,10 @@ export const AbuseAlertsPage: React.FC = () => {
     }
   };
 
+  const visibleAlerts = selectedClientId
+    ? alerts.filter((alert) => alert.clientId === selectedClientId)
+    : alerts;
+
   return (
     <div>
       <PageHeader
@@ -139,7 +173,7 @@ export const AbuseAlertsPage: React.FC = () => {
               <button
                 key={filter.value}
                 type="button"
-                onClick={() => setSelectedStatus(filter.value)}
+                onClick={() => handleStatusFilterChange(filter.value)}
                 className={`rounded px-3 py-1.5 text-xs font-medium transition-colors ${
                   selectedStatus === filter.value
                     ? 'bg-slate-800/80 text-slate-100'
@@ -162,7 +196,7 @@ export const AbuseAlertsPage: React.FC = () => {
             title="Abuse alerts unavailable"
             description={errorMessage}
           />
-        ) : alerts.length === 0 ? (
+        ) : visibleAlerts.length === 0 ? (
           <EmptyState
             icon={ShieldAlert}
             title={selectedStatus === 'ALL' ? 'No abuse alerts' : `No ${getStatusLabel(selectedStatus).toLowerCase()} alerts`}
@@ -183,7 +217,7 @@ export const AbuseAlertsPage: React.FC = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-800/35">
-                {alerts.map((alert, index) => {
+                {visibleAlerts.map((alert, index) => {
                   const status = alert.status ?? 'OPEN';
                   const blockedCount = alert.blockedCount ?? alert.blockedRequestCount ?? 0;
                   const isOpen = status === 'OPEN';

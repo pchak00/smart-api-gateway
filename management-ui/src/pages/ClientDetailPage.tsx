@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { Link, useParams } from 'react-router-dom';
 import { Activity, KeyRound, Power, RotateCw, Server, ShieldAlert } from 'lucide-react';
 import { api } from '../api/client';
 import { EmptyState, PageHeader, Panel } from '../components/PageShell';
@@ -26,6 +26,15 @@ const getAlertTimeline = (alert: AbuseAlertDto) => {
   if (alert.status === 'ACKNOWLEDGED') return formatDateTime(alert.acknowledgedAt ?? alert.lastStatusChangedAt ?? alert.lastUpdatedAt);
 
   return formatDateTime(alert.createdAt ?? alert.alertedAt);
+};
+
+const getAlertUrl = (alert: AbuseAlertDto) => {
+  const params = new URLSearchParams();
+  params.set('status', (alert.status ?? 'OPEN').toLowerCase());
+  params.set('clientId', String(alert.clientId));
+  if (alert.id) params.set('alertId', String(alert.id));
+
+  return `/abuse-alerts?${params.toString()}`;
 };
 
 export const ClientDetailPage: React.FC = () => {
@@ -341,7 +350,12 @@ export const ClientDetailPage: React.FC = () => {
                     const blockedCount = alert.blockedCount ?? alert.blockedRequestCount ?? 0;
 
                     return (
-                      <div key={`${alert.createdAt ?? 'alert'}-${index}`} className="rounded-lg bg-slate-950/35 p-4">
+                      <Link
+                        key={`${alert.createdAt ?? 'alert'}-${index}`}
+                        to={getAlertUrl(alert)}
+                        aria-label={`View ${getStatusLabel(alert.status).toLowerCase()} alert with ${formatNumber(blockedCount)} blocked requests`}
+                        className="block rounded-lg bg-slate-950/35 p-4 transition-colors hover:bg-slate-950/55 focus:outline-none focus:ring-2 focus:ring-slate-700/40"
+                      >
                         <div className="flex items-start justify-between gap-3">
                           <div className="min-w-0">
                             <p className="text-sm font-medium text-slate-100">
@@ -356,7 +370,7 @@ export const ClientDetailPage: React.FC = () => {
                           </span>
                         </div>
                         <p className="mt-3 text-xs text-slate-400">{getAlertTimeline(alert)}</p>
-                      </div>
+                      </Link>
                     );
                   })}
                 </div>
