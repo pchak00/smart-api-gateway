@@ -196,7 +196,7 @@ export const PlansPage: React.FC = () => {
     : `${plans.length} ${plans.length === 1 ? 'plan' : 'plans'}`;
 
   return (
-    <div>
+    <div className="min-w-0">
       <PageHeader
         title="Plans"
         meta={errorMessage ? <span className="text-xs text-slate-500">{errorMessage}</span> : undefined}

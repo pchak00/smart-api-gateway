@@ -211,14 +211,14 @@ export const ClientDetailPage: React.FC = () => {
   ) : undefined;
 
   return (
-    <div>
+    <div className="min-w-0">
       <PageHeader
         title={client?.clientName ?? `Client ${id ?? ''}`.trim()}
         actions={actionButtons}
       />
 
       <div className="grid grid-cols-1 gap-3 lg:grid-cols-3">
-        <Panel className="p-5 transition-colors hover:bg-slate-900/45">
+        <Panel className="p-4 sm:p-5 transition-colors hover:bg-slate-900/45">
           <div className="flex items-center gap-3">
             <Server className="text-slate-600" size={18} aria-hidden="true" />
             <div>
@@ -233,7 +233,7 @@ export const ClientDetailPage: React.FC = () => {
             </div>
           </div>
         </Panel>
-        <Panel className="p-5 transition-colors hover:bg-slate-900/45">
+        <Panel className="p-4 sm:p-5 transition-colors hover:bg-slate-900/45">
           <div className="flex items-center gap-3">
             <KeyRound className="text-slate-600" size={18} aria-hidden="true" />
             <div className="min-w-0">
@@ -249,7 +249,7 @@ export const ClientDetailPage: React.FC = () => {
             </div>
           </div>
         </Panel>
-        <Panel className="p-5 transition-colors hover:bg-slate-900/45">
+        <Panel className="p-4 sm:p-5 transition-colors hover:bg-slate-900/45">
           <div className="flex items-center gap-3">
             <Activity className="text-slate-600" size={18} aria-hidden="true" />
             <div>
@@ -273,7 +273,7 @@ export const ClientDetailPage: React.FC = () => {
           />
         ) : (
           <div className="grid grid-cols-1 gap-4 xl:grid-cols-[1fr_0.75fr]">
-            <Panel className="p-5">
+            <Panel className="p-4 sm:p-5">
               <div className="mb-5 flex items-center justify-between">
                 <div>
                   <h2 className="text-sm font-semibold text-slate-100">Usage logs</h2>
@@ -330,7 +330,7 @@ export const ClientDetailPage: React.FC = () => {
               )}
             </Panel>
 
-            <Panel className="p-5">
+            <Panel className="p-4 sm:p-5">
               <div className="mb-5 flex items-center justify-between">
                 <div>
                   <h2 className="text-sm font-semibold text-slate-100">Recent alerts</h2>

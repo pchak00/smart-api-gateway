@@ -140,7 +140,7 @@ export const AdminUsersPage: React.FC = () => {
   };
 
   return (
-    <div>
+    <div className="min-w-0">
       <PageHeader
         title="Admin Users"
         meta={errorMessage ? <span className="text-xs text-slate-500">{errorMessage}</span> : undefined}

@@ -6,6 +6,12 @@
   color-scheme: dark;
 }
 
+html,
+body,
+#root {
+  min-height: 100%;
+}
+
 * {
   margin: 0;
   padding: 0;
@@ -15,6 +21,7 @@
 }
 
 body {
+  overflow-x: hidden;
   background: #020617;
   color: #e2e8f0;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',

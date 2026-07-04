@@ -157,7 +157,7 @@ export const ProvisioningPage: React.FC = () => {
   ), [plans]);
 
   return (
-    <div>
+    <div className="min-w-0">
       <SettingsTabs />
 
       <PageHeader

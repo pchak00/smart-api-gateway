@@ -157,7 +157,7 @@ export const GatewaySettingsPage: React.FC = () => {
   };
 
   return (
-    <div>
+    <div className="min-w-0">
       <SettingsTabs />
 
       <PageHeader

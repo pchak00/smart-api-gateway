@@ -44,9 +44,11 @@ const SETTINGS_ITEMS: SidebarItem[] = [
 
 interface SidebarProps {
   isSuperAdmin: boolean;
+  className?: string;
+  onNavigate?: () => void;
 }
 
-export const Sidebar: React.FC<SidebarProps> = ({ isSuperAdmin }) => {
+export const Sidebar: React.FC<SidebarProps> = ({ isSuperAdmin, className = 'h-screen w-72', onNavigate }) => {
   const location = useLocation();
   const { showToast } = useToast();
   const { logout, role, username } = useAuth();
@@ -96,10 +98,11 @@ export const Sidebar: React.FC<SidebarProps> = ({ isSuperAdmin }) => {
   };
 
   return (
-    <aside className="flex h-screen w-72 flex-col bg-slate-950 text-slate-300">
+    <aside className={`flex flex-col bg-slate-950 text-slate-300 ${className}`}>
       <div className="px-4 py-5">
         <Link
           to="/"
+          onClick={onNavigate}
           className="flex items-center gap-3 rounded-lg px-2 py-1.5 transition-colors hover:bg-slate-900/45"
           aria-label="pacific dashboard"
         >
@@ -140,6 +143,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isSuperAdmin }) => {
             <Link
               key={item.path}
               to={item.path}
+              onClick={onNavigate}
               className={`mb-1 flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition-colors ${
                 isActive
                   ? 'bg-slate-900/65 text-slate-100'
@@ -165,6 +169,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isSuperAdmin }) => {
             <Link
               key={item.path}
               to={item.path}
+              onClick={onNavigate}
               className={`mb-1 flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition-colors ${
                 isActive
                   ? 'bg-slate-900/65 text-slate-100'

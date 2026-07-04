@@ -657,14 +657,14 @@ export const AnalyticsPage: React.FC = () => {
   );
 
   return (
-    <div>
+    <div className="min-w-0">
       <PageHeader
         title="Analytics"
         meta={errorMessage ? <span className="text-xs text-slate-500">{errorMessage}</span> : undefined}
       />
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1fr_16rem]">
-        <Panel className="p-5">
+        <Panel className="p-4 sm:p-5">
           <div className="mb-5 flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
             <div className="min-w-0">
               <h2 className="text-sm font-semibold text-slate-100">Route trends</h2>
@@ -889,7 +889,7 @@ export const AnalyticsPage: React.FC = () => {
           )}
         </Panel>
 
-        <Panel className="p-5">
+        <Panel className="p-4 sm:p-5">
           <div className="flex items-center justify-between">
             <h2 className="text-sm font-semibold text-slate-100">Summary</h2>
             <div className="flex items-center gap-2">
@@ -927,7 +927,7 @@ export const AnalyticsPage: React.FC = () => {
       </div>
 
       <div className="mt-4 grid grid-cols-1 gap-4 xl:grid-cols-2">
-        <Panel className="p-5">
+        <Panel className="p-4 sm:p-5">
           <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
             <div>
               <h2 className="text-sm font-semibold text-slate-100">Routes</h2>
@@ -993,7 +993,7 @@ export const AnalyticsPage: React.FC = () => {
           )}
         </Panel>
 
-        <Panel className="p-5">
+        <Panel className="p-4 sm:p-5">
           <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
             <div>
               <h2 className="text-sm font-semibold text-slate-100">Clients</h2>

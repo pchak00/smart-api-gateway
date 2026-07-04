@@ -162,7 +162,7 @@ export const AbuseAlertsPage: React.FC = () => {
     : alerts;
 
   return (
-    <div>
+    <div className="min-w-0">
       <PageHeader
         title="Abuse Alerts"
         meta={errorMessage ? <span className="text-xs text-slate-500">{errorMessage}</span> : undefined}

@@ -306,7 +306,7 @@ export const ClientsListPage: React.FC = () => {
   ), [plans]);
 
   return (
-    <div>
+    <div className="min-w-0">
       <PageHeader
         title="Clients"
         meta={clientsMeta}

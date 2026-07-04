@@ -177,7 +177,7 @@ export const RouteLimitsPage: React.FC = () => {
   ), [plans]);
 
   return (
-    <div>
+    <div className="min-w-0">
       <PageHeader
         title="Route Limits"
         titleAccessory={

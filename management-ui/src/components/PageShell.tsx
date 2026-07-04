@@ -15,6 +15,10 @@ interface PanelProps {
   className?: string;
 }
 
+interface PageContainerProps {
+  children: React.ReactNode;
+}
+
 interface EmptyStateProps {
   icon?: LucideIcon;
   title: string;
@@ -33,26 +37,32 @@ export const PageHeader: React.FC<PageHeaderProps> = ({
   actions,
   meta
 }) => (
-  <div className="mb-7 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-    <div className="max-w-3xl">
+  <div className="mb-6 flex min-w-0 flex-col gap-4 sm:mb-7 lg:flex-row lg:items-end lg:justify-between">
+    <div className="min-w-0 max-w-3xl">
       {eyebrow && (
         <p className="mb-2 text-sm font-medium text-slate-500">
           {eyebrow}
         </p>
       )}
-      <div className="flex items-center gap-2">
-        <h1 className="text-2xl font-semibold text-slate-100">{title}</h1>
+      <div className="flex min-w-0 flex-wrap items-center gap-2">
+        <h1 className="min-w-0 text-2xl font-semibold text-slate-100">{title}</h1>
         {titleAccessory}
       </div>
       {description && <p className="mt-2 text-sm leading-6 text-slate-500">{description}</p>}
       {meta && <div className="mt-3">{meta}</div>}
     </div>
-    {actions && <div className="flex shrink-0 items-center gap-2">{actions}</div>}
+    {actions && <div className="flex shrink-0 flex-wrap items-center gap-2">{actions}</div>}
+  </div>
+);
+
+export const PageContainer: React.FC<PageContainerProps> = ({ children }) => (
+  <div className="mx-auto w-full max-w-[1360px] px-4 py-6 sm:px-5 md:px-6 lg:px-8 lg:py-8">
+    {children}
   </div>
 );
 
 export const Panel: React.FC<PanelProps> = ({ children, className = '' }) => (
-  <section className={`rounded-lg bg-slate-900/35 ${className}`}>
+  <section className={`min-w-0 rounded-lg bg-slate-900/35 ${className}`}>
     {children}
   </section>
 );

@@ -30,8 +30,8 @@ interface StateMessageProps {
 }
 
 const DashboardSection: React.FC<DashboardSectionProps> = ({ children, className = '', title, action }) => (
-  <section className={`rounded-lg bg-slate-900/20 p-5 ${className}`}>
-    <div className="mb-4 flex items-center justify-between gap-4">
+  <section className={`min-w-0 rounded-lg bg-slate-900/20 p-4 sm:p-5 ${className}`}>
+    <div className="mb-4 flex min-w-0 flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
       <h2 className="text-sm font-semibold text-slate-100">{title}</h2>
       {action}
     </div>
@@ -316,15 +316,15 @@ const GatewaySummaryStrip: React.FC<{
   ];
 
   return (
-    <section className="rounded-lg bg-slate-900/25 px-5 py-5">
-      <div className="flex flex-col gap-1 sm:flex-row sm:items-baseline sm:justify-between">
+    <section className="min-w-0 rounded-lg bg-slate-900/25 px-4 py-4 sm:px-5 sm:py-5">
+      <div className="flex min-w-0 flex-col gap-2 sm:flex-row sm:items-baseline sm:justify-between">
         <h2 className="text-sm font-semibold text-slate-100">Gateway summary</h2>
-        <div className="flex items-center gap-2">
-          <p className="text-xs text-slate-500">{trafficTrend.windowLabel}</p>
+        <div className="flex min-w-0 items-center gap-2">
+          <p className="min-w-0 truncate text-xs text-slate-500">{trafficTrend.windowLabel}</p>
           <TrendHelpTooltip />
         </div>
       </div>
-      <dl className="mt-5 grid grid-cols-2 gap-x-8 gap-y-5 md:grid-cols-3 xl:grid-cols-6">
+      <dl className="mt-5 grid grid-cols-2 gap-x-4 gap-y-5 sm:gap-x-6 md:grid-cols-3 xl:grid-cols-6">
         {metrics.map((metric) => (
           <div
             key={metric.label}
@@ -413,7 +413,7 @@ const GatewayHealthPanel: React.FC<GatewayHealthPanelProps> = ({
         </Link>
       }
     >
-      <dl className="grid gap-3 sm:grid-cols-2">
+      <dl className="grid min-w-0 gap-3 sm:grid-cols-2">
         <div className="min-w-0 rounded-md bg-slate-950/30 px-4 py-3">
           <dt className="text-xs font-medium text-slate-400">Configured upstream</dt>
           <dd className="mt-1 flex min-w-0 items-center gap-2">
@@ -433,11 +433,11 @@ const GatewayHealthPanel: React.FC<GatewayHealthPanelProps> = ({
             )}
           </dd>
         </div>
-        <div className="rounded-md bg-slate-950/30 px-4 py-3">
+        <div className="min-w-0 rounded-md bg-slate-950/30 px-4 py-3">
           <dt className="text-xs font-medium text-slate-400">Allowed / blocked</dt>
           <dd className={healthValueClass}>{allowedRequests} / {blockedRequests}</dd>
         </div>
-        <div className="rounded-md bg-slate-950/30 px-4 py-3">
+        <div className="min-w-0 rounded-md bg-slate-950/30 px-4 py-3">
           <dt className="text-xs font-medium text-slate-400">Block rate</dt>
           <dd className="mt-1 flex min-w-0 items-baseline gap-2">
             <span className="truncate text-sm font-medium text-slate-100">
@@ -485,7 +485,7 @@ const TopRoutesPanel: React.FC<TopRoutesPanelProps> = ({ routes }) => {
 
         return (
           <div key={`${routeLabel}-${index}`} className="rounded-md bg-slate-950/20 px-4 py-3">
-            <div className="flex items-center justify-between gap-4">
+            <div className="flex min-w-0 flex-col gap-2 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
               <p className="min-w-0 truncate font-mono text-xs text-slate-300" title={routeLabel}>
                 {routeLabel}
               </p>
@@ -644,7 +644,7 @@ export const DashboardPage: React.FC = () => {
   };
 
   return (
-    <div>
+    <div className="min-w-0">
       <PageHeader
         title="Dashboard"
         meta={errorMessage ? <span className="text-xs text-slate-500">{errorMessage}</span> : undefined}
@@ -657,7 +657,7 @@ export const DashboardPage: React.FC = () => {
         isTrafficLoading={isTrafficLoading}
       />
 
-      <div className="mt-5 grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1.35fr)_minmax(22rem,0.65fr)]">
+      <div className="mt-5 grid grid-cols-1 gap-4 lg:gap-5 xl:grid-cols-[minmax(0,2fr)_minmax(20rem,1fr)]">
         <GatewayHealthPanel
           settings={gatewaySettings}
           summary={summary}
@@ -717,11 +717,11 @@ export const DashboardPage: React.FC = () => {
         </DashboardSection>
       </div>
 
-      <div className={`mt-4 grid grid-cols-1 gap-4 ${canMutate ? 'xl:grid-cols-[minmax(0,1.35fr)_minmax(22rem,0.65fr)]' : ''}`}>
+      <div className={`mt-4 grid grid-cols-1 gap-4 lg:mt-5 lg:gap-5 ${canMutate ? 'xl:grid-cols-[minmax(0,2fr)_minmax(20rem,1fr)]' : ''}`}>
         <DashboardSection
           title="Top routes"
           action={
-            <div className="flex items-center gap-4">
+            <div className="flex flex-wrap items-center gap-3 sm:gap-4">
               <div className="hidden items-center gap-3 text-xs text-slate-400 sm:flex" aria-hidden="true">
                 <span className="inline-flex items-center gap-1.5">
                   <span className={`h-1.5 w-3 rounded-full ${allowedRouteSegmentClass}`} />
@@ -759,10 +759,10 @@ export const DashboardPage: React.FC = () => {
                   <Link
                     key={action.to}
                     to={action.to}
-                    className="flex items-center gap-3 rounded-md bg-slate-950/25 px-4 py-3 text-sm font-medium text-slate-300 transition-colors hover:bg-slate-950/45 hover:text-slate-100"
+                    className="flex min-w-0 items-center gap-3 rounded-md bg-slate-950/25 px-4 py-3 text-sm font-medium text-slate-300 transition-colors hover:bg-slate-950/45 hover:text-slate-100"
                   >
                     <Icon size={16} aria-hidden="true" className="shrink-0 text-slate-600" />
-                    <span>{action.label}</span>
+                    <span className="min-w-0 truncate">{action.label}</span>
                   </Link>
                 );
               })}
