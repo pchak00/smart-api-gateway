@@ -4,7 +4,7 @@ import { useAuth } from '../hooks/useAuth';
 import { useToast } from '../hooks/useToast';
 import { PrimaryButton } from '../components/Button';
 import { PasswordInput } from '../components/PasswordInput';
-import pacificLogo from '../assets/pacific-logo.png';
+import { pacificWaveMark } from '../assets/brand';
 
 export const LoginPage: React.FC = () => {
   const [username, setUsername] = useState('');
@@ -87,7 +87,7 @@ export const LoginPage: React.FC = () => {
         <section className="hidden min-h-[32rem] items-center justify-center lg:flex">
           <div className="flex items-center justify-center gap-5">
             <img
-              src={pacificLogo}
+              src={pacificWaveMark}
               alt="pacific logo"
               className="h-24 w-24 object-contain"
             />

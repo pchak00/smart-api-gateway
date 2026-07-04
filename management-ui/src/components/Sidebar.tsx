@@ -18,7 +18,7 @@ import {
 import { useToast } from '../hooks/useToast';
 import { useAuth } from '../hooks/useAuth';
 import { getRoleLabel } from '../utils/roles';
-import pacificLogo from '../assets/pacific-logo.png';
+import { pacificWaveMark } from '../assets/brand';
 
 interface SidebarItem {
   label: string;
@@ -104,7 +104,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isSuperAdmin }) => {
           aria-label="pacific dashboard"
         >
           <img
-            src={pacificLogo}
+            src={pacificWaveMark}
             alt="pacific logo"
             className="h-8 w-8 shrink-0 object-contain"
           />

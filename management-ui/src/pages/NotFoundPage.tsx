@@ -1,13 +1,13 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Compass } from 'lucide-react';
-import pacificLogo from '../assets/pacific-logo.png';
+import { pacificWaveMark } from '../assets/brand';
 
 export const NotFoundPage: React.FC = () => (
   <div className="flex min-h-screen items-center justify-center bg-slate-950 px-4">
     <div className="w-full max-w-md text-center">
       <img
-        src={pacificLogo}
+        src={pacificWaveMark}
         alt="pacific logo"
         className="mx-auto h-12 w-12 object-contain"
       />
