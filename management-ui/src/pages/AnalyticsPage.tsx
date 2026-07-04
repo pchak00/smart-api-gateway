@@ -26,9 +26,10 @@ import { useToast } from '../hooks/useToast';
 type RouteTrendMetric = 'totalRequests' | 'allowedRequests' | 'blockedRequests';
 type RouteTrendDisplayMode = 'top5' | 'top10' | 'custom';
 type NumericAnalyticsSortField = 'totalRequests' | 'allowedRequests' | 'blockedRequests' | 'blockRate';
-type AnalyticsSortField = NumericAnalyticsSortField | 'name' | 'planName';
+type RouteAnalyticsSortField = NumericAnalyticsSortField | 'name';
+type ClientAnalyticsSortField = NumericAnalyticsSortField | 'name' | 'planName';
+type AnalyticsSortField = RouteAnalyticsSortField | ClientAnalyticsSortField;
 type AnalyticsSortDirection = 'asc' | 'desc';
-type AnalyticsSortValue = `${AnalyticsSortField}:${AnalyticsSortDirection}`;
 
 interface AnalyticsSortSelection {
   field: AnalyticsSortField;
@@ -91,31 +92,20 @@ const routeTrendDisplayOptions: Array<{ key: RouteTrendDisplayMode; label: strin
 ];
 
 const routeAnalyticsSortDropdownOptions: DropdownOption[] = [
-  { value: 'totalRequests:desc', label: 'Total requests: High to low' },
-  { value: 'totalRequests:asc', label: 'Total requests: Low to high' },
-  { value: 'allowedRequests:desc', label: 'Allowed requests: High to low' },
-  { value: 'allowedRequests:asc', label: 'Allowed requests: Low to high' },
-  { value: 'blockedRequests:desc', label: 'Blocked requests: High to low' },
-  { value: 'blockedRequests:asc', label: 'Blocked requests: Low to high' },
-  { value: 'blockRate:desc', label: 'Block rate: High to low' },
-  { value: 'blockRate:asc', label: 'Block rate: Low to high' },
-  { value: 'name:asc', label: 'Name A-Z' },
-  { value: 'name:desc', label: 'Name Z-A' }
+  { value: 'totalRequests', label: 'Total requests' },
+  { value: 'allowedRequests', label: 'Allowed requests' },
+  { value: 'blockedRequests', label: 'Blocked requests' },
+  { value: 'blockRate', label: 'Block rate' },
+  { value: 'name', label: 'Name' }
 ];
 
 const clientAnalyticsSortDropdownOptions: DropdownOption[] = [
-  { value: 'totalRequests:desc', label: 'Total requests: High to low' },
-  { value: 'totalRequests:asc', label: 'Total requests: Low to high' },
-  { value: 'allowedRequests:desc', label: 'Allowed requests: High to low' },
-  { value: 'allowedRequests:asc', label: 'Allowed requests: Low to high' },
-  { value: 'blockedRequests:desc', label: 'Blocked requests: High to low' },
-  { value: 'blockedRequests:asc', label: 'Blocked requests: Low to high' },
-  { value: 'blockRate:desc', label: 'Block rate: High to low' },
-  { value: 'blockRate:asc', label: 'Block rate: Low to high' },
-  { value: 'name:asc', label: 'Client name A-Z' },
-  { value: 'name:desc', label: 'Client name Z-A' },
-  { value: 'planName:asc', label: 'Plan name A-Z' },
-  { value: 'planName:desc', label: 'Plan name Z-A' }
+  { value: 'totalRequests', label: 'Total requests' },
+  { value: 'allowedRequests', label: 'Allowed requests' },
+  { value: 'blockedRequests', label: 'Blocked requests' },
+  { value: 'blockRate', label: 'Block rate' },
+  { value: 'name', label: 'Client name' },
+  { value: 'planName', label: 'Plan name' }
 ];
 
 const getTopRouteLimit = (mode: RouteTrendDisplayMode) => (
@@ -356,24 +346,27 @@ const getClientSortName = (client: ClientAnalyticsDto) => {
   return client.clientId === undefined ? '' : `Client #${client.clientId}`;
 };
 
-const parseAnalyticsSortValue = (value: AnalyticsSortValue): AnalyticsSortSelection => {
-  const [field, direction] = value.split(':') as [AnalyticsSortField, AnalyticsSortDirection];
+const isTextSortField = (field: AnalyticsSortField) => field === 'name' || field === 'planName';
 
-  return { field, direction };
+const getSortDirectionLabel = (field: AnalyticsSortField, direction: AnalyticsSortDirection) => {
+  if (isTextSortField(field)) {
+    return direction === 'asc' ? 'Sort A to Z' : 'Sort Z to A';
+  }
+
+  return direction === 'desc' ? 'Sort high to low' : 'Sort low to high';
 };
 
-const sortRouteAnalytics = (routes: RouteAnalyticsDto[], sortValue: AnalyticsSortValue) => (
+const sortRouteAnalytics = (routes: RouteAnalyticsDto[], sort: AnalyticsSortSelection) => (
   [...routes].sort((first, second) => {
-    const { field, direction } = parseAnalyticsSortValue(sortValue);
+    const { field, direction } = sort;
 
     if (field === 'name') {
       return compareText(first.route, second.route, direction);
     }
 
-    const routeField = field === 'planName' ? 'totalRequests' : field;
     const metricDifference = compareMetric(
-      getRouteMetricSortValue(first, routeField),
-      getRouteMetricSortValue(second, routeField),
+      getRouteMetricSortValue(first, field as NumericAnalyticsSortField),
+      getRouteMetricSortValue(second, field as NumericAnalyticsSortField),
       direction
     );
 
@@ -381,9 +374,9 @@ const sortRouteAnalytics = (routes: RouteAnalyticsDto[], sortValue: AnalyticsSor
   })
 );
 
-const sortClientAnalytics = (clients: ClientAnalyticsDto[], sortValue: AnalyticsSortValue) => (
+const sortClientAnalytics = (clients: ClientAnalyticsDto[], sort: AnalyticsSortSelection) => (
   [...clients].sort((first, second) => {
-    const { field, direction } = parseAnalyticsSortValue(sortValue);
+    const { field, direction } = sort;
 
     if (field === 'name') {
       return compareText(getClientSortName(first), getClientSortName(second), direction);
@@ -408,6 +401,29 @@ const sortClientAnalytics = (clients: ClientAnalyticsDto[], sortValue: Analytics
   })
 );
 
+interface SortDirectionButtonProps {
+  field: AnalyticsSortField;
+  direction: AnalyticsSortDirection;
+  onToggle: () => void;
+}
+
+const SortDirectionButton: React.FC<SortDirectionButtonProps> = ({ field, direction, onToggle }) => {
+  const Icon = direction === 'desc' ? ArrowDown : ArrowUp;
+  const label = getSortDirectionLabel(field, direction);
+
+  return (
+    <button
+      type="button"
+      onClick={onToggle}
+      aria-label={label}
+      title={label}
+      className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-transparent bg-slate-950/20 text-slate-500 transition-colors hover:bg-slate-900/45 hover:text-slate-200 focus:outline-none focus:ring-2 focus:ring-slate-700/20"
+    >
+      <Icon size={14} strokeWidth={2.2} aria-hidden="true" />
+    </button>
+  );
+};
+
 export const AnalyticsPage: React.FC = () => {
   const navigate = useNavigate();
   const { showToast } = useToast();
@@ -417,8 +433,10 @@ export const AnalyticsPage: React.FC = () => {
   const [trafficAnalytics, setTrafficAnalytics] = useState<TrafficAnalyticsDto[]>([]);
   const [selectedRouteMetric, setSelectedRouteMetric] = useState<RouteTrendMetric>('totalRequests');
   const [routeTrendMode, setRouteTrendMode] = useState<RouteTrendDisplayMode>('top5');
-  const [routeAnalyticsSort, setRouteAnalyticsSort] = useState<AnalyticsSortValue>('totalRequests:desc');
-  const [clientAnalyticsSort, setClientAnalyticsSort] = useState<AnalyticsSortValue>('totalRequests:desc');
+  const [routeAnalyticsSortField, setRouteAnalyticsSortField] = useState<RouteAnalyticsSortField>('totalRequests');
+  const [routeAnalyticsSortDirection, setRouteAnalyticsSortDirection] = useState<AnalyticsSortDirection>('desc');
+  const [clientAnalyticsSortField, setClientAnalyticsSortField] = useState<ClientAnalyticsSortField>('totalRequests');
+  const [clientAnalyticsSortDirection, setClientAnalyticsSortDirection] = useState<AnalyticsSortDirection>('desc');
   const [clientPlanFilter, setClientPlanFilter] = useState('');
   const [routeSearch, setRouteSearch] = useState('');
   const [selectedCustomRoutes, setSelectedCustomRoutes] = useState<string[]>([]);
@@ -577,6 +595,10 @@ export const AnalyticsPage: React.FC = () => {
   }, [routeTrafficAnalytics, routeTrendRoutes, selectedRouteMetric]);
 
   const summaryTrend = useMemo(() => getSummaryTrend(trafficAnalytics), [trafficAnalytics]);
+  const routeAnalyticsSort = useMemo<AnalyticsSortSelection>(() => ({
+    field: routeAnalyticsSortField,
+    direction: routeAnalyticsSortDirection
+  }), [routeAnalyticsSortDirection, routeAnalyticsSortField]);
   const sortedRouteAnalytics = useMemo(
     () => sortRouteAnalytics(routeAnalytics, routeAnalyticsSort),
     [routeAnalytics, routeAnalyticsSort]
@@ -604,6 +626,10 @@ export const AnalyticsPage: React.FC = () => {
       ? clientAnalytics.filter((client) => client.planName?.trim() === clientPlanFilter)
       : clientAnalytics
   ), [clientAnalytics, clientPlanFilter]);
+  const clientAnalyticsSort = useMemo<AnalyticsSortSelection>(() => ({
+    field: clientAnalyticsSortField,
+    direction: clientAnalyticsSortDirection
+  }), [clientAnalyticsSortDirection, clientAnalyticsSortField]);
   const sortedClientAnalytics = useMemo(
     () => sortClientAnalytics(filteredClientAnalytics, clientAnalyticsSort),
     [clientAnalyticsSort, filteredClientAnalytics]
@@ -615,6 +641,12 @@ export const AnalyticsPage: React.FC = () => {
       ? 'Add another route...'
       : 'Search routes...';
   const hasClientRowsForPlanFilter = clientAnalytics.length > 0 && sortedClientAnalytics.length === 0;
+  const toggleRouteAnalyticsSortDirection = () => {
+    setRouteAnalyticsSortDirection((direction) => direction === 'desc' ? 'asc' : 'desc');
+  };
+  const toggleClientAnalyticsSortDirection = () => {
+    setClientAnalyticsSortDirection((direction) => direction === 'desc' ? 'asc' : 'desc');
+  };
   const openClientDetail = (client: ClientAnalyticsDto) => {
     if (typeof client.clientId !== 'number') return;
     navigate(`/clients/${client.clientId}`);
@@ -902,15 +934,20 @@ export const AnalyticsPage: React.FC = () => {
             </div>
             <div className="flex items-center gap-3">
               <AppDropdown
-                value={routeAnalyticsSort}
-                onChange={(value) => setRouteAnalyticsSort(value as AnalyticsSortValue)}
+                value={routeAnalyticsSortField}
+                onChange={(value) => setRouteAnalyticsSortField(value as RouteAnalyticsSortField)}
                 options={routeAnalyticsSortDropdownOptions}
                 ariaLabel="Sort route analytics"
                 fullWidth={false}
                 align="right"
                 displayValue="Sort"
-                buttonClassName="h-8 border-slate-800/25 bg-slate-950/25 px-2.5 text-xs text-slate-400 hover:border-slate-700/35 hover:bg-slate-900/45 hover:text-slate-200 focus:border-slate-700/45 focus:ring-slate-700/20"
-                menuClassName="w-56"
+                buttonClassName="h-8 border-transparent bg-slate-950/20 px-2.5 text-xs text-slate-400 hover:border-transparent hover:bg-slate-900/45 hover:text-slate-200 focus:border-slate-700/30 focus:ring-slate-700/20"
+                menuClassName="w-44"
+              />
+              <SortDirectionButton
+                field={routeAnalyticsSortField}
+                direction={routeAnalyticsSortDirection}
+                onToggle={toggleRouteAnalyticsSortDirection}
               />
               <Route className="text-slate-600" size={18} aria-hidden="true" />
             </div>
@@ -970,19 +1007,24 @@ export const AnalyticsPage: React.FC = () => {
                 fullWidth={false}
                 align="right"
                 displayValue={`Plan: ${clientPlanFilter ? selectedClientPlanLabel : 'All'}`}
-                buttonClassName="h-8 min-w-28 border-slate-800/25 bg-slate-950/25 px-2.5 text-xs text-slate-400 hover:border-slate-700/35 hover:bg-slate-900/45 hover:text-slate-200 focus:border-slate-700/45 focus:ring-slate-700/20"
+                buttonClassName="h-8 min-w-28 border-transparent bg-slate-950/20 px-2.5 text-xs text-slate-400 hover:border-transparent hover:bg-slate-900/45 hover:text-slate-200 focus:border-slate-700/30 focus:ring-slate-700/20"
                 menuClassName="w-44"
               />
               <AppDropdown
-                value={clientAnalyticsSort}
-                onChange={(value) => setClientAnalyticsSort(value as AnalyticsSortValue)}
+                value={clientAnalyticsSortField}
+                onChange={(value) => setClientAnalyticsSortField(value as ClientAnalyticsSortField)}
                 options={clientAnalyticsSortDropdownOptions}
                 ariaLabel="Sort client analytics"
                 fullWidth={false}
                 align="right"
                 displayValue="Sort"
-                buttonClassName="h-8 border-slate-800/25 bg-slate-950/25 px-2.5 text-xs text-slate-400 hover:border-slate-700/35 hover:bg-slate-900/45 hover:text-slate-200 focus:border-slate-700/45 focus:ring-slate-700/20"
-                menuClassName="w-56"
+                buttonClassName="h-8 border-transparent bg-slate-950/20 px-2.5 text-xs text-slate-400 hover:border-transparent hover:bg-slate-900/45 hover:text-slate-200 focus:border-slate-700/30 focus:ring-slate-700/20"
+                menuClassName="w-44"
+              />
+              <SortDirectionButton
+                field={clientAnalyticsSortField}
+                direction={clientAnalyticsSortDirection}
+                onToggle={toggleClientAnalyticsSortDirection}
               />
               <Users className="text-slate-600" size={18} aria-hidden="true" />
             </div>
