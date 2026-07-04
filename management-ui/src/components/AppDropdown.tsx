@@ -14,13 +14,14 @@ interface AppDropdownProps {
   value: string;
   options: DropdownOption[];
   onChange: (value: string) => void;
-  displayValue?: string;
+  displayValue?: React.ReactNode;
   fullWidth?: boolean;
   align?: 'left' | 'right';
   className?: string;
   buttonClassName?: string;
   menuClassName?: string;
   disabled?: boolean;
+  showChevron?: boolean;
 }
 
 const cx = (...classes: Array<string | false | undefined>) =>
@@ -38,7 +39,8 @@ export const AppDropdown: React.FC<AppDropdownProps> = ({
   className = '',
   buttonClassName = '',
   menuClassName = '',
-  disabled = false
+  disabled = false,
+  showChevron = true
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement | null>(null);
@@ -85,11 +87,13 @@ export const AppDropdown: React.FC<AppDropdownProps> = ({
         )}
       >
         <span className="min-w-0 truncate">{displayValue ?? selectedOption?.label ?? 'Select'}</span>
-        <ChevronDown
-          size={15}
-          aria-hidden="true"
-          className={cx('shrink-0 text-slate-600 transition-transform', isOpen && 'rotate-180')}
-        />
+        {showChevron && (
+          <ChevronDown
+            size={15}
+            aria-hidden="true"
+            className={cx('shrink-0 text-slate-600 transition-transform', isOpen && 'rotate-180')}
+          />
+        )}
       </button>
 
       {isOpen && (

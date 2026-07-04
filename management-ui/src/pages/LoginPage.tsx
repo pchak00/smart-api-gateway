@@ -85,14 +85,16 @@ export const LoginPage: React.FC = () => {
         </section>
 
         <section className="hidden min-h-[32rem] items-center justify-center lg:flex">
-          <div className="text-center">
+          <div className="flex items-center justify-center gap-5">
             <img
               src={pacificLogo}
               alt="pacific logo"
-              className="mx-auto h-28 w-28 object-contain"
+              className="h-24 w-24 object-contain"
             />
-            <p className="mt-7 text-4xl font-semibold text-slate-100">pacific</p>
-            <p className="mt-3 text-sm text-slate-500">smart api gateway management</p>
+            <div className="text-left">
+              <p className="text-4xl font-semibold leading-none text-slate-100">pacific</p>
+              <p className="mt-3 text-sm text-slate-500">smart api gateway</p>
+            </div>
           </div>
         </section>
       </main>
