@@ -234,7 +234,7 @@ export const RouteLimitsPage: React.FC = () => {
             {editingLimit && (
               <div className="text-sm">
                 <p className="text-slate-500">Plan</p>
-                <p className="mt-2 rounded-md border border-slate-800 bg-slate-950 px-3 py-2 text-slate-300">
+                <p className="mt-2 quiet-static-field">
                   {getPlanLabel(editingLimit.planName ?? 'Unknown')}
                 </p>
               </div>
@@ -250,7 +250,7 @@ export const RouteLimitsPage: React.FC = () => {
                 id="route-pattern"
                 value={routePattern}
                 onChange={(event) => setRoutePattern(event.target.value)}
-                className="mt-2 w-full rounded-md border border-slate-800 bg-slate-950 px-3 py-2 font-mono text-sm text-slate-100 outline-none focus:border-slate-600"
+                className="mt-2 quiet-field font-mono"
                 required
               />
             </div>

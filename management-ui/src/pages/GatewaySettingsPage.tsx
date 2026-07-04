@@ -188,7 +188,7 @@ export const GatewaySettingsPage: React.FC = () => {
               <input
                 value={formState.upstreamBaseUrl}
                 onChange={(event) => updateField('upstreamBaseUrl', event.target.value)}
-                className="mt-2 w-full rounded-md border border-slate-800 bg-slate-950 px-3 py-2 text-sm text-slate-100 outline-none transition-colors focus:border-slate-600 disabled:cursor-not-allowed disabled:text-slate-500"
+                className="mt-2 quiet-field"
                 placeholder="http://backend-service:8081"
                 disabled={!canMutate || isSaving || isTestingConnection}
                 required
@@ -200,7 +200,7 @@ export const GatewaySettingsPage: React.FC = () => {
               <input
                 value={formState.healthCheckPath}
                 onChange={(event) => updateField('healthCheckPath', event.target.value)}
-                className="mt-2 w-full rounded-md border border-slate-800 bg-slate-950 px-3 py-2 text-sm text-slate-100 outline-none transition-colors focus:border-slate-600 disabled:cursor-not-allowed disabled:text-slate-500"
+                className="mt-2 quiet-field"
                 placeholder="/health"
                 disabled={!canMutate || isSaving || isTestingConnection}
                 required

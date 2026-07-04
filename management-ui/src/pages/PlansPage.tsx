@@ -232,7 +232,7 @@ export const PlansPage: React.FC = () => {
             <input
               value={planName}
               onChange={(event) => setPlanName(event.target.value)}
-              className="mt-2 w-full rounded-md border border-slate-800 bg-slate-950 px-3 py-2 text-sm text-slate-100 outline-none focus:border-slate-600"
+              className="mt-2 quiet-field"
               required
             />
           </label>

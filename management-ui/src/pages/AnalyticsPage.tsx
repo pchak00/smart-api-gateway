@@ -417,7 +417,7 @@ const SortDirectionButton: React.FC<SortDirectionButtonProps> = ({ field, direct
       onClick={onToggle}
       aria-label={label}
       title={label}
-      className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-transparent bg-slate-950/20 text-slate-500 transition-colors hover:bg-slate-900/45 hover:text-slate-200 focus:outline-none focus:ring-2 focus:ring-slate-700/20"
+      className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-slate-500 transition-colors hover:bg-slate-900/35 hover:text-slate-200 focus:outline-none focus:ring-2 focus:ring-cyan-400/20"
     >
       <Icon size={14} strokeWidth={2.2} aria-hidden="true" />
     </button>
@@ -671,32 +671,32 @@ export const AnalyticsPage: React.FC = () => {
               <p className="mt-1 text-xs text-slate-400">{analyticsWindowLabel}</p>
             </div>
             <div className="flex flex-wrap items-center gap-3">
-              <div className="flex rounded-md bg-slate-950/25 p-0.5">
+              <div className="flex gap-1">
                 {routeTrendMetricOptions.map((option) => (
                   <button
                     key={option.key}
                     type="button"
                     onClick={() => setSelectedRouteMetric(option.key)}
-                    className={`rounded px-2.5 py-1 text-xs font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-slate-700/25 ${
+                    className={`rounded px-2.5 py-1 text-xs font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-cyan-400/20 ${
                       selectedRouteMetric === option.key
-                        ? 'bg-slate-800/65 text-slate-100'
-                        : 'text-slate-400 hover:bg-slate-900/45 hover:text-slate-200'
+                        ? 'bg-slate-800/45 text-slate-100'
+                        : 'text-slate-400 hover:bg-slate-900/35 hover:text-slate-200'
                     }`}
                   >
                     {option.label}
                   </button>
                 ))}
               </div>
-              <div className="flex rounded-md bg-slate-950/25 p-0.5">
+              <div className="flex gap-1">
                 {routeTrendDisplayOptions.map((option) => (
                   <button
                     key={option.key}
                     type="button"
                     onClick={() => setRouteTrendMode(option.key)}
-                    className={`rounded px-2.5 py-1 text-xs font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-slate-700/25 ${
+                    className={`rounded px-2.5 py-1 text-xs font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-cyan-400/20 ${
                       routeTrendMode === option.key
-                        ? 'bg-slate-800/65 text-slate-100'
-                        : 'text-slate-400 hover:bg-slate-900/45 hover:text-slate-200'
+                        ? 'bg-slate-800/45 text-slate-100'
+                        : 'text-slate-400 hover:bg-slate-900/35 hover:text-slate-200'
                     }`}
                   >
                     {option.label}
@@ -710,7 +710,7 @@ export const AnalyticsPage: React.FC = () => {
           {routeTrendMode === 'custom' && !isLoading && !errorMessage && routeTrendRouteCount > 0 && (
             <div className="mb-5 space-y-3">
               <div className="relative max-w-xl">
-                <div className="flex items-center rounded-md border border-slate-800 bg-slate-950/75 px-3 transition-colors focus-within:border-slate-600">
+                <div className="flex items-center border-b border-slate-800/70 bg-transparent transition-colors hover:border-slate-700/90 focus-within:border-cyan-400/70 focus-within:outline focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-cyan-400/25">
                   <Search className="mr-2 shrink-0 text-slate-700" size={15} aria-hidden="true" />
                   <input
                     type="search"
@@ -941,7 +941,7 @@ export const AnalyticsPage: React.FC = () => {
                 fullWidth={false}
                 align="right"
                 displayValue="Sort"
-                buttonClassName="h-8 border-transparent bg-slate-950/20 px-2.5 text-xs text-slate-400 hover:border-transparent hover:bg-slate-900/45 hover:text-slate-200 focus:border-slate-700/30 focus:ring-slate-700/20"
+                buttonClassName="h-8 px-0 text-xs text-slate-400"
                 menuClassName="w-44"
               />
               <SortDirectionButton
@@ -1007,7 +1007,7 @@ export const AnalyticsPage: React.FC = () => {
                 fullWidth={false}
                 align="right"
                 displayValue={`Plan: ${clientPlanFilter ? selectedClientPlanLabel : 'All'}`}
-                buttonClassName="h-8 min-w-28 border-transparent bg-slate-950/20 px-2.5 text-xs text-slate-400 hover:border-transparent hover:bg-slate-900/45 hover:text-slate-200 focus:border-slate-700/30 focus:ring-slate-700/20"
+                buttonClassName="h-8 min-w-28 px-0 text-xs text-slate-400"
                 menuClassName="w-44"
               />
               <AppDropdown
@@ -1018,7 +1018,7 @@ export const AnalyticsPage: React.FC = () => {
                 fullWidth={false}
                 align="right"
                 displayValue="Sort"
-                buttonClassName="h-8 border-transparent bg-slate-950/20 px-2.5 text-xs text-slate-400 hover:border-transparent hover:bg-slate-900/45 hover:text-slate-200 focus:border-slate-700/30 focus:ring-slate-700/20"
+                buttonClassName="h-8 px-0 text-xs text-slate-400"
                 menuClassName="w-44"
               />
               <SortDirectionButton

@@ -167,16 +167,16 @@ export const AbuseAlertsPage: React.FC = () => {
         title="Abuse Alerts"
         meta={errorMessage ? <span className="text-xs text-slate-500">{errorMessage}</span> : undefined}
         actions={
-          <div className="flex rounded-md border border-slate-800/70 bg-slate-950/40 p-1">
+          <div className="flex gap-1">
             {statusFilters.map((filter) => (
               <button
                 key={filter.value}
                 type="button"
                 onClick={() => handleStatusFilterChange(filter.value)}
-                className={`rounded px-3 py-1.5 text-xs font-medium transition-colors ${
+                className={`rounded px-3 py-1.5 text-xs font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-cyan-400/20 ${
                   selectedStatus === filter.value
-                    ? 'bg-slate-800/80 text-slate-100'
-                    : 'text-slate-500 hover:bg-slate-900/60 hover:text-slate-300'
+                    ? 'bg-slate-800/45 text-slate-100'
+                    : 'text-slate-500 hover:bg-slate-900/35 hover:text-slate-300'
                 }`}
               >
                 {filter.label}

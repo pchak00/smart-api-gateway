@@ -10,6 +10,14 @@ import { canManageAdminUser, getAssignableRoles, getRoleLabel, isOwnerRole, isSu
 import { RowActions } from '../components/RowActions';
 import { getApiErrorMessage } from '../utils/apiError';
 import { PasswordInput } from '../components/PasswordInput';
+import { AppDropdown, DropdownOption } from '../components/AppDropdown';
+
+const toRoleOptions = (roles: AdminRole[]): DropdownOption[] => (
+  roles.map((adminRole) => ({
+    value: adminRole,
+    label: getRoleLabel(adminRole)
+  }))
+);
 
 export const AdminUsersPage: React.FC = () => {
   const { role, username } = useAuth();
@@ -25,6 +33,7 @@ export const AdminUsersPage: React.FC = () => {
   const [newRole, setNewRole] = useState<AdminRole>('READ_ONLY_ADMIN');
   const [selectedRole, setSelectedRole] = useState<AdminRole>('READ_ONLY_ADMIN');
   const assignableRoles = useMemo(() => getAssignableRoles(role), [role]);
+  const assignableRoleOptions = useMemo(() => toRoleOptions(assignableRoles), [assignableRoles]);
   const canCreateAdminUsers = assignableRoles.length > 0;
   const writeTooltip = !canCreateAdminUsers ? 'Owner or Admin required' : undefined;
 
@@ -168,7 +177,7 @@ export const AdminUsersPage: React.FC = () => {
             <input
               value={newUsername}
               onChange={(event) => setNewUsername(event.target.value)}
-              className="mt-2 w-full rounded-md border border-slate-800 bg-slate-950 px-3 py-2 text-sm text-slate-100 outline-none focus:border-slate-600"
+              className="mt-2 quiet-field"
               required
             />
           </label>
@@ -178,24 +187,20 @@ export const AdminUsersPage: React.FC = () => {
               value={newPassword}
               onChange={(event) => setNewPassword(event.target.value)}
               wrapperClassName="mt-2"
-              inputClassName="w-full rounded-md border border-slate-800 bg-slate-950 px-3 py-2 text-sm text-slate-100 outline-none focus:border-slate-600"
+              inputClassName="quiet-field"
               required
             />
           </label>
-          <label className="block text-sm text-slate-500">
-            Role
-            <select
+          <div className="block text-sm text-slate-500">
+            <span>Role</span>
+            <AppDropdown
               value={newRole}
-              onChange={(event) => setNewRole(event.target.value as AdminRole)}
-              className="mt-2 w-full rounded-md border border-slate-800 bg-slate-950 px-3 py-2 text-sm text-slate-100 outline-none focus:border-slate-600"
-            >
-              {assignableRoles.map((assignableRole) => (
-                <option key={assignableRole} value={assignableRole}>
-                  {getRoleLabel(assignableRole)}
-                </option>
-              ))}
-            </select>
-          </label>
+              onChange={(value) => setNewRole(value as AdminRole)}
+              options={assignableRoleOptions}
+              ariaLabel="Select admin role"
+              className="mt-2"
+            />
+          </div>
           <div className="flex gap-2">
             <PrimaryButton type="submit" disabled={isSubmitting}>
               Create
@@ -213,20 +218,16 @@ export const AdminUsersPage: React.FC = () => {
             <p className="text-sm font-medium text-slate-100">{editingAdmin.username}</p>
             <p className="mt-1 text-xs text-slate-500">Update access level</p>
           </div>
-          <label className="block min-w-48 text-sm text-slate-500">
-            Role
-            <select
+          <div className="block min-w-48 text-sm text-slate-500">
+            <span>Role</span>
+            <AppDropdown
               value={selectedRole}
-              onChange={(event) => setSelectedRole(event.target.value as AdminRole)}
-              className="mt-2 w-full rounded-md border border-slate-800 bg-slate-950 px-3 py-2 text-sm text-slate-100 outline-none focus:border-slate-600"
-            >
-              {getEditableRoles(editingAdmin.role).map((editableRole) => (
-                <option key={editableRole} value={editableRole}>
-                  {getRoleLabel(editableRole)}
-                </option>
-              ))}
-            </select>
-          </label>
+              onChange={(value) => setSelectedRole(value as AdminRole)}
+              options={toRoleOptions(getEditableRoles(editingAdmin.role))}
+              ariaLabel="Select replacement admin role"
+              className="mt-2"
+            />
+          </div>
           <PrimaryButton type="submit" disabled={isSubmitting}>
             Save
           </PrimaryButton>
