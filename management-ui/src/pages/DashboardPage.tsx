@@ -691,7 +691,7 @@ export const DashboardPage: React.FC = () => {
               </span>
             </StateMessage>
           ) : (
-            <div className="divide-y divide-slate-800/35">
+            <div className="space-y-1">
               {visibleAlerts.map((alert) => (
                 <Link
                   key={alert.id}

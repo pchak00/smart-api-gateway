@@ -4,7 +4,7 @@ import { api } from '../api/client';
 import { useAuth } from '../hooks/useAuth';
 import { useToast } from '../hooks/useToast';
 import { PlanDto, RouteLimitDto } from '../types';
-import { PrimaryButton, SecondaryButton } from '../components/Button';
+import { IconButton, PrimaryButton, SecondaryButton } from '../components/Button';
 import { ListSearch } from '../components/ListSearch';
 import { EmptyState, PageHeader } from '../components/PageShell';
 import { RowActions } from '../components/RowActions';
@@ -196,19 +196,19 @@ export const RouteLimitsPage: React.FC = () => {
           resultLabel={!isLoading && !errorMessage ? routeLimitResultLabel : undefined}
         />
         <div className="flex shrink-0">
-          <PrimaryButton
+          <IconButton
             type="button"
             disabled={!canMutate}
-            tooltip={writeTooltip}
+            tooltip={canMutate ? 'Add route limit' : writeTooltip ?? 'Admin required'}
+            aria-label="Add route limit"
             onClick={() => {
               setEditingLimit(null);
               resetForm();
               setIsCreateOpen((open) => !open);
             }}
           >
-            <Plus size={16} aria-hidden="true" />
-            Add Route Limit
-          </PrimaryButton>
+            <Plus size={20} strokeWidth={2.2} aria-hidden="true" />
+          </IconButton>
         </div>
       </div>
 
@@ -316,7 +316,7 @@ export const RouteLimitsPage: React.FC = () => {
                   </th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-800/35">
+              <tbody>
                 {filteredRouteLimits.map((limit) => {
                   const planName = limit.planName ?? 'Unknown';
                   const routePath = limit.routePattern ?? limit.path ?? 'Unknown route';
@@ -325,10 +325,7 @@ export const RouteLimitsPage: React.FC = () => {
                   return (
                     <tr key={limit.id ?? `${limit.planId ?? 'plan'}-${routePath}`} className="transition-colors hover:bg-slate-900/25">
                       <td className="px-4 py-4">
-                        <div className="flex items-center gap-3">
-                          <Route className="text-slate-600" size={16} aria-hidden="true" />
-                          <span className="font-mono text-sm text-slate-100">{routePath}</span>
-                        </div>
+                        <span className="font-mono text-sm text-slate-100">{routePath}</span>
                       </td>
                       <td className="px-4 py-4 text-sm text-slate-300">
                         {getPlanLabel(planName)}

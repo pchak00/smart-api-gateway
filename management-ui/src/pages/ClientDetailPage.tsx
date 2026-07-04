@@ -303,7 +303,7 @@ export const ClientDetailPage: React.FC = () => {
                         <th className="px-4 py-3 text-left text-xs font-medium text-slate-400">Time</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-800/35">
+                    <tbody>
                       {usageLogs.map((log) => {
                         const allowed = log.allowed ?? log.isAllowed ?? false;
 

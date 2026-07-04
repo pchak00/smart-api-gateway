@@ -4,7 +4,7 @@ import { api } from '../api/client';
 import { useAuth } from '../hooks/useAuth';
 import { useToast } from '../hooks/useToast';
 import { ClientDto, PlanDto } from '../types';
-import { PrimaryButton, SecondaryButton } from '../components/Button';
+import { IconButton, PrimaryButton, SecondaryButton } from '../components/Button';
 import { ListSearch } from '../components/ListSearch';
 import { EmptyState, PageHeader } from '../components/PageShell';
 import { RowActions } from '../components/RowActions';
@@ -210,15 +210,15 @@ export const PlansPage: React.FC = () => {
           resultLabel={!isLoading && !errorMessage ? planResultLabel : undefined}
         />
         <div className="flex shrink-0">
-          <PrimaryButton
+          <IconButton
             type="button"
             disabled={!canMutate}
-            tooltip={writeTooltip}
+            tooltip={canMutate ? 'Create plan' : writeTooltip ?? 'Admin required'}
+            aria-label="Create plan"
             onClick={startCreate}
           >
-            <Plus size={16} aria-hidden="true" />
-            Create Plan
-          </PrimaryButton>
+            <Plus size={20} strokeWidth={2.2} aria-hidden="true" />
+          </IconButton>
         </div>
       </div>
 
@@ -308,14 +308,11 @@ export const PlansPage: React.FC = () => {
                   </th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-800/35">
+              <tbody>
                 {filteredPlans.map((plan) => (
                   <tr key={plan.id ?? plan.planName} className="transition-colors hover:bg-slate-900/25">
                     <td className="px-4 py-4">
-                      <div className="flex items-center gap-3">
-                        <CreditCard className="text-slate-600" size={16} aria-hidden="true" />
-                        <span className="text-sm font-medium text-slate-100">{getPlanLabel(plan.planName)}</span>
-                      </div>
+                      <span className="text-sm font-medium text-slate-100">{getPlanLabel(plan.planName)}</span>
                     </td>
                     <td className="px-4 py-4 text-sm text-slate-300">{plan.requestsPerMinute}</td>
                     <td className="px-4 py-4 text-sm text-slate-400">{getClientCountLabel(plan.planName)}</td>

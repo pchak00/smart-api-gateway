@@ -1,11 +1,11 @@
 import React, { FormEvent, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Server, Users } from 'lucide-react';
+import { Plus, Users } from 'lucide-react';
 import { api } from '../api/client';
 import { ClientDto, PlanDto } from '../types';
 import { useAuth } from '../hooks/useAuth';
 import { useToast } from '../hooks/useToast';
-import { PrimaryButton, SecondaryButton } from '../components/Button';
+import { IconButton, PrimaryButton, SecondaryButton } from '../components/Button';
 import { ListSearch } from '../components/ListSearch';
 import { EmptyState, PageHeader } from '../components/PageShell';
 import { RowActions } from '../components/RowActions';
@@ -336,19 +336,19 @@ export const ClientsListPage: React.FC = () => {
           </label>
         </div>
         <div className="flex shrink-0">
-          <PrimaryButton
+          <IconButton
             type="button"
             disabled={!canMutate}
-            tooltip={!canMutate ? 'Admin required' : undefined}
+            tooltip={canMutate ? 'Create client' : 'Admin required'}
+            aria-label="Create client"
             onClick={() => {
               resetCreateForm();
               setEditingClient(null);
               setIsCreateOpen((open) => !open);
             }}
           >
-            <Plus size={16} aria-hidden="true" />
-            Create Client
-          </PrimaryButton>
+            <Plus size={20} strokeWidth={2.2} aria-hidden="true" />
+          </IconButton>
         </div>
       </div>
 
@@ -469,7 +469,7 @@ export const ClientsListPage: React.FC = () => {
                   </th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-800/35">
+              <tbody>
                 {filteredClients.map((client) => {
                   const hasBackendId = typeof client.id === 'number';
                   const planName = client.plan?.planName ?? client.planName ?? 'Unknown';
@@ -500,10 +500,7 @@ export const ClientsListPage: React.FC = () => {
                       }`}
                     >
                       <td className="px-4 py-4">
-                        <div className="flex items-center gap-3">
-                          <Server className="text-slate-600" size={16} aria-hidden="true" />
-                          <span className="text-sm font-medium text-slate-100">{client.clientName}</span>
-                        </div>
+                        <span className="text-sm font-medium text-slate-100">{client.clientName}</span>
                       </td>
                       <td className="px-4 py-4">
                         <SensitiveValue

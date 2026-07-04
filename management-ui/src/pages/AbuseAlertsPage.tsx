@@ -215,7 +215,7 @@ export const AbuseAlertsPage: React.FC = () => {
                   </th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-800/35">
+              <tbody>
                 {visibleAlerts.map((alert, index) => {
                   const status = alert.status ?? 'OPEN';
                   const blockedCount = alert.blockedCount ?? alert.blockedRequestCount ?? 0;

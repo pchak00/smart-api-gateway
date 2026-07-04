@@ -3,7 +3,7 @@ import { Plus, UserCog } from 'lucide-react';
 import { api } from '../api/client';
 import { useAuth } from '../hooks/useAuth';
 import { useToast } from '../hooks/useToast';
-import { PrimaryButton, SecondaryButton } from '../components/Button';
+import { IconButton, PrimaryButton, SecondaryButton } from '../components/Button';
 import { EmptyState, PageHeader } from '../components/PageShell';
 import { AdminRole, AdminUserDto } from '../types';
 import { canManageAdminUser, getAssignableRoles, getRoleLabel, isOwnerRole, isSuperAdminRole } from '../utils/roles';
@@ -145,19 +145,19 @@ export const AdminUsersPage: React.FC = () => {
         title="Admin Users"
         meta={errorMessage ? <span className="text-xs text-slate-500">{errorMessage}</span> : undefined}
         actions={
-          <PrimaryButton
+          <IconButton
             type="button"
             disabled={!canCreateAdminUsers}
-            tooltip={writeTooltip}
+            tooltip={canCreateAdminUsers ? 'Create admin' : writeTooltip ?? 'Owner or Admin required'}
+            aria-label="Create admin"
             onClick={() => {
               setEditingAdmin(null);
               resetCreateForm();
               setIsCreateOpen((open) => !open);
             }}
           >
-            <Plus size={16} aria-hidden="true" />
-            Create Admin
-          </PrimaryButton>
+            <Plus size={20} strokeWidth={2.2} aria-hidden="true" />
+          </IconButton>
         }
       />
 
@@ -263,7 +263,7 @@ export const AdminUsersPage: React.FC = () => {
                   </th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-800/35">
+              <tbody>
                 {adminUsers.map((adminUser) => {
                   const canManageRow = canManageAdminUser(role, adminUser.role);
                   const editableRoles = getEditableRoles(adminUser.role);
@@ -274,10 +274,7 @@ export const AdminUsersPage: React.FC = () => {
                   return (
                     <tr key={adminUser.id ?? adminUser.username} className="transition-colors hover:bg-slate-900/25">
                       <td className="px-4 py-4">
-                        <div className="flex items-center gap-3">
-                          <UserCog className="text-slate-600" size={16} aria-hidden="true" />
-                          <span className="text-sm font-medium text-slate-100">{adminUser.username}</span>
-                        </div>
+                        <span className="text-sm font-medium text-slate-100">{adminUser.username}</span>
                       </td>
                       <td className="px-4 py-4 text-sm text-slate-300">{getRoleLabel(adminUser.role)}</td>
                       <td className="px-4 py-4 text-right text-sm">

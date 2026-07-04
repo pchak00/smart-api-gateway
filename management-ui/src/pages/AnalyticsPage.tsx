@@ -900,7 +900,7 @@ export const AnalyticsPage: React.FC = () => {
             </div>
           </div>
 
-          <div className="mt-5 divide-y divide-slate-800/35">
+          <div className="mt-5 space-y-4">
             <div className="pb-4">
               <p className="text-sm text-slate-400">Requests</p>
               <div className="mt-2 flex min-w-0 items-baseline gap-2">
@@ -908,14 +908,14 @@ export const AnalyticsPage: React.FC = () => {
                 {!isLoading && <TrendIndicator delta={summaryTrend.requestDelta} tone="traffic" />}
               </div>
             </div>
-            <div className="py-4">
+            <div className="py-2">
               <p className="text-sm text-slate-400">Allowed</p>
               <div className="mt-2 flex min-w-0 items-baseline gap-2">
                 <p className="truncate text-3xl font-semibold text-slate-50">{isLoading ? '...' : formatNumber(summaryTrend.totalAllowed)}</p>
                 {!isLoading && <TrendIndicator delta={summaryTrend.allowedDelta} tone="traffic" />}
               </div>
             </div>
-            <div className="py-4">
+            <div className="py-2">
               <p className="text-sm text-slate-400">Blocked</p>
               <div className="mt-2 flex min-w-0 items-baseline gap-2">
                 <p className="truncate text-3xl font-semibold text-slate-100">{isLoading ? '...' : formatNumber(summaryTrend.totalBlocked)}</p>
@@ -975,7 +975,7 @@ export const AnalyticsPage: React.FC = () => {
                     <th className="px-4 py-3 text-right text-xs font-medium text-slate-400">Block rate</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-800/35">
+                <tbody>
                   {sortedRouteAnalytics.map((route, index) => (
                     <tr key={route.route ?? index} className="transition-colors hover:bg-slate-900/25">
                       <td className="px-4 py-4 font-mono text-xs text-slate-300">{route.route ?? 'Unknown route'}</td>
@@ -1059,7 +1059,7 @@ export const AnalyticsPage: React.FC = () => {
                     <th className="px-4 py-3 text-left text-xs font-medium text-slate-400">Plan</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-800/35">
+                <tbody>
                   {sortedClientAnalytics.map((client, index) => {
                     const hasClientId = typeof client.clientId === 'number';
                     const clientName = getClientName(client, index);

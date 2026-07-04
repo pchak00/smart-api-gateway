@@ -4,7 +4,7 @@ import { api } from '../api/client';
 import { useAuth } from '../hooks/useAuth';
 import { useToast } from '../hooks/useToast';
 import { EmptyState, PageHeader } from '../components/PageShell';
-import { PrimaryButton, SecondaryButton } from '../components/Button';
+import { IconButton, PrimaryButton, SecondaryButton } from '../components/Button';
 import { RowActions } from '../components/RowActions';
 import { SettingsTabs } from '../components/SettingsTabs';
 import { AppDropdown, DropdownOption } from '../components/AppDropdown';
@@ -169,18 +169,18 @@ export const ProvisioningPage: React.FC = () => {
         }
         meta={errorMessage ? <span className="text-xs text-slate-500">{errorMessage}</span> : undefined}
         actions={
-          <PrimaryButton
+          <IconButton
             type="button"
             disabled={!canMutate}
-            tooltip={writeTooltip}
+            tooltip={canMutate ? 'Create token' : writeTooltip ?? 'Admin required'}
+            aria-label="Create token"
             onClick={() => {
               resetForm();
               setIsCreateOpen((open) => !open);
             }}
           >
-            <Plus size={16} aria-hidden="true" />
-            Create Token
-          </PrimaryButton>
+            <Plus size={20} strokeWidth={2.2} aria-hidden="true" />
+          </IconButton>
         }
       />
 
@@ -277,14 +277,11 @@ export const ProvisioningPage: React.FC = () => {
                   </th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-800/35">
+              <tbody>
                 {tokens.map((token) => (
                   <tr key={token.id} className="transition-colors hover:bg-slate-900/25">
                     <td className="px-4 py-4">
-                      <div className="flex items-center gap-3">
-                        <KeyRound className="text-slate-600" size={16} aria-hidden="true" />
-                        <span className="text-sm font-medium text-slate-100">{token.name}</span>
-                      </div>
+                      <span className="text-sm font-medium text-slate-100">{token.name}</span>
                     </td>
                     <td className="px-4 py-4 text-sm text-slate-300">
                       {getPlanLabel(token.defaultPlanName)}
