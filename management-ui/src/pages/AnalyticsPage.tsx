@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Activity, ArrowDown, ArrowUp, BarChart3, Filter, Minus, Route, Search, SlidersHorizontal, Users, X } from 'lucide-react';
+import { Activity, ArrowDown, ArrowUp, BarChart3, Minus, Route, Search, Users, X } from 'lucide-react';
 import {
   CartesianGrid,
   Line,
@@ -408,20 +408,6 @@ const sortClientAnalytics = (clients: ClientAnalyticsDto[], sortValue: Analytics
   })
 );
 
-interface DropdownIconTriggerProps {
-  icon: React.ElementType;
-  active?: boolean;
-}
-
-const DropdownIconTrigger: React.FC<DropdownIconTriggerProps> = ({ icon: Icon, active = false }) => (
-  <span className="relative inline-flex h-5 w-5 items-center justify-center">
-    <Icon size={15} strokeWidth={2.1} aria-hidden="true" />
-    {active && (
-      <span className="absolute right-0 top-0 h-1.5 w-1.5 rounded-full bg-slate-400/80" aria-hidden="true" />
-    )}
-  </span>
-);
-
 export const AnalyticsPage: React.FC = () => {
   const navigate = useNavigate();
   const { showToast } = useToast();
@@ -622,6 +608,7 @@ export const AnalyticsPage: React.FC = () => {
     () => sortClientAnalytics(filteredClientAnalytics, clientAnalyticsSort),
     [clientAnalyticsSort, filteredClientAnalytics]
   );
+  const selectedClientPlanLabel = clientPlanFilterOptions.find((option) => option.value === clientPlanFilter)?.label ?? 'All';
   const routeSearchPlaceholder = selectedCustomRoutes.length >= 5
     ? 'Remove a route to add another'
     : selectedCustomRoutes.length > 0
@@ -652,32 +639,32 @@ export const AnalyticsPage: React.FC = () => {
               <p className="mt-1 text-xs text-slate-400">{analyticsWindowLabel}</p>
             </div>
             <div className="flex flex-wrap items-center gap-3">
-              <div className="flex rounded-md border border-slate-800/70 bg-slate-950/40 p-1">
+              <div className="flex rounded-md bg-slate-950/25 p-0.5">
                 {routeTrendMetricOptions.map((option) => (
                   <button
                     key={option.key}
                     type="button"
                     onClick={() => setSelectedRouteMetric(option.key)}
-                    className={`rounded px-2.5 py-1 text-xs font-medium transition-colors ${
+                    className={`rounded px-2.5 py-1 text-xs font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-slate-700/25 ${
                       selectedRouteMetric === option.key
-                        ? 'bg-slate-800/80 text-slate-100'
-                        : 'text-slate-400 hover:bg-slate-900/60 hover:text-slate-200'
+                        ? 'bg-slate-800/65 text-slate-100'
+                        : 'text-slate-400 hover:bg-slate-900/45 hover:text-slate-200'
                     }`}
                   >
                     {option.label}
                   </button>
                 ))}
               </div>
-              <div className="flex rounded-md border border-slate-800/70 bg-slate-950/40 p-1">
+              <div className="flex rounded-md bg-slate-950/25 p-0.5">
                 {routeTrendDisplayOptions.map((option) => (
                   <button
                     key={option.key}
                     type="button"
                     onClick={() => setRouteTrendMode(option.key)}
-                    className={`rounded px-2.5 py-1 text-xs font-medium transition-colors ${
+                    className={`rounded px-2.5 py-1 text-xs font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-slate-700/25 ${
                       routeTrendMode === option.key
-                        ? 'bg-slate-800/80 text-slate-100'
-                        : 'text-slate-400 hover:bg-slate-900/60 hover:text-slate-200'
+                        ? 'bg-slate-800/65 text-slate-100'
+                        : 'text-slate-400 hover:bg-slate-900/45 hover:text-slate-200'
                     }`}
                   >
                     {option.label}
@@ -921,9 +908,8 @@ export const AnalyticsPage: React.FC = () => {
                 ariaLabel="Sort route analytics"
                 fullWidth={false}
                 align="right"
-                displayValue={<DropdownIconTrigger icon={SlidersHorizontal} />}
-                showChevron={false}
-                buttonClassName="h-8 w-8 justify-center border-transparent bg-transparent px-0 text-slate-500 hover:border-transparent hover:bg-slate-900/45 hover:text-slate-200 focus:border-transparent"
+                displayValue="Sort"
+                buttonClassName="h-8 border-slate-800/25 bg-slate-950/25 px-2.5 text-xs text-slate-400 hover:border-slate-700/35 hover:bg-slate-900/45 hover:text-slate-200 focus:border-slate-700/45 focus:ring-slate-700/20"
                 menuClassName="w-56"
               />
               <Route className="text-slate-600" size={18} aria-hidden="true" />
@@ -983,9 +969,8 @@ export const AnalyticsPage: React.FC = () => {
                 ariaLabel="Filter client analytics by plan"
                 fullWidth={false}
                 align="right"
-                displayValue={<DropdownIconTrigger icon={Filter} active={Boolean(clientPlanFilter)} />}
-                showChevron={false}
-                buttonClassName="h-8 w-8 justify-center border-transparent bg-transparent px-0 text-slate-500 hover:border-transparent hover:bg-slate-900/45 hover:text-slate-200 focus:border-transparent"
+                displayValue={`Plan: ${clientPlanFilter ? selectedClientPlanLabel : 'All'}`}
+                buttonClassName="h-8 min-w-28 border-slate-800/25 bg-slate-950/25 px-2.5 text-xs text-slate-400 hover:border-slate-700/35 hover:bg-slate-900/45 hover:text-slate-200 focus:border-slate-700/45 focus:ring-slate-700/20"
                 menuClassName="w-44"
               />
               <AppDropdown
@@ -995,9 +980,8 @@ export const AnalyticsPage: React.FC = () => {
                 ariaLabel="Sort client analytics"
                 fullWidth={false}
                 align="right"
-                displayValue={<DropdownIconTrigger icon={SlidersHorizontal} />}
-                showChevron={false}
-                buttonClassName="h-8 w-8 justify-center border-transparent bg-transparent px-0 text-slate-500 hover:border-transparent hover:bg-slate-900/45 hover:text-slate-200 focus:border-transparent"
+                displayValue="Sort"
+                buttonClassName="h-8 border-slate-800/25 bg-slate-950/25 px-2.5 text-xs text-slate-400 hover:border-slate-700/35 hover:bg-slate-900/45 hover:text-slate-200 focus:border-slate-700/45 focus:ring-slate-700/20"
                 menuClassName="w-56"
               />
               <Users className="text-slate-600" size={18} aria-hidden="true" />
