@@ -279,7 +279,7 @@ export const ProvisioningPage: React.FC = () => {
               </thead>
               <tbody className="divide-y divide-slate-800/35">
                 {tokens.map((token) => (
-                  <tr key={token.id} className="transition-colors hover:bg-slate-900/35">
+                  <tr key={token.id} className="transition-colors hover:bg-slate-900/25">
                     <td className="px-4 py-4">
                       <div className="flex items-center gap-3">
                         <KeyRound className="text-slate-600" size={16} aria-hidden="true" />
@@ -293,7 +293,7 @@ export const ProvisioningPage: React.FC = () => {
                       <span className={`inline-flex items-center rounded-md px-2 py-0.5 text-xs font-medium ${
                         token.active
                           ? 'bg-emerald-950/30 text-emerald-300/90'
-                          : 'bg-slate-900/70 text-slate-500'
+                          : 'bg-slate-900/40 text-slate-500'
                       }`}>
                         {token.active ? 'Active' : 'Disabled'}
                       </span>

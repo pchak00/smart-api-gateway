@@ -310,7 +310,7 @@ export const PlansPage: React.FC = () => {
               </thead>
               <tbody className="divide-y divide-slate-800/35">
                 {filteredPlans.map((plan) => (
-                  <tr key={plan.id ?? plan.planName} className="transition-colors hover:bg-slate-900/35">
+                  <tr key={plan.id ?? plan.planName} className="transition-colors hover:bg-slate-900/25">
                     <td className="px-4 py-4">
                       <div className="flex items-center gap-3">
                         <CreditCard className="text-slate-600" size={16} aria-hidden="true" />

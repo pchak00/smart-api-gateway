@@ -323,7 +323,7 @@ export const RouteLimitsPage: React.FC = () => {
                   const requestLimit = limit.requestsPerMinute ?? limit.requestPerMinute;
 
                   return (
-                    <tr key={limit.id ?? `${limit.planId ?? 'plan'}-${routePath}`} className="transition-colors hover:bg-slate-900/35">
+                    <tr key={limit.id ?? `${limit.planId ?? 'plan'}-${routePath}`} className="transition-colors hover:bg-slate-900/25">
                       <td className="px-4 py-4">
                         <div className="flex items-center gap-3">
                           <Route className="text-slate-600" size={16} aria-hidden="true" />

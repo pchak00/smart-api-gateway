@@ -62,7 +62,7 @@ export const PageContainer: React.FC<PageContainerProps> = ({ children }) => (
 );
 
 export const Panel: React.FC<PanelProps> = ({ children, className = '' }) => (
-  <section className={`min-w-0 rounded-lg bg-slate-900/35 ${className}`}>
+  <section className={`min-w-0 rounded-lg bg-slate-900/[0.08] ${className}`}>
     {children}
   </section>
 );

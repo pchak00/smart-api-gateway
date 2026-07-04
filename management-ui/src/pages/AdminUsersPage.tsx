@@ -272,7 +272,7 @@ export const AdminUsersPage: React.FC = () => {
                   const rowAccessTitle = canManageRow ? undefined : 'Owner required';
 
                   return (
-                    <tr key={adminUser.id ?? adminUser.username} className="transition-colors hover:bg-slate-900/35">
+                    <tr key={adminUser.id ?? adminUser.username} className="transition-colors hover:bg-slate-900/25">
                       <td className="px-4 py-4">
                         <div className="flex items-center gap-3">
                           <UserCog className="text-slate-600" size={16} aria-hidden="true" />

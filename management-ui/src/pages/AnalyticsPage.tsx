@@ -977,7 +977,7 @@ export const AnalyticsPage: React.FC = () => {
                 </thead>
                 <tbody className="divide-y divide-slate-800/35">
                   {sortedRouteAnalytics.map((route, index) => (
-                    <tr key={route.route ?? index} className="transition-colors hover:bg-slate-900/35">
+                    <tr key={route.route ?? index} className="transition-colors hover:bg-slate-900/25">
                       <td className="px-4 py-4 font-mono text-xs text-slate-300">{route.route ?? 'Unknown route'}</td>
                       <td className="px-4 py-4 text-right text-sm text-slate-300">{formatNumber(route.totalRequests)}</td>
                       <td className="px-4 py-4 text-right text-sm text-slate-400">{formatNumber(route.allowedRequests)}</td>
@@ -1081,7 +1081,7 @@ export const AnalyticsPage: React.FC = () => {
                             openClientDetail(client);
                           }
                         }}
-                        className={`transition-colors hover:bg-slate-900/35 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-slate-700/40 ${
+                        className={`transition-colors hover:bg-slate-900/25 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-slate-700/40 ${
                           hasClientId ? 'group cursor-pointer' : ''
                         }`}
                       >

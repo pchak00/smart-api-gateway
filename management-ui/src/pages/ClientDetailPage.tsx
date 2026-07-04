@@ -16,7 +16,7 @@ import {
 } from '../components/ClientApiKeyLifecycleDialogs';
 
 const alertStatusClass = (status: AbuseAlertStatus | string | null | undefined) => {
-  if (status === 'RESOLVED') return 'bg-slate-900/70 text-slate-400';
+  if (status === 'RESOLVED') return 'bg-slate-900/40 text-slate-400';
   if (status === 'ACKNOWLEDGED') return 'bg-sky-950/25 text-sky-300/80';
   return 'bg-amber-950/25 text-amber-300/85';
 };
@@ -308,7 +308,7 @@ export const ClientDetailPage: React.FC = () => {
                         const allowed = log.allowed ?? log.isAllowed ?? false;
 
                         return (
-                          <tr key={log.id} className="transition-colors hover:bg-slate-900/35">
+                          <tr key={log.id} className="transition-colors hover:bg-slate-900/25">
                             <td className="px-4 py-4 font-mono text-sm text-slate-100">{log.path}</td>
                             <td className="px-4 py-4 text-sm text-slate-300">{log.method}</td>
                             <td className="px-4 py-4">
@@ -354,7 +354,7 @@ export const ClientDetailPage: React.FC = () => {
                         key={`${alert.createdAt ?? 'alert'}-${index}`}
                         to={getAlertUrl(alert)}
                         aria-label={`View ${getStatusLabel(alert.status).toLowerCase()} alert with ${formatNumber(blockedCount)} blocked requests`}
-                        className="block rounded-lg bg-slate-950/35 p-4 transition-colors hover:bg-slate-950/55 focus:outline-none focus:ring-2 focus:ring-slate-700/40"
+                        className="block rounded-lg bg-slate-950/20 p-4 transition-colors hover:bg-slate-950/35 focus:outline-none focus:ring-2 focus:ring-slate-700/40"
                       >
                         <div className="flex items-start justify-between gap-3">
                           <div className="min-w-0">

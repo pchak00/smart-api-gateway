@@ -31,7 +31,7 @@ const parseStatusFilter = (value: string | null): AlertFilter => {
 };
 
 const statusLabelClass = (status: AbuseAlertStatus | string | null | undefined) => {
-  if (status === 'RESOLVED') return 'bg-slate-900/70 text-slate-400';
+  if (status === 'RESOLVED') return 'bg-slate-900/40 text-slate-400';
   if (status === 'ACKNOWLEDGED') return 'bg-sky-950/25 text-sky-300/80';
   return 'bg-amber-950/25 text-amber-300/85';
 };
@@ -231,7 +231,7 @@ export const AbuseAlertsPage: React.FC = () => {
                     : [];
 
                   return (
-                    <tr key={alert.id ?? index} className="transition-colors hover:bg-slate-900/35">
+                    <tr key={alert.id ?? index} className="transition-colors hover:bg-slate-900/25">
                       <td className="px-4 py-4">
                         <p className="text-sm font-medium text-slate-100">
                           {alert.clientName ?? `Client #${alert.clientId ?? index + 1}`}
