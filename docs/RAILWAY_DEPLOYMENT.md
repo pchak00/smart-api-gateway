@@ -229,7 +229,7 @@ Example:
 ```bash
 PACIFIC_API_URL=https://your-gateway.up.railway.app \
 PACIFIC_ADMIN_USERNAME=owner \
-PACIFIC_ADMIN_PASSWORD=admin123 \
+PACIFIC_ADMIN_PASSWORD='<admin-password>' \
 PACIFIC_CLIENT_API_KEY=your-client-key \
 ./scripts/railway-smoke-demo.sh
 ```

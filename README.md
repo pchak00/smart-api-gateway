@@ -429,7 +429,7 @@ http://localhost:3000
 
 ```text
 username: owner
-password: admin123
+password: Coastal gateway passphrase 2026!
 ```
 
 4. Inspect the dashboard and analytics pages. They use real backend usage logs and aggregate data from gateway traffic.
@@ -463,7 +463,7 @@ done
 
 ```text
 username: viewer
-password: admin123
+password: Coastal gateway passphrase 2026!
 ```
 
 The viewer can inspect allowed data but cannot mutate resources. The Admin Users area is blocked, and mutation controls are disabled or guarded.
@@ -503,9 +503,9 @@ The application automatically seeds demo data when the database is empty.
 
 | Username | Password | Role |
 |-----------|-----------|---------|
-| owner | admin123 | OWNER |
-| super admin | admin123 | SUPER_ADMIN |
-| viewer | admin123 | READ_ONLY_ADMIN |
+| owner | Coastal gateway passphrase 2026! | OWNER |
+| super admin | Coastal gateway passphrase 2026! | SUPER_ADMIN |
+| viewer | Coastal gateway passphrase 2026! | READ_ONLY_ADMIN |
 
 #### Plans
 
@@ -539,7 +539,7 @@ curl -X POST http://localhost:8080/auth/login \
 -H "Content-Type: application/json" \
 -d '{
   "username":"owner",
-  "password":"admin123"
+  "password":"Coastal gateway passphrase 2026!"
 }'
 ```
 

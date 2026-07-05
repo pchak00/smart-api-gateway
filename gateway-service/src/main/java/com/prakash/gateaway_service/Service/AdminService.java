@@ -31,18 +31,20 @@ import java.util.List;
 @Service
 public class AdminService {
     private static final Logger log = LoggerFactory.getLogger(AdminService.class);
-    private static final int MIN_PASSWORD_LENGTH = 8;
     private static final String DEFAULT_RECOVERY_USERNAME = "owner";
 
     private final AdminUserRepository adminUserRepository;
     private final PasswordEncoder passwordEncoder;
+    private final AdminPasswordPolicy adminPasswordPolicy;
     private final String adminRecoveryToken;
 
     public AdminService(AdminUserRepository adminUserRepository,
                         PasswordEncoder passwordEncoder,
+                        AdminPasswordPolicy adminPasswordPolicy,
                         @Value("${admin.recovery.token:}") String adminRecoveryToken) {
         this.adminUserRepository = adminUserRepository;
         this.passwordEncoder = passwordEncoder;
+        this.adminPasswordPolicy = adminPasswordPolicy;
         this.adminRecoveryToken = adminRecoveryToken == null ? "" : adminRecoveryToken;
     }
     @Transactional
@@ -58,7 +60,7 @@ public class AdminService {
 
         AdminUser admin = new AdminUser();
         admin.setUsername(request.username());
-        admin.setPassword(passwordEncoder.encode(request.password()));
+        admin.setPassword(passwordEncoder.encode(validatePassword(request.username(), request.password(), null)));
         admin.setRole(request.role());
 
         AdminUser saved = adminUserRepository.save(admin);
@@ -112,7 +114,7 @@ public class AdminService {
                         new AdminNotFoundException("Admin not found with id: " + adminId));
 
         assertCanManage(actor, admin);
-        String newPassword = validatePasswordReset(request);
+        String newPassword = validatePasswordReset(admin.getUsername(), request);
 
         admin.setPassword(passwordEncoder.encode(newPassword));
         adminUserRepository.save(admin);
@@ -131,7 +133,7 @@ public class AdminService {
         assertValidRecoveryToken(providedRecoveryToken);
 
         String username = normalizeRecoveryUsername(request == null ? null : request.username());
-        String newPassword = validateRecoveryPassword(request);
+        String newPassword = validateRecoveryPassword(username, request);
         AdminUser admin = adminUserRepository.findByUsername(username)
                 .orElseGet(AdminUser::new);
         boolean created = admin.getId() == null;
@@ -198,33 +200,30 @@ public class AdminService {
         }
     }
 
-    private String validatePasswordReset(AdminPasswordResetRequestDto request) {
+    private String validatePasswordReset(String username, AdminPasswordResetRequestDto request) {
         if (request == null) {
             throw new InvalidAdminPasswordException("New password is required");
         }
 
-        return validatePassword(request.newPassword(), request.confirmPassword());
+        return validatePassword(username, request.newPassword(), request.confirmPassword());
     }
 
-    private String validateRecoveryPassword(AdminRecoveryRequestDto request) {
+    private String validateRecoveryPassword(String username, AdminRecoveryRequestDto request) {
         if (request == null) {
             throw new InvalidAdminPasswordException("New password is required");
         }
 
-        return validatePassword(request.newPassword(), request.confirmPassword());
+        return validatePassword(username, request.newPassword(), request.confirmPassword());
     }
 
-    private String validatePassword(String newPassword, String confirmPassword) {
-        if (newPassword == null || newPassword.isBlank()) {
-            throw new InvalidAdminPasswordException("New password is required");
-        }
-
-        if (newPassword.length() < MIN_PASSWORD_LENGTH) {
-            throw new InvalidAdminPasswordException("New password must be at least 8 characters");
-        }
-
-        if (confirmPassword != null && !newPassword.equals(confirmPassword)) {
+    private String validatePassword(String username, String newPassword, String confirmPassword) {
+        if (newPassword != null && confirmPassword != null && !newPassword.equals(confirmPassword)) {
             throw new InvalidAdminPasswordException("Password confirmation does not match");
+        }
+
+        AdminPasswordPolicy.ValidationResult result = adminPasswordPolicy.validate(username, newPassword);
+        if (!result.valid()) {
+            throw new InvalidAdminPasswordException(result.feedback());
         }
 
         return newPassword;

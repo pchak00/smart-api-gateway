@@ -54,7 +54,7 @@ class AdminControllerTest {
                         .content("""
                                 {
                                   "username": "new-admin",
-                                  "password": "admin123",
+                                  "password": "Coastal gateway passphrase 2026!",
                                   "role": "SUPER_ADMIN"
                                 }
                                 """))
@@ -75,7 +75,7 @@ class AdminControllerTest {
                         .content("""
                                 {
                                   "username": "viewer",
-                                  "password": "admin123",
+                                  "password": "Coastal gateway passphrase 2026!",
                                   "role": "READ_ONLY_ADMIN"
                                 }
                                 """))
@@ -93,7 +93,7 @@ class AdminControllerTest {
                         .content("""
                                 {
                                   "username": "viewer",
-                                  "password": "admin123",
+                                  "password": "Coastal gateway passphrase 2026!",
                                   "role": "READ_ONLY_ADMIN"
                                 }
                                 """))
@@ -137,8 +137,8 @@ class AdminControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {
-                                  "newPassword": "new-password",
-                                  "confirmPassword": "new-password"
+                                  "newPassword": "Coastal gateway passphrase 2026!",
+                                  "confirmPassword": "Coastal gateway passphrase 2026!"
                                 }
                                 """))
                 .andExpect(status().isNoContent());
@@ -153,8 +153,8 @@ class AdminControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {
-                                  "newPassword": "new-password",
-                                  "confirmPassword": "new-password"
+                                  "newPassword": "Coastal gateway passphrase 2026!",
+                                  "confirmPassword": "Coastal gateway passphrase 2026!"
                                 }
                                 """))
                 .andExpect(status().isForbidden());

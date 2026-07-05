@@ -98,7 +98,7 @@ Services use Spring Boot Maven Plugin. Built JARs are in `target/` as `-SNAPSHOT
 PostgreSQL uses automatic schema creation (`spring.jpa.hibernate.ddl-auto=update`). Database initialization SQL is in `gateway-service/src/main/resources/data.sql` and runs on startup due to `spring.sql.init.mode=always`.
 
 Demo data includes:
-- Admin users: `owner` (OWNER), `super admin` (SUPER_ADMIN), `viewer` (READ_ONLY_ADMIN), password `admin123`
+- Admin users: `owner` (OWNER), `super admin` (SUPER_ADMIN), `viewer` (READ_ONLY_ADMIN), password `Coastal gateway passphrase 2026!`
 - Plans: FREE (10 RPM), PRO (100 RPM), ENTERPRISE (1000 RPM)
 - Clients: `Demo Free Client` (`free-demo-api-key`), `Demo Pro Client` (`pro-demo-api-key`)
 
@@ -108,7 +108,7 @@ Admin login to get JWT token:
 ```bash
 curl -X POST http://localhost:8080/auth/login \
   -H "Content-Type: application/json" \
-  -d '{"username":"owner","password":"admin123"}'
+  -d '{"username":"owner","password":"Coastal gateway passphrase 2026!"}'
 ```
 
 Gateway request with API key:

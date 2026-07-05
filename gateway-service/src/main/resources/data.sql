@@ -20,7 +20,7 @@ SELECT id, '/api/reports', 2 FROM plan WHERE name = 'FREE'
 INSERT INTO admin_user (username, password, role)
 VALUES (
            'owner',
-           '$2a$10$VesL5BPpxoJCpR3IyPN58uSDxrCpElhhO0x0P38VrttzV2dk1js0i', -- admin123
+           '$2a$10$00tC1UnCk6O0wFMrKYdyP.Lj7Z.EMTmUDnmeseJzp0BWn3BxWDMtq', -- Coastal gateway passphrase 2026!
            'OWNER'
        )
     ON CONFLICT (username) DO UPDATE
@@ -30,7 +30,7 @@ VALUES (
 INSERT INTO admin_user (username, password, role)
 VALUES (
            'super admin',
-           '$2a$10$VesL5BPpxoJCpR3IyPN58uSDxrCpElhhO0x0P38VrttzV2dk1js0i', -- admin123
+           '$2a$10$00tC1UnCk6O0wFMrKYdyP.Lj7Z.EMTmUDnmeseJzp0BWn3BxWDMtq', -- Coastal gateway passphrase 2026!
            'SUPER_ADMIN'
        )
     ON CONFLICT (username) DO UPDATE
@@ -41,7 +41,7 @@ VALUES (
 INSERT INTO admin_user (username, password, role)
 VALUES (
            'viewer',
-           '$2a$10$VesL5BPpxoJCpR3IyPN58uSDxrCpElhhO0x0P38VrttzV2dk1js0i', -- admin123
+           '$2a$10$00tC1UnCk6O0wFMrKYdyP.Lj7Z.EMTmUDnmeseJzp0BWn3BxWDMtq', -- Coastal gateway passphrase 2026!
            'READ_ONLY_ADMIN'
        )
     ON CONFLICT (username) DO UPDATE

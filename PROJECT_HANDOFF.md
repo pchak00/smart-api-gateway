@@ -67,9 +67,9 @@ Important backend behavior:
   - `SUPER_ADMIN`
   - `READ_ONLY_ADMIN`
 - Seeded admin logins from `gateway-service/src/main/resources/data.sql`:
-  - `owner` / `admin123` (`OWNER`)
-  - `super admin` / `admin123` (`SUPER_ADMIN`)
-  - `viewer` / `admin123` (`READ_ONLY_ADMIN`)
+  - `owner` / `Coastal gateway passphrase 2026!` (`OWNER`)
+  - `super admin` / `Coastal gateway passphrase 2026!` (`SUPER_ADMIN`)
+  - `viewer` / `Coastal gateway passphrase 2026!` (`READ_ONLY_ADMIN`)
 - Server-to-server client provisioning is available at `POST /provisioning/clients` and documented in `docs/CLIENT_PROVISIONING.md`.
 - If a local persisted Postgres volume contains unexpected old demo data, reset it with:
   `docker compose down -v && docker compose up --build postgres redis backend-service gateway-service`

@@ -51,8 +51,8 @@ class AdminRecoveryControllerTest {
                         .content("""
                                 {
                                   "username": "owner",
-                                  "newPassword": "new-password",
-                                  "confirmPassword": "new-password"
+                                  "newPassword": "Coastal gateway passphrase 2026!",
+                                  "confirmPassword": "Coastal gateway passphrase 2026!"
                                 }
                                 """))
                 .andExpect(status().isOk())
@@ -75,8 +75,8 @@ class AdminRecoveryControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {
-                                  "newPassword": "new-password",
-                                  "confirmPassword": "new-password"
+                                  "newPassword": "Coastal gateway passphrase 2026!",
+                                  "confirmPassword": "Coastal gateway passphrase 2026!"
                                 }
                                 """))
                 .andExpect(status().isNotFound())
@@ -93,8 +93,8 @@ class AdminRecoveryControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {
-                                  "newPassword": "new-password",
-                                  "confirmPassword": "new-password"
+                                  "newPassword": "Coastal gateway passphrase 2026!",
+                                  "confirmPassword": "Coastal gateway passphrase 2026!"
                                 }
                                 """))
                 .andExpect(status().isForbidden())

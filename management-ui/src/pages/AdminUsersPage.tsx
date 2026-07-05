@@ -11,12 +11,49 @@ import { RowActions } from '../components/RowActions';
 import { getApiErrorMessage } from '../utils/apiError';
 import { PasswordInput } from '../components/PasswordInput';
 import { AppDropdown, DropdownOption } from '../components/AppDropdown';
+import { evaluateAdminPassword, PasswordPolicyResult, PasswordStrength } from '../utils/passwordPolicy';
 
 const toRoleOptions = (roles: AdminRole[]): DropdownOption[] => (
   roles.map((adminRole) => ({
     value: adminRole,
     label: getRoleLabel(adminRole)
   }))
+);
+
+const strengthFillClass: Record<PasswordStrength, string> = {
+  weak: 'bg-slate-700',
+  fair: 'bg-amber-400/75',
+  strong: 'bg-cyan-400/75',
+  'very-strong': 'bg-emerald-400/75'
+};
+
+const strengthTextClass: Record<PasswordStrength, string> = {
+  weak: 'text-slate-500',
+  fair: 'text-amber-300/85',
+  strong: 'text-cyan-300/85',
+  'very-strong': 'text-emerald-300/85'
+};
+
+const strengthWidthClass: Record<PasswordStrength, string> = {
+  weak: 'w-1/4',
+  fair: 'w-1/2',
+  strong: 'w-3/4',
+  'very-strong': 'w-full'
+};
+
+const PasswordStrengthHint: React.FC<{ policy: PasswordPolicyResult }> = ({ policy }) => (
+  <div className="mt-2" aria-live="polite">
+    <div className="h-1 overflow-hidden rounded-full bg-slate-900/80">
+      <div
+        className={`h-full rounded-full transition-all ${strengthFillClass[policy.strength]} ${strengthWidthClass[policy.strength]}`}
+      />
+    </div>
+    <p className="mt-1 text-xs text-slate-500">
+      <span className={`font-medium ${strengthTextClass[policy.strength]}`}>{policy.label}</span>
+      <span className="mx-1 text-slate-700">/</span>
+      <span>{policy.feedback}</span>
+    </p>
+  </div>
 );
 
 export const AdminUsersPage: React.FC = () => {
@@ -43,6 +80,15 @@ export const AdminUsersPage: React.FC = () => {
     () => adminUsers.filter((adminUser) => isOwnerRole(adminUser.role)).length,
     [adminUsers]
   );
+  const createPasswordPolicy = useMemo(
+    () => evaluateAdminPassword(newUsername, newPassword),
+    [newUsername, newPassword]
+  );
+  const resetPasswordPolicy = useMemo(
+    () => evaluateAdminPassword(resettingAdmin?.username, resetPassword),
+    [resettingAdmin?.username, resetPassword]
+  );
+  const isResetConfirmationValid = resetConfirmPassword.length > 0 && resetPassword === resetConfirmPassword;
 
   const loadAdminUsers = async () => {
     try {
@@ -83,6 +129,11 @@ export const AdminUsersPage: React.FC = () => {
   const handleCreateAdmin = async (event: FormEvent) => {
     event.preventDefault();
     if (!canCreateAdminUsers) return;
+
+    if (!createPasswordPolicy.valid) {
+      showToast({ message: createPasswordPolicy.feedback, type: 'error' });
+      return;
+    }
 
     setIsSubmitting(true);
     try {
@@ -156,8 +207,8 @@ export const AdminUsersPage: React.FC = () => {
       return;
     }
 
-    if (resetPassword.length < 8) {
-      showToast({ message: 'Password must be at least 8 characters.', type: 'error' });
+    if (!resetPasswordPolicy.valid) {
+      showToast({ message: resetPasswordPolicy.feedback, type: 'error' });
       return;
     }
 
@@ -247,7 +298,10 @@ export const AdminUsersPage: React.FC = () => {
               wrapperClassName="mt-2"
               inputClassName="quiet-field"
               required
+              minLength={12}
+              maxLength={128}
             />
+            <PasswordStrengthHint policy={createPasswordPolicy} />
           </label>
           <div className="block text-sm text-slate-500">
             <span>Role</span>
@@ -260,7 +314,7 @@ export const AdminUsersPage: React.FC = () => {
             />
           </div>
           <div className="flex gap-2">
-            <PrimaryButton type="submit" disabled={isSubmitting}>
+            <PrimaryButton type="submit" disabled={isSubmitting || !createPasswordPolicy.valid}>
               Create
             </PrimaryButton>
             <SecondaryButton type="button" onClick={() => setIsCreateOpen(false)}>
@@ -309,8 +363,10 @@ export const AdminUsersPage: React.FC = () => {
               wrapperClassName="mt-2"
               inputClassName="quiet-field"
               required
-              minLength={8}
+              minLength={12}
+              maxLength={128}
             />
+            <PasswordStrengthHint policy={resetPasswordPolicy} />
           </label>
           <label className="block text-sm text-slate-500">
             Confirm password
@@ -320,11 +376,15 @@ export const AdminUsersPage: React.FC = () => {
               wrapperClassName="mt-2"
               inputClassName="quiet-field"
               required
-              minLength={8}
+              minLength={12}
+              maxLength={128}
             />
+            {resetConfirmPassword.length > 0 && !isResetConfirmationValid && (
+              <p className="mt-2 text-xs text-slate-500" aria-live="polite">Passwords do not match.</p>
+            )}
           </label>
           <div className="flex gap-2">
-            <PrimaryButton type="submit" disabled={isSubmitting}>
+            <PrimaryButton type="submit" disabled={isSubmitting || !resetPasswordPolicy.valid || !isResetConfirmationValid}>
               Reset
             </PrimaryButton>
             <SecondaryButton

@@ -27,19 +27,22 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 class AdminServiceTest {
+    private static final String STRONG_PASSWORD = "Coastal gateway passphrase 2026!";
+    private static final String RECOVERY_PASSWORD = "river market quartz transit 2026";
 
     private AdminUserRepository adminUserRepository;
     private PasswordEncoder passwordEncoder;
+    private AdminPasswordPolicy adminPasswordPolicy;
     private AdminService adminService;
 
     @BeforeEach
     void setUp() {
         adminUserRepository = mock(AdminUserRepository.class);
         passwordEncoder = mock(PasswordEncoder.class);
-        adminService = new AdminService(adminUserRepository, passwordEncoder, "");
-        when(passwordEncoder.encode("password")).thenReturn("encoded-password");
-        when(passwordEncoder.encode("new-password")).thenReturn("encoded-new-password");
-        when(passwordEncoder.encode("recovered-password")).thenReturn("encoded-recovered-password");
+        adminPasswordPolicy = new AdminPasswordPolicy();
+        adminService = new AdminService(adminUserRepository, passwordEncoder, adminPasswordPolicy, "");
+        when(passwordEncoder.encode(STRONG_PASSWORD)).thenReturn("encoded-strong-password");
+        when(passwordEncoder.encode(RECOVERY_PASSWORD)).thenReturn("encoded-recovery-password");
         when(adminUserRepository.save(any(AdminUser.class))).thenAnswer(invocation -> {
             AdminUser adminUser = invocation.getArgument(0);
             if (adminUser.getId() == null) {
@@ -55,7 +58,7 @@ class AdminServiceTest {
         when(adminUserRepository.existsByUsername("new-admin")).thenReturn(false);
 
         var response = adminService.createAdmin(
-                new AdminDto("new-admin", "password", AdminRole.SUPER_ADMIN),
+                new AdminDto("new-admin", STRONG_PASSWORD, AdminRole.SUPER_ADMIN),
                 "owner"
         );
 
@@ -68,7 +71,7 @@ class AdminServiceTest {
         when(adminUserRepository.existsByUsername("second-owner")).thenReturn(false);
 
         var response = adminService.createAdmin(
-                new AdminDto("second-owner", "password", AdminRole.OWNER),
+                new AdminDto("second-owner", STRONG_PASSWORD, AdminRole.OWNER),
                 "owner"
         );
 
@@ -81,7 +84,7 @@ class AdminServiceTest {
         when(adminUserRepository.existsByUsername("viewer")).thenReturn(false);
 
         var response = adminService.createAdmin(
-                new AdminDto("viewer", "password", AdminRole.READ_ONLY_ADMIN),
+                new AdminDto("viewer", STRONG_PASSWORD, AdminRole.READ_ONLY_ADMIN),
                 "admin"
         );
 
@@ -95,6 +98,19 @@ class AdminServiceTest {
         assertThrows(AdminRoleHierarchyException.class, () -> adminService.createAdmin(
                 new AdminDto("new-admin", "password", AdminRole.SUPER_ADMIN),
                 "admin"
+        ));
+
+        verify(adminUserRepository, never()).save(any());
+    }
+
+    @Test
+    void createAdminRejectsWeakPassword() {
+        when(adminUserRepository.findByUsername("owner")).thenReturn(Optional.of(admin(1L, "owner", AdminRole.OWNER)));
+        when(adminUserRepository.existsByUsername("new-admin")).thenReturn(false);
+
+        assertThrows(InvalidAdminPasswordException.class, () -> adminService.createAdmin(
+                new AdminDto("new-admin", "admin123", AdminRole.SUPER_ADMIN),
+                "owner"
         ));
 
         verify(adminUserRepository, never()).save(any());
@@ -200,11 +216,11 @@ class AdminServiceTest {
 
         adminService.resetAdminPassword(
                 2L,
-                new AdminPasswordResetRequestDto("new-password", "new-password"),
+                new AdminPasswordResetRequestDto(STRONG_PASSWORD, STRONG_PASSWORD),
                 "owner"
         );
 
-        assertEquals("encoded-new-password", target.getPassword());
+        assertEquals("encoded-strong-password", target.getPassword());
         verify(adminUserRepository).save(target);
     }
 
@@ -215,11 +231,11 @@ class AdminServiceTest {
 
         assertThrows(AdminRoleHierarchyException.class, () -> adminService.resetAdminPassword(
                 5L,
-                new AdminPasswordResetRequestDto("new-password", "new-password"),
+                new AdminPasswordResetRequestDto(STRONG_PASSWORD, STRONG_PASSWORD),
                 "viewer"
         ));
 
-        verify(passwordEncoder, never()).encode("new-password");
+        verify(passwordEncoder, never()).encode(STRONG_PASSWORD);
         verify(adminUserRepository, never()).save(any());
     }
 
@@ -230,7 +246,21 @@ class AdminServiceTest {
 
         assertThrows(InvalidAdminPasswordException.class, () -> adminService.resetAdminPassword(
                 2L,
-                new AdminPasswordResetRequestDto("new-password", "different"),
+                new AdminPasswordResetRequestDto(STRONG_PASSWORD, "different"),
+                "owner"
+        ));
+
+        verify(adminUserRepository, never()).save(any());
+    }
+
+    @Test
+    void passwordResetRejectsWeakPassword() {
+        when(adminUserRepository.findByUsername("owner")).thenReturn(Optional.of(admin(1L, "owner", AdminRole.OWNER)));
+        when(adminUserRepository.findById(2L)).thenReturn(Optional.of(admin(2L, "admin", AdminRole.SUPER_ADMIN)));
+
+        assertThrows(InvalidAdminPasswordException.class, () -> adminService.resetAdminPassword(
+                2L,
+                new AdminPasswordResetRequestDto("12345678", "12345678"),
                 "owner"
         ));
 
@@ -240,7 +270,7 @@ class AdminServiceTest {
     @Test
     void emergencyRecoveryIsDisabledWhenTokenUnset() {
         assertThrows(AdminRecoveryUnavailableException.class, () -> adminService.recoverOwner(
-                new AdminRecoveryRequestDto("owner", "recovered-password", "recovered-password"),
+                new AdminRecoveryRequestDto("owner", RECOVERY_PASSWORD, RECOVERY_PASSWORD),
                 "token"
         ));
 
@@ -249,10 +279,10 @@ class AdminServiceTest {
 
     @Test
     void emergencyRecoveryRejectsWrongToken() {
-        AdminService recoveryService = new AdminService(adminUserRepository, passwordEncoder, "correct-token");
+        AdminService recoveryService = new AdminService(adminUserRepository, passwordEncoder, adminPasswordPolicy, "correct-token");
 
         assertThrows(InvalidAdminRecoveryTokenException.class, () -> recoveryService.recoverOwner(
-                new AdminRecoveryRequestDto("owner", "recovered-password", "recovered-password"),
+                new AdminRecoveryRequestDto("owner", RECOVERY_PASSWORD, RECOVERY_PASSWORD),
                 "wrong-token"
         ));
 
@@ -261,11 +291,11 @@ class AdminServiceTest {
 
     @Test
     void emergencyRecoveryCreatesOwnerWithCorrectToken() {
-        AdminService recoveryService = new AdminService(adminUserRepository, passwordEncoder, "correct-token");
+        AdminService recoveryService = new AdminService(adminUserRepository, passwordEncoder, adminPasswordPolicy, "correct-token");
         when(adminUserRepository.findByUsername("owner")).thenReturn(Optional.empty());
 
         var response = recoveryService.recoverOwner(
-                new AdminRecoveryRequestDto(null, "recovered-password", "recovered-password"),
+                new AdminRecoveryRequestDto(null, RECOVERY_PASSWORD, RECOVERY_PASSWORD),
                 "correct-token"
         );
 
@@ -276,18 +306,31 @@ class AdminServiceTest {
 
     @Test
     void emergencyRecoveryResetsExistingAdminAndPromotesToOwner() {
-        AdminService recoveryService = new AdminService(adminUserRepository, passwordEncoder, "correct-token");
+        AdminService recoveryService = new AdminService(adminUserRepository, passwordEncoder, adminPasswordPolicy, "correct-token");
         AdminUser admin = admin(2L, "admin", AdminRole.READ_ONLY_ADMIN);
         when(adminUserRepository.findByUsername("admin")).thenReturn(Optional.of(admin));
 
         var response = recoveryService.recoverOwner(
-                new AdminRecoveryRequestDto("admin", "recovered-password", "recovered-password"),
+                new AdminRecoveryRequestDto("admin", RECOVERY_PASSWORD, RECOVERY_PASSWORD),
                 "correct-token"
         );
 
         assertEquals("admin", response.username());
         assertEquals(AdminRole.OWNER, admin.getRole());
-        assertEquals("encoded-recovered-password", admin.getPassword());
+        assertEquals("encoded-recovery-password", admin.getPassword());
+    }
+
+    @Test
+    void emergencyRecoveryRejectsWeakPasswordWithCorrectToken() {
+        AdminService recoveryService = new AdminService(adminUserRepository, passwordEncoder, adminPasswordPolicy, "correct-token");
+        when(adminUserRepository.findByUsername("owner")).thenReturn(Optional.empty());
+
+        assertThrows(InvalidAdminPasswordException.class, () -> recoveryService.recoverOwner(
+                new AdminRecoveryRequestDto("owner", "owner123456789", "owner123456789"),
+                "correct-token"
+        ));
+
+        verify(adminUserRepository, never()).save(any());
     }
 
     private AdminUser admin(Long id, String username, AdminRole role) {
