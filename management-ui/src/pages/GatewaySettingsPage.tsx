@@ -4,7 +4,6 @@ import { api } from '../api/client';
 import { PrimaryButton, SecondaryButton } from '../components/Button';
 import { EmptyState, PageHeader } from '../components/PageShell';
 import { NumberField } from '../components/NumberField';
-import { SettingsTabs } from '../components/SettingsTabs';
 import { useAuth } from '../hooks/useAuth';
 import { useToast } from '../hooks/useToast';
 import { GatewaySettingsDto, TestGatewayConnectionResponse } from '../types';
@@ -158,8 +157,6 @@ export const GatewaySettingsPage: React.FC = () => {
 
   return (
     <div className="min-w-0">
-      <SettingsTabs />
-
       <PageHeader
         title="Gateway settings"
         meta={loadError ? <span className="text-xs text-slate-500">{loadError}</span> : undefined}
@@ -182,7 +179,7 @@ export const GatewaySettingsPage: React.FC = () => {
             </div>
           )}
 
-          <div className="grid gap-5 border-y border-slate-800/40 py-5">
+          <div className="grid gap-5 py-3">
             <label className="block text-sm text-slate-500">
               Upstream API URL
               <input
@@ -220,7 +217,7 @@ export const GatewaySettingsPage: React.FC = () => {
             </label>
           </div>
 
-          <section className="border-b border-slate-800/40 py-5">
+          <section className="py-5">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <p className="text-sm font-medium text-slate-300">Connection test</p>
@@ -268,7 +265,7 @@ export const GatewaySettingsPage: React.FC = () => {
             )}
           </section>
 
-          <dl className="grid gap-4 border-b border-slate-800/40 py-5 sm:grid-cols-2">
+          <dl className="grid gap-4 py-3 sm:grid-cols-2">
             <div>
               <dt className="text-xs font-medium text-slate-600">Last updated</dt>
               <dd className="mt-1 text-sm text-slate-300">{formatDateTime(settings?.updatedAt)}</dd>
@@ -282,7 +279,11 @@ export const GatewaySettingsPage: React.FC = () => {
           <div className="mt-5 flex flex-wrap gap-2">
             {canMutate ? (
               <>
-                <PrimaryButton type="submit" disabled={isSaving}>
+                <PrimaryButton
+                  type="submit"
+                  disabled={isSaving}
+                  className="bg-transparent text-slate-100 hover:bg-slate-900/35"
+                >
                   <Save size={16} aria-hidden="true" />
                   {isSaving ? 'Saving...' : 'Save settings'}
                 </PrimaryButton>
@@ -296,6 +297,7 @@ export const GatewaySettingsPage: React.FC = () => {
                 type="button"
                 disabled
                 tooltip={writeTooltip}
+                className="bg-transparent text-slate-500"
                 onClick={() => showToast({ message: permissionMessage, type: 'error' })}
               >
                 <Save size={16} aria-hidden="true" />

@@ -1,4 +1,5 @@
 import React, { FormEvent, useEffect, useMemo, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { Clipboard, KeyRound, Plus } from 'lucide-react';
 import { api } from '../api/client';
 import { useAuth } from '../hooks/useAuth';
@@ -6,7 +7,6 @@ import { useToast } from '../hooks/useToast';
 import { EmptyState, PageHeader } from '../components/PageShell';
 import { IconButton, PrimaryButton, SecondaryButton } from '../components/Button';
 import { RowActions } from '../components/RowActions';
-import { SettingsTabs } from '../components/SettingsTabs';
 import { AppDropdown, DropdownOption } from '../components/AppDropdown';
 import { InfoTooltip } from '../components/InfoTooltip';
 import { PlanDto, ProvisioningTokenDto } from '../types';
@@ -21,6 +21,8 @@ interface OneTimeToken {
 export const ProvisioningPage: React.FC = () => {
   const { canMutate } = useAuth();
   const { showToast } = useToast();
+  const [searchParams] = useSearchParams();
+  const createActionRequested = searchParams.get('action') === 'create';
   const [tokens, setTokens] = useState<ProvisioningTokenDto[]>([]);
   const [plans, setPlans] = useState<PlanDto[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -156,10 +158,14 @@ export const ProvisioningPage: React.FC = () => {
     }))
   ), [plans]);
 
+  useEffect(() => {
+    if (!createActionRequested || !canMutate) return;
+    resetForm();
+    setIsCreateOpen(true);
+  }, [canMutate, createActionRequested]);
+
   return (
     <div className="min-w-0">
-      <SettingsTabs />
-
       <PageHeader
         title="Provisioning"
         titleAccessory={
@@ -168,21 +174,22 @@ export const ProvisioningPage: React.FC = () => {
           </InfoTooltip>
         }
         meta={errorMessage ? <span className="text-xs text-slate-500">{errorMessage}</span> : undefined}
-        actions={
-          <IconButton
-            type="button"
-            disabled={!canMutate}
-            tooltip={canMutate ? 'Create token' : writeTooltip ?? 'Admin required'}
-            aria-label="Create token"
-            onClick={() => {
-              resetForm();
-              setIsCreateOpen((open) => !open);
-            }}
-          >
-            <Plus size={20} strokeWidth={2.2} aria-hidden="true" />
-          </IconButton>
-        }
       />
+
+      <div className="mb-6 flex">
+        <IconButton
+          type="button"
+          disabled={!canMutate}
+          tooltip={canMutate ? 'Create token' : writeTooltip ?? 'Admin required'}
+          aria-label="Create token"
+          onClick={() => {
+            resetForm();
+            setIsCreateOpen((open) => !open);
+          }}
+        >
+          <Plus size={20} strokeWidth={2.2} aria-hidden="true" />
+        </IconButton>
+      </div>
 
       {isCreateOpen && (
         <form
@@ -221,7 +228,7 @@ export const ProvisioningPage: React.FC = () => {
       )}
 
       {oneTimeToken && (
-        <section className="mb-8 border-y border-slate-800/40 py-5">
+        <section className="mb-8 py-5">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
             <div className="min-w-0 flex-1">
               <p className="text-sm font-semibold text-slate-100">{oneTimeToken.name}</p>

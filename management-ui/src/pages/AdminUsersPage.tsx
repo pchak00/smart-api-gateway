@@ -153,22 +153,23 @@ export const AdminUsersPage: React.FC = () => {
       <PageHeader
         title="Admin Users"
         meta={errorMessage ? <span className="text-xs text-slate-500">{errorMessage}</span> : undefined}
-        actions={
-          <IconButton
-            type="button"
-            disabled={!canCreateAdminUsers}
-            tooltip={canCreateAdminUsers ? 'Create admin' : writeTooltip ?? 'Owner or Admin required'}
-            aria-label="Create admin"
-            onClick={() => {
-              setEditingAdmin(null);
-              resetCreateForm();
-              setIsCreateOpen((open) => !open);
-            }}
-          >
-            <Plus size={20} strokeWidth={2.2} aria-hidden="true" />
-          </IconButton>
-        }
       />
+
+      <div className="mb-6 flex">
+        <IconButton
+          type="button"
+          disabled={!canCreateAdminUsers}
+          tooltip={canCreateAdminUsers ? 'Create admin' : writeTooltip ?? 'Owner or Admin required'}
+          aria-label="Create admin"
+          onClick={() => {
+            setEditingAdmin(null);
+            resetCreateForm();
+            setIsCreateOpen((open) => !open);
+          }}
+        >
+          <Plus size={20} strokeWidth={2.2} aria-hidden="true" />
+        </IconButton>
+      </div>
 
       {isCreateOpen && (
         <form onSubmit={handleCreateAdmin} className="mb-8 grid gap-4 py-2 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_12rem_auto] md:items-end">

@@ -526,9 +526,9 @@ const TopRoutesPanel: React.FC<TopRoutesPanelProps> = ({ routes }) => {
 };
 
 const quickActions: QuickAction[] = [
-  { label: 'Create API client', to: '/clients', icon: Users },
-  { label: 'Create route limit', to: '/route-limits', icon: Plus },
-  { label: 'Create provisioning token', to: '/settings/provisioning', icon: KeyRound },
+  { label: 'Create API client', to: '/clients?action=create', icon: Users },
+  { label: 'Create route limit', to: '/route-limits?action=create', icon: Plus },
+  { label: 'Create provisioning token', to: '/settings/provisioning?action=create', icon: KeyRound },
   { label: 'Open gateway settings', to: '/settings/gateway', icon: SlidersHorizontal }
 ];
 

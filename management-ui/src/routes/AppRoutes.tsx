@@ -1,5 +1,5 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { LoginPage } from '../pages/LoginPage';
 import { DashboardPage } from '../pages/DashboardPage';
 import { ClientsListPage } from '../pages/ClientsListPage';
@@ -16,6 +16,10 @@ import { AppLayout as MainLayout } from '../layout/AppLayout';
 import { ProtectedRoute } from './ProtectedRoute';
 import { useAuth } from '../hooks/useAuth';
 
+const ProvisioningRedirect: React.FC = () => {
+  const location = useLocation();
+  return <Navigate to={`/settings/provisioning${location.search}`} replace />;
+};
 
 export const AppRoutes: React.FC = () => {
   const { isLoading } = useAuth();
@@ -52,7 +56,7 @@ export const AppRoutes: React.FC = () => {
           <Route path="settings" element={<Navigate to="/settings/gateway" replace />} />
           <Route path="settings/gateway" element={<GatewaySettingsPage />} />
           <Route path="settings/provisioning" element={<ProvisioningPage />} />
-          <Route path="provisioning" element={<Navigate to="/settings/provisioning" replace />} />
+          <Route path="provisioning" element={<ProvisioningRedirect />} />
           <Route
             path="admin-users"
             element={

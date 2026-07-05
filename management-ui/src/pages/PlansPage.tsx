@@ -202,24 +202,22 @@ export const PlansPage: React.FC = () => {
         meta={errorMessage ? <span className="text-xs text-slate-500">{errorMessage}</span> : undefined}
       />
 
-      <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+      <div className="mb-6 flex w-full flex-col gap-3 sm:max-w-xl sm:flex-row sm:items-start">
         <ListSearch
           value={searchQuery}
           onChange={setSearchQuery}
           placeholder="Search plans..."
           resultLabel={!isLoading && !errorMessage ? planResultLabel : undefined}
         />
-        <div className="flex shrink-0">
-          <IconButton
-            type="button"
-            disabled={!canMutate}
-            tooltip={canMutate ? 'Create plan' : writeTooltip ?? 'Admin required'}
-            aria-label="Create plan"
-            onClick={startCreate}
-          >
-            <Plus size={20} strokeWidth={2.2} aria-hidden="true" />
-          </IconButton>
-        </div>
+        <IconButton
+          type="button"
+          disabled={!canMutate}
+          tooltip={canMutate ? 'Create plan' : writeTooltip ?? 'Admin required'}
+          aria-label="Create plan"
+          onClick={startCreate}
+        >
+          <Plus size={20} strokeWidth={2.2} aria-hidden="true" />
+        </IconButton>
       </div>
 
       {(isCreateOpen || editingPlan) && (

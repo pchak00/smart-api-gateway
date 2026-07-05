@@ -1,5 +1,5 @@
 import React, { FormEvent, useEffect, useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Plus, Users } from 'lucide-react';
 import { api } from '../api/client';
 import { ClientDto, PlanDto } from '../types';
@@ -43,6 +43,8 @@ const getLastActiveLabel = (client: ClientDto) => (
 
 export const ClientsListPage: React.FC = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const createActionRequested = searchParams.get('action') === 'create';
   const { canMutate } = useAuth();
   const { showToast } = useToast();
   const [clients, setClients] = useState<ClientDto[]>([]);
@@ -103,6 +105,13 @@ export const ClientsListPage: React.FC = () => {
     setNewClientPlanId(plans[0]?.id !== undefined ? String(plans[0].id) : '');
     setNewClientActive(true);
   };
+
+  useEffect(() => {
+    if (!createActionRequested || !canMutate) return;
+    resetCreateForm();
+    setEditingClient(null);
+    setIsCreateOpen(true);
+  }, [canMutate, createActionRequested]);
 
   const handleCreateClient = async (event: FormEvent) => {
     event.preventDefault();
@@ -312,44 +321,40 @@ export const ClientsListPage: React.FC = () => {
         meta={clientsMeta}
       />
 
-      <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-        <div className="flex w-full flex-col gap-3 sm:max-w-2xl sm:flex-row sm:items-start">
-          <ListSearch
-            value={searchQuery}
-            onChange={setSearchQuery}
-            placeholder="Search clients..."
-            resultLabel={!isLoading && !errorMessage ? clientResultLabel : undefined}
+      <div className="mb-6 flex w-full flex-col gap-3 sm:max-w-3xl sm:flex-row sm:items-start">
+        <ListSearch
+          value={searchQuery}
+          onChange={setSearchQuery}
+          placeholder="Search clients..."
+          resultLabel={!isLoading && !errorMessage ? clientResultLabel : undefined}
+        />
+        <label
+          className="inline-flex h-9 w-full cursor-pointer items-center gap-2 text-sm text-slate-400 transition-colors hover:text-slate-200 sm:w-auto"
+          title="Show active clients with no traffic for 30+ days, including never-active clients."
+        >
+          <input
+            type="checkbox"
+            checked={activityFilter === 'stale'}
+            onChange={(event) => setActivityFilter(event.target.checked ? 'stale' : 'all')}
+            className="peer sr-only"
+            aria-label="Show stale clients only"
           />
-          <label
-            className="inline-flex h-9 w-full cursor-pointer items-center gap-2 text-sm text-slate-400 transition-colors hover:text-slate-200 sm:w-auto"
-            title="Show active clients with no traffic for 30+ days, including never-active clients."
-          >
-            <input
-              type="checkbox"
-              checked={activityFilter === 'stale'}
-              onChange={(event) => setActivityFilter(event.target.checked ? 'stale' : 'all')}
-              className="peer sr-only"
-              aria-label="Show stale clients only"
-            />
-            <span className="relative h-4 w-8 shrink-0 rounded-full bg-slate-800/85 transition-colors after:absolute after:left-0.5 after:top-0.5 after:h-3 after:w-3 after:rounded-full after:bg-slate-500 after:transition-transform peer-checked:bg-cyan-950/70 peer-checked:after:translate-x-4 peer-checked:after:bg-cyan-300/80 peer-focus-visible:ring-2 peer-focus-visible:ring-slate-600/50" />
-            <span className="whitespace-nowrap text-xs font-medium">Stale</span>
-          </label>
-        </div>
-        <div className="flex shrink-0">
-          <IconButton
-            type="button"
-            disabled={!canMutate}
-            tooltip={canMutate ? 'Create client' : 'Admin required'}
-            aria-label="Create client"
-            onClick={() => {
-              resetCreateForm();
-              setEditingClient(null);
-              setIsCreateOpen((open) => !open);
-            }}
-          >
-            <Plus size={20} strokeWidth={2.2} aria-hidden="true" />
-          </IconButton>
-        </div>
+          <span className="relative h-4 w-8 shrink-0 rounded-full bg-slate-800/85 transition-colors after:absolute after:left-0.5 after:top-0.5 after:h-3 after:w-3 after:rounded-full after:bg-slate-500 after:transition-transform peer-checked:bg-cyan-950/70 peer-checked:after:translate-x-4 peer-checked:after:bg-cyan-300/80 peer-focus-visible:ring-2 peer-focus-visible:ring-slate-600/50" />
+          <span className="whitespace-nowrap text-xs font-medium">Stale</span>
+        </label>
+        <IconButton
+          type="button"
+          disabled={!canMutate}
+          tooltip={canMutate ? 'Create client' : 'Admin required'}
+          aria-label="Create client"
+          onClick={() => {
+            resetCreateForm();
+            setEditingClient(null);
+            setIsCreateOpen((open) => !open);
+          }}
+        >
+          <Plus size={20} strokeWidth={2.2} aria-hidden="true" />
+        </IconButton>
       </div>
 
       {isCreateOpen && (

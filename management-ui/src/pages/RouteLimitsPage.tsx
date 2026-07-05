@@ -1,4 +1,5 @@
 import React, { FormEvent, useEffect, useMemo, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { Plus, Route } from 'lucide-react';
 import { api } from '../api/client';
 import { useAuth } from '../hooks/useAuth';
@@ -18,6 +19,8 @@ import { matchesSearch, normalizeSearch } from '../utils/search';
 export const RouteLimitsPage: React.FC = () => {
   const { canMutate } = useAuth();
   const { showToast } = useToast();
+  const [searchParams] = useSearchParams();
+  const createActionRequested = searchParams.get('action') === 'create';
   const [routeLimits, setRouteLimits] = useState<RouteLimitDto[]>([]);
   const [plans, setPlans] = useState<PlanDto[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -72,6 +75,13 @@ export const RouteLimitsPage: React.FC = () => {
     setRoutePattern('/api/');
     setRequestsPerMinute('10');
   };
+
+  useEffect(() => {
+    if (!createActionRequested || !canMutate) return;
+    setEditingLimit(null);
+    resetForm();
+    setIsCreateOpen(true);
+  }, [canMutate, createActionRequested]);
 
   const handleCreateRouteLimit = async (event: FormEvent) => {
     event.preventDefault();
@@ -188,28 +198,26 @@ export const RouteLimitsPage: React.FC = () => {
         meta={errorMessage ? <span className="text-xs text-slate-500">{errorMessage}</span> : undefined}
       />
 
-      <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+      <div className="mb-6 flex w-full flex-col gap-3 sm:max-w-2xl sm:flex-row sm:items-start">
         <ListSearch
           value={searchQuery}
           onChange={setSearchQuery}
           placeholder="Search route limits..."
           resultLabel={!isLoading && !errorMessage ? routeLimitResultLabel : undefined}
         />
-        <div className="flex shrink-0">
-          <IconButton
-            type="button"
-            disabled={!canMutate}
-            tooltip={canMutate ? 'Add route limit' : writeTooltip ?? 'Admin required'}
-            aria-label="Add route limit"
-            onClick={() => {
-              setEditingLimit(null);
-              resetForm();
-              setIsCreateOpen((open) => !open);
-            }}
-          >
-            <Plus size={20} strokeWidth={2.2} aria-hidden="true" />
-          </IconButton>
-        </div>
+        <IconButton
+          type="button"
+          disabled={!canMutate}
+          tooltip={canMutate ? 'Add route limit' : writeTooltip ?? 'Admin required'}
+          aria-label="Add route limit"
+          onClick={() => {
+            setEditingLimit(null);
+            resetForm();
+            setIsCreateOpen((open) => !open);
+          }}
+        >
+          <Plus size={20} strokeWidth={2.2} aria-hidden="true" />
+        </IconButton>
       </div>
 
       {(isCreateOpen || editingLimit) && (
