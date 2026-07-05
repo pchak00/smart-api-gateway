@@ -77,7 +77,7 @@ export const LoginPage: React.FC = () => {
             <PrimaryButton
               type="submit"
               disabled={isLoading}
-              className="w-full py-3"
+              className="h-11 w-full bg-slate-900/30 hover:bg-slate-800/40"
             >
               {isLoading ? 'Signing in...' : 'Sign in'}
             </PrimaryButton>

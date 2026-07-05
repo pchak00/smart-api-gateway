@@ -169,27 +169,26 @@ export const ProvisioningPage: React.FC = () => {
       <PageHeader
         title="Provisioning"
         titleAccessory={
-          <InfoTooltip label="Provisioning token details">
-            Provisioning tokens are trusted server-to-server credentials used to create API clients without using the browser UI. Use them from backend services only, not frontend code.
-          </InfoTooltip>
+          <>
+            <InfoTooltip label="Provisioning token details">
+              Provisioning tokens are trusted server-to-server credentials used to create API clients without using the browser UI. Use them from backend services only, not frontend code.
+            </InfoTooltip>
+            <IconButton
+              type="button"
+              disabled={!canMutate}
+              tooltip={canMutate ? 'Create token' : writeTooltip ?? 'Admin required'}
+              aria-label="Create token"
+              onClick={() => {
+                resetForm();
+                setIsCreateOpen((open) => !open);
+              }}
+            >
+              <Plus size={20} strokeWidth={2.2} aria-hidden="true" />
+            </IconButton>
+          </>
         }
         meta={errorMessage ? <span className="text-xs text-slate-500">{errorMessage}</span> : undefined}
       />
-
-      <div className="mb-6 flex">
-        <IconButton
-          type="button"
-          disabled={!canMutate}
-          tooltip={canMutate ? 'Create token' : writeTooltip ?? 'Admin required'}
-          aria-label="Create token"
-          onClick={() => {
-            resetForm();
-            setIsCreateOpen((open) => !open);
-          }}
-        >
-          <Plus size={20} strokeWidth={2.2} aria-hidden="true" />
-        </IconButton>
-      </div>
 
       {isCreateOpen && (
         <form

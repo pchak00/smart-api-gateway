@@ -282,7 +282,6 @@ export const GatewaySettingsPage: React.FC = () => {
                 <PrimaryButton
                   type="submit"
                   disabled={isSaving}
-                  className="bg-transparent text-slate-100 hover:bg-slate-900/35"
                 >
                   <Save size={16} aria-hidden="true" />
                   {isSaving ? 'Saving...' : 'Save settings'}
@@ -297,7 +296,6 @@ export const GatewaySettingsPage: React.FC = () => {
                 type="button"
                 disabled
                 tooltip={writeTooltip}
-                className="bg-transparent text-slate-500"
                 onClick={() => showToast({ message: permissionMessage, type: 'error' })}
               >
                 <Save size={16} aria-hidden="true" />
