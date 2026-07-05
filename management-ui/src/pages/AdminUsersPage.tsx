@@ -28,14 +28,21 @@ export const AdminUsersPage: React.FC = () => {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [editingAdmin, setEditingAdmin] = useState<AdminUserDto | null>(null);
+  const [resettingAdmin, setResettingAdmin] = useState<AdminUserDto | null>(null);
   const [newUsername, setNewUsername] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [newRole, setNewRole] = useState<AdminRole>('READ_ONLY_ADMIN');
   const [selectedRole, setSelectedRole] = useState<AdminRole>('READ_ONLY_ADMIN');
+  const [resetPassword, setResetPassword] = useState('');
+  const [resetConfirmPassword, setResetConfirmPassword] = useState('');
   const assignableRoles = useMemo(() => getAssignableRoles(role), [role]);
   const assignableRoleOptions = useMemo(() => toRoleOptions(assignableRoles), [assignableRoles]);
   const canCreateAdminUsers = assignableRoles.length > 0;
   const writeTooltip = !canCreateAdminUsers ? 'Owner or Admin required' : undefined;
+  const ownerCount = useMemo(
+    () => adminUsers.filter((adminUser) => isOwnerRole(adminUser.role)).length,
+    [adminUsers]
+  );
 
   const loadAdminUsers = async () => {
     try {
@@ -104,9 +111,20 @@ export const AdminUsersPage: React.FC = () => {
 
     setEditingAdmin(adminUser);
     setIsCreateOpen(false);
+    setResettingAdmin(null);
     setSelectedRole(editableRoles.includes(adminUser.role as AdminRole)
       ? adminUser.role as AdminRole
       : editableRoles[editableRoles.length - 1]);
+  };
+
+  const startPasswordReset = (adminUser: AdminUserDto) => {
+    if (!adminUser.id || !canManageAdminUser(role, adminUser.role)) return;
+
+    setResettingAdmin(adminUser);
+    setEditingAdmin(null);
+    setIsCreateOpen(false);
+    setResetPassword('');
+    setResetConfirmPassword('');
   };
 
   const handleUpdateRole = async (event: FormEvent) => {
@@ -122,6 +140,45 @@ export const AdminUsersPage: React.FC = () => {
     } catch (error) {
       showToast({
         message: getApiErrorMessage(error, 'Could not update admin role.'),
+        type: 'error'
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleResetPassword = async (event: FormEvent) => {
+    event.preventDefault();
+    if (!resettingAdmin?.id || !canManageAdminUser(role, resettingAdmin.role)) return;
+
+    if (!resetPassword.trim()) {
+      showToast({ message: 'New password is required.', type: 'error' });
+      return;
+    }
+
+    if (resetPassword.length < 8) {
+      showToast({ message: 'Password must be at least 8 characters.', type: 'error' });
+      return;
+    }
+
+    if (resetPassword !== resetConfirmPassword) {
+      showToast({ message: 'Passwords do not match.', type: 'error' });
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      await api.resetAdminUserPassword(resettingAdmin.id, {
+        newPassword: resetPassword,
+        confirmPassword: resetConfirmPassword
+      });
+      showToast({ message: 'Password reset.', type: 'success' });
+      setResettingAdmin(null);
+      setResetPassword('');
+      setResetConfirmPassword('');
+    } catch (error) {
+      showToast({
+        message: getApiErrorMessage(error, 'Could not reset password.'),
         type: 'error'
       });
     } finally {
@@ -160,6 +217,7 @@ export const AdminUsersPage: React.FC = () => {
             aria-label="Create admin"
             onClick={() => {
               setEditingAdmin(null);
+              setResettingAdmin(null);
               resetCreateForm();
               setIsCreateOpen((open) => !open);
             }}
@@ -237,6 +295,52 @@ export const AdminUsersPage: React.FC = () => {
         </form>
       )}
 
+      {resettingAdmin && (
+        <form onSubmit={handleResetPassword} className="mb-8 grid gap-4 py-2 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_auto] md:items-end">
+          <div className="min-w-56">
+            <p className="text-sm font-medium text-slate-100">{resettingAdmin.username}</p>
+            <p className="mt-1 text-xs text-slate-500">Reset admin password</p>
+          </div>
+          <label className="block text-sm text-slate-500">
+            New password
+            <PasswordInput
+              value={resetPassword}
+              onChange={(event) => setResetPassword(event.target.value)}
+              wrapperClassName="mt-2"
+              inputClassName="quiet-field"
+              required
+              minLength={8}
+            />
+          </label>
+          <label className="block text-sm text-slate-500">
+            Confirm password
+            <PasswordInput
+              value={resetConfirmPassword}
+              onChange={(event) => setResetConfirmPassword(event.target.value)}
+              wrapperClassName="mt-2"
+              inputClassName="quiet-field"
+              required
+              minLength={8}
+            />
+          </label>
+          <div className="flex gap-2">
+            <PrimaryButton type="submit" disabled={isSubmitting}>
+              Reset
+            </PrimaryButton>
+            <SecondaryButton
+              type="button"
+              onClick={() => {
+                setResettingAdmin(null);
+                setResetPassword('');
+                setResetConfirmPassword('');
+              }}
+            >
+              Cancel
+            </SecondaryButton>
+          </div>
+        </form>
+      )}
+
       <section>
         {isLoading ? (
           <div className="px-6 py-12 text-center text-sm text-slate-500">Loading admin users...</div>
@@ -268,7 +372,9 @@ export const AdminUsersPage: React.FC = () => {
                 {adminUsers.map((adminUser) => {
                   const canManageRow = canManageAdminUser(role, adminUser.role);
                   const editableRoles = getEditableRoles(adminUser.role);
-                  const canChangeRole = editableRoles.length > 1;
+                  const isLastOwner = isOwnerRole(adminUser.role) && ownerCount <= 1;
+                  const lastOwnerTitle = isLastOwner ? 'At least one owner must remain.' : undefined;
+                  const canChangeRole = editableRoles.length > 1 && !isLastOwner;
                   const isCurrentUser = adminUser.username === username;
                   const rowAccessTitle = canManageRow ? undefined : 'Owner required';
 
@@ -285,16 +391,22 @@ export const AdminUsersPage: React.FC = () => {
                               {
                                 label: 'Change role',
                                 disabled: !canChangeRole,
-                                title: rowAccessTitle ?? (!canChangeRole ? 'No role changes available' : undefined),
+                                title: rowAccessTitle ?? lastOwnerTitle ?? (!canChangeRole ? 'No role changes available' : undefined),
                                 onClick: () => startRoleEdit(adminUser)
+                              },
+                              {
+                                label: 'Reset password',
+                                disabled: !canManageRow,
+                                title: rowAccessTitle,
+                                onClick: () => startPasswordReset(adminUser)
                               },
                               {
                                 label: 'Delete',
                                 tone: 'danger',
-                                disabled: !canManageRow || isCurrentUser,
+                                disabled: !canManageRow || isCurrentUser || isLastOwner,
                                 title: rowAccessTitle ?? (isCurrentUser
                                   ? 'You cannot delete your current session user'
-                                  : undefined),
+                                  : lastOwnerTitle),
                                 onClick: () => handleDeleteAdmin(adminUser)
                               }
                             ]}

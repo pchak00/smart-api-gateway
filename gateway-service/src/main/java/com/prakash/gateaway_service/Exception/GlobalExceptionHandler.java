@@ -21,6 +21,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler({ClientNotFoundException.class,
                       PlanNotFoundException.class,
                       AdminNotFoundException.class,
+                      AdminRecoveryUnavailableException.class,
                       ProvisioningTokenNotFoundException.class,
                       AbuseAlertNotFoundException.class})
     public ResponseEntity<ExceptionResponse> handleNotFound(
@@ -45,7 +46,8 @@ public class GlobalExceptionHandler {
                       InvalidProvisioningRequestException.class,
                       InvalidGatewaySettingsException.class,
                       InvalidRouteLimitException.class,
-                      InvalidAbuseAlertStatusException.class})
+                      InvalidAbuseAlertStatusException.class,
+                      InvalidAdminPasswordException.class})
     public ResponseEntity<ExceptionResponse> handleBadRequest(
             RuntimeException e, HttpServletRequest request
     ) {
@@ -56,6 +58,15 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler({InactiveProvisioningTokenException.class, DisallowedProvisioningPlanException.class})
     public ResponseEntity<ExceptionResponse> handleForbidden(
+            RuntimeException e, HttpServletRequest request
+    ) {
+        ExceptionResponse response = new ExceptionResponse(HttpStatus.FORBIDDEN.value(),
+                e.getMessage(), System.currentTimeMillis(), request.getRequestURI());
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(response);
+    }
+
+    @ExceptionHandler(InvalidAdminRecoveryTokenException.class)
+    public ResponseEntity<ExceptionResponse> handleInvalidRecoveryToken(
             RuntimeException e, HttpServletRequest request
     ) {
         ExceptionResponse response = new ExceptionResponse(HttpStatus.FORBIDDEN.value(),

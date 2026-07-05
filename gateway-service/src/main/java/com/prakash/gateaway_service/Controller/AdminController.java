@@ -40,4 +40,14 @@ public class AdminController {
         return ResponseEntity.ok(response);
 
     }
+
+    @PatchMapping("/users/{id}/password")
+    public ResponseEntity<Void> resetAdminPassword(
+            @PathVariable Long id,
+            @RequestBody AdminPasswordResetRequestDto request,
+            Authentication authentication
+    ) {
+        adminService.resetAdminPassword(id, request, authentication.getName());
+        return ResponseEntity.noContent().build();
+    }
 }

@@ -43,6 +43,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         .requestMatchers("/api/**").permitAll()
                         .requestMatchers("/auth/**").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/admin/recovery/owner").permitAll()
                         .requestMatchers(HttpMethod.POST, "/provisioning/clients").permitAll()
 
                         .requestMatchers("/admin/clients/*/usage").hasAnyRole("OWNER", "SUPER_ADMIN", "READ_ONLY_ADMIN")

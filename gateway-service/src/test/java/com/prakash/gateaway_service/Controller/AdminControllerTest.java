@@ -129,4 +129,36 @@ class AdminControllerTest {
 
         verify(adminService).deleteAdmin(3L, "admin");
     }
+
+    @Test
+    @WithMockUser(username = "owner", roles = "OWNER")
+    void ownerCanResetAdminPassword() throws Exception {
+        mockMvc.perform(patch("/admin/users/2/password")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "newPassword": "new-password",
+                                  "confirmPassword": "new-password"
+                                }
+                                """))
+                .andExpect(status().isNoContent());
+
+        verify(adminService).resetAdminPassword(eq(2L), any(), eq("owner"));
+    }
+
+    @Test
+    @WithMockUser(username = "viewer", roles = "READ_ONLY_ADMIN")
+    void readOnlyAdminCannotResetAdminPassword() throws Exception {
+        mockMvc.perform(patch("/admin/users/2/password")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "newPassword": "new-password",
+                                  "confirmPassword": "new-password"
+                                }
+                                """))
+                .andExpect(status().isForbidden());
+
+        verify(adminService, never()).resetAdminPassword(any(), any(), any());
+    }
 }

@@ -31,7 +31,8 @@ import {
   UpdateGatewaySettingsRequest,
   TestGatewayConnectionRequest,
   TestGatewayConnectionResponse,
-  AdminRole
+  AdminRole,
+  AdminPasswordResetRequest
 } from '../types';
 
 const baseURL = (import.meta.env.VITE_API_BASE_URL as string | undefined) || '/';
@@ -325,6 +326,10 @@ class ApiClient {
   async updateAdminUserRole(id: number, payload: { role: AdminRole }): Promise<AdminUserDto> {
     const response = await this.axiosInstance.patch<AdminUserDto>(`/admin/users/${id}/role`, payload);
     return response.data;
+  }
+
+  async resetAdminUserPassword(id: number, payload: AdminPasswordResetRequest): Promise<void> {
+    await this.axiosInstance.patch(`/admin/users/${id}/password`, payload);
   }
 
   async deleteAdminUser(id: number): Promise<void> {

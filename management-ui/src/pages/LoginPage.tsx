@@ -81,6 +81,8 @@ export const LoginPage: React.FC = () => {
             >
               {isLoading ? 'Signing in...' : 'Sign in'}
             </PrimaryButton>
+
+            <p className="text-center text-xs text-slate-600">Need access? Contact an owner.</p>
           </form>
         </section>
 

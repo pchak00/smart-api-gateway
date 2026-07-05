@@ -24,6 +24,11 @@ export interface AdminUserDto {
   role: AdminRole | string;
 }
 
+export interface AdminPasswordResetRequest {
+  newPassword: string;
+  confirmPassword: string;
+}
+
 // Plans
 export interface PlanDto {
   id?: number;
