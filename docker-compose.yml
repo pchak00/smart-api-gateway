@@ -44,6 +44,7 @@ services:
       ADMIN_REFRESH_TOKEN_EXPIRATION_MS: ${ADMIN_REFRESH_TOKEN_EXPIRATION_MS:-604800000}
       BACKEND_SERVICE_URL: ${BACKEND_SERVICE_URL:-http://backend-service:8081}
       CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-http://localhost:3000,http://127.0.0.1:3000,http://localhost:5173,http://127.0.0.1:5173}
+#      ADMIN_RECOVERY_TOKEN: ${ADMIN_RECOVERY_TOKEN:-local-dev-recovery-token-123456789}
 
   management-ui:
     build:
