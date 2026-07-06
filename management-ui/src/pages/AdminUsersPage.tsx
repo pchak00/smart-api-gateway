@@ -42,17 +42,59 @@ const strengthWidthClass: Record<PasswordStrength, string> = {
 };
 
 const PasswordStrengthHint: React.FC<{ policy: PasswordPolicyResult }> = ({ policy }) => (
-  <div className="mt-2" aria-live="polite">
+  <div aria-live="polite">
     <div className="h-1 overflow-hidden rounded-full bg-slate-900/80">
       <div
         className={`h-full rounded-full transition-all ${strengthFillClass[policy.strength]} ${strengthWidthClass[policy.strength]}`}
       />
     </div>
-    <p className="mt-1 text-xs text-slate-500">
+    <p className="mt-1 text-xs leading-5 text-slate-500">
       <span className={`font-medium ${strengthTextClass[policy.strength]}`}>{policy.label}</span>
       <span className="mx-1 text-slate-700">/</span>
       <span>{policy.feedback}</span>
     </p>
+  </div>
+);
+
+const AdminFormField: React.FC<{
+  label: string;
+  children: React.ReactNode;
+  as?: 'label' | 'div';
+  className?: string;
+}> = ({ label, children, as: Component = 'label', className = '' }) => (
+  <Component className={`block min-w-0 text-sm text-slate-500 ${className}`}>
+    <span>{label}</span>
+    {children}
+  </Component>
+);
+
+interface AdminPasswordFieldProps extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'type'> {
+  label: string;
+  policy?: PasswordPolicyResult;
+  support?: React.ReactNode;
+}
+
+const AdminPasswordField: React.FC<AdminPasswordFieldProps> = ({
+  label,
+  policy,
+  support,
+  ...props
+}) => (
+  <AdminFormField label={label}>
+    <PasswordInput
+      {...props}
+      wrapperClassName="mt-2"
+      inputClassName="quiet-field"
+    />
+    <div className="min-h-[3.25rem] pt-2">
+      {policy ? <PasswordStrengthHint policy={policy} /> : support}
+    </div>
+  </AdminFormField>
+);
+
+const AdminFormActions: React.FC<{ children: React.ReactNode }> = ({ children }) => (
+  <div className="flex flex-wrap items-center gap-2 pt-1 md:pt-7">
+    {children}
   </div>
 );
 
@@ -280,31 +322,25 @@ export const AdminUsersPage: React.FC = () => {
       />
 
       {isCreateOpen && (
-        <form onSubmit={handleCreateAdmin} className="mb-8 grid gap-4 py-2 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_12rem_auto] md:items-end">
-          <label className="block text-sm text-slate-500">
-            Username
+        <form onSubmit={handleCreateAdmin} className="mb-8 grid gap-x-4 gap-y-3 py-2 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_12rem_auto] md:items-start">
+          <AdminFormField label="Username">
             <input
               value={newUsername}
               onChange={(event) => setNewUsername(event.target.value)}
               className="mt-2 quiet-field"
               required
             />
-          </label>
-          <label className="block text-sm text-slate-500">
-            Password
-            <PasswordInput
-              value={newPassword}
-              onChange={(event) => setNewPassword(event.target.value)}
-              wrapperClassName="mt-2"
-              inputClassName="quiet-field"
-              required
-              minLength={12}
-              maxLength={128}
-            />
-            <PasswordStrengthHint policy={createPasswordPolicy} />
-          </label>
-          <div className="block text-sm text-slate-500">
-            <span>Role</span>
+          </AdminFormField>
+          <AdminPasswordField
+            label="Password"
+            value={newPassword}
+            onChange={(event) => setNewPassword(event.target.value)}
+            policy={createPasswordPolicy}
+            required
+            minLength={12}
+            maxLength={128}
+          />
+          <AdminFormField label="Role" as="div">
             <AppDropdown
               value={newRole}
               onChange={(value) => setNewRole(value as AdminRole)}
@@ -312,15 +348,15 @@ export const AdminUsersPage: React.FC = () => {
               ariaLabel="Select admin role"
               className="mt-2"
             />
-          </div>
-          <div className="flex gap-2">
+          </AdminFormField>
+          <AdminFormActions>
             <PrimaryButton type="submit" disabled={isSubmitting || !createPasswordPolicy.valid}>
               Create
             </PrimaryButton>
             <SecondaryButton type="button" onClick={() => setIsCreateOpen(false)}>
               Cancel
             </SecondaryButton>
-          </div>
+          </AdminFormActions>
         </form>
       )}
 
@@ -350,40 +386,32 @@ export const AdminUsersPage: React.FC = () => {
       )}
 
       {resettingAdmin && (
-        <form onSubmit={handleResetPassword} className="mb-8 grid gap-4 py-2 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_auto] md:items-end">
+        <form onSubmit={handleResetPassword} className="mb-8 grid gap-x-4 gap-y-3 py-2 md:grid-cols-[minmax(10rem,0.8fr)_minmax(0,1fr)_minmax(0,1fr)_auto] md:items-start">
           <div className="min-w-56">
             <p className="text-sm font-medium text-slate-100">{resettingAdmin.username}</p>
             <p className="mt-1 text-xs text-slate-500">Reset admin password</p>
           </div>
-          <label className="block text-sm text-slate-500">
-            New password
-            <PasswordInput
-              value={resetPassword}
-              onChange={(event) => setResetPassword(event.target.value)}
-              wrapperClassName="mt-2"
-              inputClassName="quiet-field"
-              required
-              minLength={12}
-              maxLength={128}
-            />
-            <PasswordStrengthHint policy={resetPasswordPolicy} />
-          </label>
-          <label className="block text-sm text-slate-500">
-            Confirm password
-            <PasswordInput
-              value={resetConfirmPassword}
-              onChange={(event) => setResetConfirmPassword(event.target.value)}
-              wrapperClassName="mt-2"
-              inputClassName="quiet-field"
-              required
-              minLength={12}
-              maxLength={128}
-            />
-            {resetConfirmPassword.length > 0 && !isResetConfirmationValid && (
-              <p className="mt-2 text-xs text-slate-500" aria-live="polite">Passwords do not match.</p>
-            )}
-          </label>
-          <div className="flex gap-2">
+          <AdminPasswordField
+            label="New password"
+            value={resetPassword}
+            onChange={(event) => setResetPassword(event.target.value)}
+            policy={resetPasswordPolicy}
+            required
+            minLength={12}
+            maxLength={128}
+          />
+          <AdminPasswordField
+            label="Confirm password"
+            value={resetConfirmPassword}
+            onChange={(event) => setResetConfirmPassword(event.target.value)}
+            support={resetConfirmPassword.length > 0 && !isResetConfirmationValid ? (
+              <p className="text-xs leading-5 text-slate-500" aria-live="polite">Passwords do not match.</p>
+            ) : null}
+            required
+            minLength={12}
+            maxLength={128}
+          />
+          <AdminFormActions>
             <PrimaryButton type="submit" disabled={isSubmitting || !resetPasswordPolicy.valid || !isResetConfirmationValid}>
               Reset
             </PrimaryButton>
@@ -397,7 +425,7 @@ export const AdminUsersPage: React.FC = () => {
             >
               Cancel
             </SecondaryButton>
-          </div>
+          </AdminFormActions>
         </form>
       )}
 
