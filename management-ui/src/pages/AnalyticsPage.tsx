@@ -2,7 +2,6 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowDown, ArrowUp, Minus, Route, Search, Users, X } from 'lucide-react';
 import {
-  CartesianGrid,
   Line,
   LineChart,
   ResponsiveContainer,
@@ -20,7 +19,7 @@ import {
 import { EmptyState, PageHeader, Panel } from '../components/PageShell';
 import { AppDropdown, DropdownOption } from '../components/AppDropdown';
 import { InfoTooltip } from '../components/InfoTooltip';
-import { formatBucket, formatNumber, getPlanLabel } from '../utils/display';
+import { formatBucket, formatNumber, getPlanLabel, getServerTimestampDate } from '../utils/display';
 import { useToast } from '../hooks/useToast';
 
 type RouteTrendMetric = 'totalRequests' | 'allowedRequests' | 'blockedRequests';
@@ -37,6 +36,7 @@ interface AnalyticsSortSelection {
 }
 
 type RouteTrendChartPoint = {
+  bucket: string;
   bucketLabel: string;
   [key: string]: string | number;
 };
@@ -57,6 +57,29 @@ type RouteTrendRoute = {
   opacity: number;
 };
 
+type ActivityHint = {
+  tone: 'idle' | 'empty';
+  label: string;
+} | null;
+
+type RouteTrendTooltipPayload = {
+  dataKey?: string | number;
+  value?: number | string;
+  color?: string;
+  stroke?: string;
+  payload?: RouteTrendChartPoint;
+};
+
+interface RouteTrendTooltipProps {
+  active?: boolean;
+  label?: string | number;
+  payload?: RouteTrendTooltipPayload[];
+  routes: RouteTrendRoute[];
+  metric: RouteTrendMetric;
+}
+
+const ANALYTICS_WINDOW_DAYS = 7;
+
 const safeCount = (value: number | null | undefined) => (
   typeof value === 'number' && !Number.isNaN(value) ? value : 0
 );
@@ -73,6 +96,43 @@ const getBlockRate = (totalRequests: number | null | undefined, blockedRequests:
 const getRouteName = (route: string | null | undefined) => {
   const routeName = route?.trim();
   return routeName || 'Unknown route';
+};
+
+const getLocalDateKey = (date: Date) => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+
+  return `${year}-${month}-${day}`;
+};
+
+const getBucketDateKey = (bucket: string | null | undefined) => {
+  if (!bucket) return null;
+
+  const date = getServerTimestampDate(bucket);
+  return date ? getLocalDateKey(date) : null;
+};
+
+const getCurrentAnalyticsWindow = (days = ANALYTICS_WINDOW_DAYS) => {
+  const today = new Date();
+  const endDate = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+  const startDate = new Date(endDate);
+  startDate.setDate(endDate.getDate() - (days - 1));
+
+  return Array.from({ length: days }, (_, index) => {
+    const date = new Date(startDate);
+    date.setDate(startDate.getDate() + index);
+    return getLocalDateKey(date);
+  });
+};
+
+const getPointActivity = (
+  point: Pick<TrafficAnalyticsDto, 'totalRequests' | 'allowedRequests' | 'blockedRequests'>
+) => {
+  const totalRequests = safePositiveCount(point.totalRequests);
+  if (totalRequests > 0) return totalRequests;
+
+  return safePositiveCount(point.allowedRequests) + safePositiveCount(point.blockedRequests);
 };
 
 const getClientName = (client: ClientAnalyticsDto, index: number) => (
@@ -152,6 +212,76 @@ const getAnalyticsWindowLabel = (buckets: Array<string | undefined>) => {
   if (sortedBuckets.length === 1) return formatBucket(sortedBuckets[0]);
 
   return `${formatBucket(sortedBuckets[0])} - ${formatBucket(sortedBuckets[sortedBuckets.length - 1])}`;
+};
+
+const fillTrafficWindow = (
+  traffic: TrafficAnalyticsDto[],
+  windowBuckets: string[]
+): TrafficAnalyticsDto[] => {
+  const buckets = new Map<string, TrafficAnalyticsDto>(
+    windowBuckets.map((bucket) => [
+      bucket,
+      {
+        bucket,
+        totalRequests: 0,
+        allowedRequests: 0,
+        blockedRequests: 0
+      }
+    ])
+  );
+
+  traffic.forEach((point) => {
+    const bucket = getBucketDateKey(point.bucket);
+    if (!bucket || !buckets.has(bucket)) return;
+
+    const existing = buckets.get(bucket);
+    if (!existing) return;
+
+    buckets.set(bucket, {
+      bucket,
+      totalRequests: safePositiveCount(existing.totalRequests) + safePositiveCount(point.totalRequests),
+      allowedRequests: safePositiveCount(existing.allowedRequests) + safePositiveCount(point.allowedRequests),
+      blockedRequests: safePositiveCount(existing.blockedRequests) + safePositiveCount(point.blockedRequests)
+    });
+  });
+
+  return windowBuckets.map((bucket) => buckets.get(bucket)).filter((point): point is TrafficAnalyticsDto => Boolean(point));
+};
+
+const getActivityHint = (
+  traffic: TrafficAnalyticsDto[],
+  routeTraffic: RouteTrafficAnalyticsDto[],
+  windowBuckets: string[]
+): ActivityHint => {
+  const activityByBucket = new Map(windowBuckets.map((bucket) => [bucket, 0]));
+  const trackActivity = (point: TrafficAnalyticsDto | RouteTrafficAnalyticsDto) => {
+    const bucket = getBucketDateKey(point.bucket);
+    if (!bucket || !activityByBucket.has(bucket)) return;
+
+    activityByBucket.set(bucket, (activityByBucket.get(bucket) ?? 0) + getPointActivity(point));
+  };
+
+  traffic.forEach(trackActivity);
+  routeTraffic.forEach(trackActivity);
+
+  const todayBucket = windowBuckets[windowBuckets.length - 1];
+  if ((activityByBucket.get(todayBucket) ?? 0) > 0) return null;
+
+  const latestActiveBucket = [...windowBuckets]
+    .reverse()
+    .find((bucket) => (activityByBucket.get(bucket) ?? 0) > 0);
+
+  if (!latestActiveBucket) {
+    return {
+      tone: 'empty',
+      label: 'No traffic in selected window'
+    };
+  }
+
+  return {
+    tone: 'idle',
+    label: `No traffic since ${formatBucket(latestActiveBucket)}`
+  };
 };
 
 type TrendDirection = 'up' | 'down' | 'flat' | 'none';
@@ -303,6 +433,58 @@ const getRouteTrendCountLabel = (
   return `Showing top ${limit} routes`;
 };
 
+const routeTrendMetricUnit: Record<RouteTrendMetric, string> = {
+  totalRequests: 'requests',
+  allowedRequests: 'allowed',
+  blockedRequests: 'blocked'
+};
+
+const RouteTrendTooltip: React.FC<RouteTrendTooltipProps> = ({
+  active,
+  label,
+  payload,
+  routes,
+  metric
+}) => {
+  if (!active || !payload?.length) return null;
+
+  const payloadByKey = new Map(payload.map((item) => [String(item.dataKey), item]));
+  const visibleValues = routes
+    .map((route) => {
+      const item = payloadByKey.get(route.key);
+      const rawValue = item?.value;
+      const value = typeof rawValue === 'number' ? rawValue : Number(rawValue);
+
+      return {
+        route,
+        value: Number.isFinite(value) ? value : 0
+      };
+    });
+
+  return (
+    <div className="min-w-44 max-w-72 rounded-md bg-slate-950/95 px-3 py-2 text-xs shadow-[0_18px_45px_rgba(2,6,23,0.34)] ring-1 ring-cyan-200/10">
+      <p className="mb-2 font-medium text-slate-300">{String(label)}</p>
+      <div className="max-h-48 space-y-1 overflow-y-auto">
+        {visibleValues.map(({ route, value }) => (
+          <div key={route.key} className="grid min-w-0 grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-2">
+            <span
+              className="h-1.5 w-1.5 rounded-full"
+              style={{ backgroundColor: route.color, opacity: route.opacity }}
+              aria-hidden="true"
+            />
+            <span className="min-w-0 truncate font-mono text-slate-400" title={route.route}>
+              {route.route}
+            </span>
+            <span className="font-medium text-slate-100">
+              {formatNumber(value)} {routeTrendMetricUnit[metric]}
+            </span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
 const compareMetric = (first: number, second: number, direction: AnalyticsSortDirection) => {
   const difference = direction === 'desc' ? second - first : first - second;
   return difference === 0 ? 0 : difference;
@@ -442,6 +624,7 @@ export const AnalyticsPage: React.FC = () => {
   const [selectedCustomRoutes, setSelectedCustomRoutes] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const analyticsWindowBuckets = useMemo(() => getCurrentAnalyticsWindow(), []);
 
   useEffect(() => {
     const loadAnalytics = async () => {
@@ -530,10 +713,18 @@ export const AnalyticsPage: React.FC = () => {
   }, [routeTrendMode, routeTrendRouteOptions, selectedCustomRoutes, selectedRouteMetric]);
 
   const routeTrendRouteCount = routeTrendRouteOptions.length;
-  const analyticsWindowLabel = useMemo(() => getAnalyticsWindowLabel([
-    ...trafficAnalytics.map((point) => point.bucket),
-    ...routeTrafficAnalytics.map((point) => point.bucket)
-  ]), [routeTrafficAnalytics, trafficAnalytics]);
+  const filledTrafficAnalytics = useMemo(
+    () => fillTrafficWindow(trafficAnalytics, analyticsWindowBuckets),
+    [analyticsWindowBuckets, trafficAnalytics]
+  );
+  const analyticsWindowLabel = useMemo(
+    () => getAnalyticsWindowLabel(analyticsWindowBuckets),
+    [analyticsWindowBuckets]
+  );
+  const activityHint = useMemo(
+    () => getActivityHint(trafficAnalytics, routeTrafficAnalytics, analyticsWindowBuckets),
+    [analyticsWindowBuckets, routeTrafficAnalytics, trafficAnalytics]
+  );
 
   const routeSearchResults = useMemo(() => {
     const query = routeSearch.trim().toLowerCase();
@@ -561,29 +752,35 @@ export const AnalyticsPage: React.FC = () => {
   };
 
   const routeTrendData = useMemo<RouteTrendChartPoint[]>(() => {
-    const buckets = new Map<string, RouteTrendChartPoint>();
+    const buckets = new Map<string, RouteTrendChartPoint>(
+      analyticsWindowBuckets.map((bucket) => [
+        bucket,
+        {
+          bucket,
+          bucketLabel: formatBucket(bucket)
+        }
+      ])
+    );
     const routeKeyByName = new Map(routeTrendRoutes.map((route) => [route.route, route.key]));
 
     routeTrafficAnalytics.forEach((point) => {
-      const bucket = point.bucket ?? 'Unknown date';
+      const bucket = getBucketDateKey(point.bucket);
       const route = getRouteName(point.route);
       const routeKey = routeKeyByName.get(route);
 
-      if (!routeKey) return;
+      if (!bucket || !routeKey || !buckets.has(bucket)) return;
 
-      const existing = buckets.get(bucket) ?? {
-        bucket,
-        bucketLabel: formatBucket(bucket)
-      };
-
+      const existing = buckets.get(bucket);
+      if (!existing) return;
       existing[routeKey] = safeCount(typeof existing[routeKey] === 'number' ? existing[routeKey] : undefined) +
         safeCount(point[selectedRouteMetric]);
       buckets.set(bucket, existing);
     });
 
-    return [...buckets.entries()]
-      .sort(([first], [second]) => first.localeCompare(second))
-      .map(([, point]) => {
+    return analyticsWindowBuckets
+      .map((bucket) => buckets.get(bucket))
+      .filter((point): point is RouteTrendChartPoint => Boolean(point))
+      .map((point) => {
         routeTrendRoutes.forEach((route) => {
           if (typeof point[route.key] !== 'number') {
             point[route.key] = 0;
@@ -592,9 +789,9 @@ export const AnalyticsPage: React.FC = () => {
 
         return point;
       });
-  }, [routeTrafficAnalytics, routeTrendRoutes, selectedRouteMetric]);
+  }, [analyticsWindowBuckets, routeTrafficAnalytics, routeTrendRoutes, selectedRouteMetric]);
 
-  const summaryTrend = useMemo(() => getSummaryTrend(trafficAnalytics), [trafficAnalytics]);
+  const summaryTrend = useMemo(() => getSummaryTrend(filledTrafficAnalytics), [filledTrafficAnalytics]);
   const routeAnalyticsSort = useMemo<AnalyticsSortSelection>(() => ({
     field: routeAnalyticsSortField,
     direction: routeAnalyticsSortDirection
@@ -668,7 +865,14 @@ export const AnalyticsPage: React.FC = () => {
           <div className="mb-5 flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
             <div className="min-w-0">
               <h2 className="text-sm font-semibold text-slate-100">Route trends</h2>
-              <p className="mt-1 text-xs text-slate-400">{analyticsWindowLabel}</p>
+              <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1">
+                <p className="text-xs text-slate-400">{analyticsWindowLabel}</p>
+                {activityHint && (
+                  <p className={`text-xs ${activityHint.tone === 'empty' ? 'text-slate-500' : 'text-slate-500/90'}`}>
+                    {activityHint.label}
+                  </p>
+                )}
+              </div>
             </div>
             <div className="flex flex-wrap items-center gap-3">
               <div className="flex gap-1">
@@ -821,24 +1025,27 @@ export const AnalyticsPage: React.FC = () => {
             <div className="h-72 2xl:h-80">
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={routeTrendData} margin={{ top: 8, right: 8, left: -16, bottom: 0 }}>
-                  <CartesianGrid stroke="#1e293b" strokeOpacity={0.55} vertical={false} />
-                  <XAxis dataKey="bucketLabel" tick={{ fill: '#94a3b8', fontSize: 12 }} tickLine={false} axisLine={false} />
-                  <YAxis tick={{ fill: '#94a3b8', fontSize: 12 }} tickLine={false} axisLine={false} />
+                  <XAxis
+                    dataKey="bucketLabel"
+                    tick={{ fill: '#94a3b8', fontSize: 12 }}
+                    tickLine={false}
+                    axisLine={false}
+                    interval="preserveStartEnd"
+                    minTickGap={14}
+                  />
+                  <YAxis
+                    tick={{ fill: '#94a3b8', fontSize: 12 }}
+                    tickLine={false}
+                    axisLine={false}
+                    allowDecimals={false}
+                    width={42}
+                  />
                   <Tooltip
-                    contentStyle={{
-                      background: 'rgba(2, 6, 23, 0.94)',
-                      border: '1px solid rgba(125, 211, 252, 0.08)',
-                      borderRadius: 8,
-                      boxShadow: '0 18px 45px rgba(2, 6, 23, 0.32), inset 0 1px 0 rgba(186, 230, 253, 0.055)',
-                      color: '#e2e8f0'
-                    }}
-                    itemStyle={{ color: '#cbd5e1', fontSize: 12 }}
-                    labelStyle={{ color: '#94a3b8', fontSize: 12, marginBottom: 6 }}
-                    labelFormatter={(label) => `Bucket: ${String(label)}`}
-                    formatter={(value, name) => [
-                      formatNumber(typeof value === 'number' ? value : Number(value)),
-                      routeTrendRoutes.find((route) => route.key === name)?.route ?? String(name)
-                    ]}
+                    allowEscapeViewBox={{ x: true, y: true }}
+                    content={<RouteTrendTooltip routes={routeTrendRoutes} metric={selectedRouteMetric} />}
+                    cursor={{ stroke: '#94a3b8', strokeOpacity: 0.22, strokeWidth: 1 }}
+                    isAnimationActive={false}
+                    wrapperStyle={{ outline: 'none', zIndex: 30 }}
                   />
                   {routeTrendRoutes.map((route) => (
                     <Line
@@ -851,7 +1058,12 @@ export const AnalyticsPage: React.FC = () => {
                       strokeOpacity={route.opacity}
                       strokeWidth={route.strokeWidth}
                       dot={false}
-                      activeDot={{ r: 4 }}
+                      activeDot={{
+                        r: 4,
+                        fill: route.color,
+                        stroke: '#020617',
+                        strokeWidth: 2
+                      }}
                     />
                   ))}
                 </LineChart>
