@@ -37,7 +37,7 @@ export const NumberField: React.FC<NumberFieldProps> = ({
   disabled,
   ...props
 }) => (
-  <div className="mt-2 flex border-b border-slate-800/70 bg-transparent pr-1 transition-colors hover:border-slate-700/90 focus-within:border-cyan-400/70 focus-within:ring-2 focus-within:ring-cyan-400/20">
+  <div className="pacific-line-focus mt-2 flex border-b border-slate-800/70 bg-transparent pr-1 transition-colors hover:border-slate-700/90">
     <input
       {...props}
       type="number"
@@ -54,7 +54,7 @@ export const NumberField: React.FC<NumberFieldProps> = ({
         type="button"
         disabled={disabled}
         onClick={() => onChange(toNextValue(value, -1, step, min, max))}
-        className="flex w-7 items-center justify-center rounded text-slate-500 transition-colors hover:bg-slate-900/35 hover:text-slate-200 focus:outline-none focus:ring-2 focus:ring-cyan-400/20 disabled:cursor-not-allowed disabled:text-slate-700"
+        className="pacific-icon-focus flex w-7 items-center justify-center rounded text-slate-500 transition-colors hover:bg-slate-900/35 hover:text-slate-200 disabled:cursor-not-allowed disabled:text-slate-700"
         aria-label="Decrease value"
       >
         <Minus size={13} aria-hidden="true" />
@@ -63,7 +63,7 @@ export const NumberField: React.FC<NumberFieldProps> = ({
         type="button"
         disabled={disabled}
         onClick={() => onChange(toNextValue(value, 1, step, min, max))}
-        className="flex w-7 items-center justify-center rounded text-slate-500 transition-colors hover:bg-slate-900/35 hover:text-slate-200 focus:outline-none focus:ring-2 focus:ring-cyan-400/20 disabled:cursor-not-allowed disabled:text-slate-700"
+        className="pacific-icon-focus flex w-7 items-center justify-center rounded text-slate-500 transition-colors hover:bg-slate-900/35 hover:text-slate-200 disabled:cursor-not-allowed disabled:text-slate-700"
         aria-label="Increase value"
       >
         <Plus size={13} aria-hidden="true" />

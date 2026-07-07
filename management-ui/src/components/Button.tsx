@@ -24,7 +24,7 @@ export const DisabledButton: React.FC<DisabledButtonProps> = ({
   className = '',
   ...props
 }) => {
-  const baseClass = 'inline-flex h-9 items-center justify-center gap-2 rounded-md px-3.5 text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-cyan-400/20';
+  const baseClass = 'pacific-control-focus inline-flex h-9 items-center justify-center gap-2 rounded-md px-3.5 text-sm font-medium transition-colors';
   const disabledClass = disabled ? 'cursor-not-allowed opacity-50' : '';
 
   return (
@@ -86,7 +86,7 @@ export const IconButton: React.FC<IconButtonProps> = ({
   const baseClass = [
     'inline-flex h-9 w-9 items-center justify-center rounded-md text-slate-400 transition-colors',
     'hover:bg-slate-900/35 hover:text-slate-100',
-    'focus:outline-none focus:ring-2 focus:ring-cyan-400/20',
+    'pacific-icon-focus',
     'disabled:cursor-not-allowed disabled:text-slate-600 disabled:opacity-55'
   ].join(' ');
 

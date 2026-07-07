@@ -4,11 +4,23 @@
 
 @layer components {
   .quiet-field {
-    @apply w-full border-0 border-b border-slate-800/70 bg-transparent px-0 py-2 text-sm text-slate-100 outline-none transition-colors placeholder:text-slate-700 hover:border-slate-700/90 focus:border-cyan-400/70 focus:ring-0 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-400/25 disabled:cursor-not-allowed disabled:text-slate-600 disabled:hover:border-slate-800/70;
+    @apply w-full border-0 border-b border-slate-800/70 bg-transparent px-0 py-2 text-sm text-slate-100 outline-none transition-colors placeholder:text-slate-700 hover:border-slate-700/90 focus:border-cyan-400/70 focus:ring-0 focus-visible:outline-none disabled:cursor-not-allowed disabled:text-slate-600 disabled:hover:border-slate-800/70;
   }
 
   .quiet-static-field {
     @apply w-full border-b border-slate-800/60 bg-transparent px-0 py-2 text-sm text-slate-300;
+  }
+
+  .pacific-control-focus {
+    @apply focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0 focus-visible:bg-slate-900/35 focus-visible:text-slate-100;
+  }
+
+  .pacific-icon-focus {
+    @apply focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0 focus-visible:bg-slate-900/45 focus-visible:text-slate-100;
+  }
+
+  .pacific-line-focus {
+    @apply focus-within:border-cyan-400/70 focus-within:outline-none focus-within:ring-0;
   }
 }
 
@@ -69,8 +81,7 @@ select:disabled {
 select:focus-visible,
 input:focus-visible,
 textarea:focus-visible {
-  outline: 2px solid rgba(100, 116, 139, 0.32);
-  outline-offset: 2px;
+  outline: none;
 }
 
 input[type='number'] {

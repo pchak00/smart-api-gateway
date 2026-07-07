@@ -68,7 +68,7 @@ export const SensitiveValue: React.FC<SensitiveValueProps> = ({
           <button
             type="button"
             onClick={handleCopy}
-            className="inline-flex h-7 w-7 items-center justify-center rounded-md text-slate-500 transition-colors hover:bg-slate-900/70 hover:text-slate-200 focus:outline-none focus:ring-2 focus:ring-slate-700/35"
+            className="pacific-icon-focus inline-flex h-7 w-7 items-center justify-center rounded-md text-slate-500 transition-colors hover:bg-slate-900/70 hover:text-slate-200"
             aria-label="Copy API key"
             title="Copy API key"
           >
@@ -80,7 +80,7 @@ export const SensitiveValue: React.FC<SensitiveValueProps> = ({
               event.stopPropagation();
               onRevealedChange(!revealed);
             }}
-            className="inline-flex h-7 w-7 items-center justify-center rounded-md text-slate-500 transition-colors hover:bg-slate-900/70 hover:text-slate-200 focus:outline-none focus:ring-2 focus:ring-slate-700/35"
+            className="pacific-icon-focus inline-flex h-7 w-7 items-center justify-center rounded-md text-slate-500 transition-colors hover:bg-slate-900/70 hover:text-slate-200"
             aria-label={revealed ? 'Hide API key' : 'Reveal API key'}
             title={revealed ? 'Hide API key' : 'Reveal API key'}
           >

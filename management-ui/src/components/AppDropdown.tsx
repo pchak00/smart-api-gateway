@@ -81,7 +81,7 @@ export const AppDropdown: React.FC<AppDropdownProps> = ({
         aria-haspopup="listbox"
         aria-expanded={isOpen}
         className={cx(
-          'flex h-9 items-center justify-between gap-2 border-b border-slate-800/70 bg-transparent px-0 text-left text-sm text-slate-200 outline-none transition-colors hover:border-slate-700/90 hover:bg-slate-900/15 focus:border-cyan-400/70 focus:ring-2 focus:ring-cyan-400/20 disabled:cursor-not-allowed disabled:text-slate-600',
+          'pacific-line-focus flex h-9 items-center justify-between gap-2 border-b border-slate-800/70 bg-transparent px-0 text-left text-sm text-slate-200 outline-none transition-colors hover:border-slate-700/90 hover:bg-slate-900/15 focus:border-cyan-400/70 disabled:cursor-not-allowed disabled:text-slate-600',
           fullWidth ? 'w-full' : 'w-auto',
           buttonClassName
         )}

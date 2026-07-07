@@ -91,7 +91,7 @@ export const AppLayout: React.FC = () => {
               type="button"
               onClick={() => setIsMobileNavOpen(false)}
               aria-label="Close navigation"
-              className="absolute right-3 top-4 z-10 inline-flex h-9 w-9 items-center justify-center rounded-md text-slate-500 transition-colors hover:bg-slate-900/60 hover:text-slate-100 focus:outline-none focus:ring-2 focus:ring-slate-700/35"
+              className="pacific-icon-focus absolute right-3 top-4 z-10 inline-flex h-9 w-9 items-center justify-center rounded-md text-slate-500 transition-colors hover:bg-slate-900/60 hover:text-slate-100"
             >
               <X size={18} aria-hidden="true" />
             </button>

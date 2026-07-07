@@ -339,7 +339,7 @@ export const ClientsListPage: React.FC = () => {
             className="peer sr-only"
             aria-label="Show stale clients only"
           />
-          <span className="relative h-4 w-8 shrink-0 rounded-full bg-slate-800/85 transition-colors after:absolute after:left-0.5 after:top-0.5 after:h-3 after:w-3 after:rounded-full after:bg-slate-500 after:transition-transform peer-checked:bg-cyan-950/70 peer-checked:after:translate-x-4 peer-checked:after:bg-cyan-300/80 peer-focus-visible:ring-2 peer-focus-visible:ring-slate-600/50" />
+          <span className="relative h-4 w-8 shrink-0 rounded-full bg-slate-800/85 transition-colors after:absolute after:left-0.5 after:top-0.5 after:h-3 after:w-3 after:rounded-full after:bg-slate-500 after:transition-transform peer-checked:bg-cyan-950/70 peer-checked:after:translate-x-4 peer-checked:after:bg-cyan-300/80 peer-focus-visible:after:bg-slate-100" />
           <span className="whitespace-nowrap text-xs font-medium">Stale</span>
         </label>
         <IconButton
@@ -386,7 +386,7 @@ export const ClientsListPage: React.FC = () => {
               onChange={(event) => setNewClientActive(event.target.checked)}
               className="peer sr-only"
             />
-            <span className="relative h-5 w-9 rounded-full bg-slate-800/80 transition-colors after:absolute after:left-0.5 after:top-0.5 after:h-4 after:w-4 after:rounded-full after:bg-slate-500 after:transition-transform peer-checked:bg-cyan-950/70 peer-checked:after:translate-x-4 peer-checked:after:bg-cyan-300/80 peer-focus-visible:ring-2 peer-focus-visible:ring-slate-600/50" />
+            <span className="relative h-5 w-9 rounded-full bg-slate-800/80 transition-colors after:absolute after:left-0.5 after:top-0.5 after:h-4 after:w-4 after:rounded-full after:bg-slate-500 after:transition-transform peer-checked:bg-cyan-950/70 peer-checked:after:translate-x-4 peer-checked:after:bg-cyan-300/80 peer-focus-visible:after:bg-slate-100" />
             Active
           </label>
           <div className="flex gap-2">
@@ -500,7 +500,7 @@ export const ClientsListPage: React.FC = () => {
                           openClientDetail(client);
                         }
                       }}
-                      className={`transition-colors hover:bg-slate-900/25 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-slate-700/40 ${
+                      className={`transition-colors hover:bg-slate-900/25 focus:outline-none focus-visible:bg-slate-900/35 ${
                         hasBackendId ? 'cursor-pointer' : ''
                       }`}
                     >

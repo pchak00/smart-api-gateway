@@ -24,7 +24,7 @@ export const PasswordInput: React.FC<PasswordInputProps> = ({
       <button
         type="button"
         onClick={() => setIsVisible((visible) => !visible)}
-        className="absolute right-0 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-md text-slate-600 transition-colors hover:text-slate-300 focus:outline-none focus:ring-2 focus:ring-slate-700/40"
+        className="pacific-icon-focus absolute right-0 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-md text-slate-600 transition-colors hover:text-slate-300"
         aria-label={isVisible ? 'Hide password' : 'Show password'}
         aria-pressed={isVisible}
       >

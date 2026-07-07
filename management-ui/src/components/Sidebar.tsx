@@ -153,7 +153,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 aria-label={toggleLabel}
                 aria-expanded={!isCollapsed}
                 className={cx(
-                  'group flex w-full items-center rounded-lg py-1.5 transition-colors duration-150 hover:bg-slate-900/45 focus:outline-none focus:ring-2 focus:ring-slate-700/35',
+                  'pacific-control-focus group flex w-full items-center rounded-lg py-1.5 transition-colors duration-150 hover:bg-slate-900/45',
                   isCollapsed ? 'justify-center px-0' : 'justify-between gap-3 px-2'
                 )}
               >
@@ -230,7 +230,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   type="button"
                   onClick={handleRestrictedClick}
                   className={cx(
-                    'flex w-full cursor-not-allowed items-center rounded-lg py-2.5 text-left text-sm text-slate-600 transition-colors hover:bg-slate-900/45 focus:outline-none focus:ring-2 focus:ring-slate-700/35',
+                    'pacific-control-focus flex w-full cursor-not-allowed items-center rounded-lg py-2.5 text-left text-sm text-slate-600 transition-colors hover:bg-slate-900/45',
                     isCollapsed ? 'justify-center px-0' : 'gap-3 px-3'
                   )}
                   aria-disabled="true"
@@ -264,7 +264,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 onClick={onNavigate}
                 aria-label={isCollapsed ? item.label : undefined}
                 className={cx(
-                  'flex items-center rounded-lg py-2.5 text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-slate-700/35',
+                  'pacific-control-focus flex items-center rounded-lg py-2.5 text-sm transition-colors',
                   isCollapsed ? 'justify-center px-0' : 'gap-3 px-3',
                   isActive
                     ? 'bg-slate-900/65 text-slate-100'
@@ -312,7 +312,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 onClick={onNavigate}
                 aria-label={isCollapsed ? item.label : undefined}
                 className={cx(
-                  'flex items-center rounded-lg py-2.5 text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-slate-700/35',
+                  'pacific-control-focus flex items-center rounded-lg py-2.5 text-sm transition-colors',
                   isCollapsed ? 'justify-center px-0' : 'gap-3 px-3',
                   isActive
                     ? 'bg-slate-900/65 text-slate-100'
@@ -370,7 +370,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             aria-label="Open account menu"
             onClick={() => setIsProfileOpen((open) => !open)}
             className={cx(
-              'group flex w-full items-center rounded-lg py-2.5 text-left text-sm text-slate-400 transition-colors hover:bg-slate-900/55 hover:text-slate-100 focus:outline-none focus:ring-2 focus:ring-slate-700/35',
+              'pacific-control-focus group flex w-full items-center rounded-lg py-2.5 text-left text-sm text-slate-400 transition-colors hover:bg-slate-900/55 hover:text-slate-100',
               isCollapsed ? 'justify-center px-0' : 'justify-between px-3'
             )}
           >

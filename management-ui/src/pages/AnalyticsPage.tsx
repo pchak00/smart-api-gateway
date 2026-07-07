@@ -417,7 +417,7 @@ const SortDirectionButton: React.FC<SortDirectionButtonProps> = ({ field, direct
       onClick={onToggle}
       aria-label={label}
       title={label}
-      className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-slate-500 transition-colors hover:bg-slate-900/35 hover:text-slate-200 focus:outline-none focus:ring-2 focus:ring-cyan-400/20"
+      className="pacific-icon-focus inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-slate-500 transition-colors hover:bg-slate-900/35 hover:text-slate-200"
     >
       <Icon size={14} strokeWidth={2.2} aria-hidden="true" />
     </button>
@@ -677,7 +677,7 @@ export const AnalyticsPage: React.FC = () => {
                     key={option.key}
                     type="button"
                     onClick={() => setSelectedRouteMetric(option.key)}
-                    className={`rounded px-2.5 py-1 text-xs font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-cyan-400/20 ${
+                    className={`pacific-control-focus rounded px-2.5 py-1 text-xs font-medium transition-colors ${
                       selectedRouteMetric === option.key
                         ? 'bg-slate-800/45 text-slate-100'
                         : 'text-slate-400 hover:bg-slate-900/35 hover:text-slate-200'
@@ -693,7 +693,7 @@ export const AnalyticsPage: React.FC = () => {
                     key={option.key}
                     type="button"
                     onClick={() => setRouteTrendMode(option.key)}
-                    className={`rounded px-2.5 py-1 text-xs font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-cyan-400/20 ${
+                    className={`pacific-control-focus rounded px-2.5 py-1 text-xs font-medium transition-colors ${
                       routeTrendMode === option.key
                         ? 'bg-slate-800/45 text-slate-100'
                         : 'text-slate-400 hover:bg-slate-900/35 hover:text-slate-200'
@@ -710,7 +710,7 @@ export const AnalyticsPage: React.FC = () => {
           {routeTrendMode === 'custom' && !isLoading && !errorMessage && routeTrendRouteCount > 0 && (
             <div className="mb-5 space-y-3">
               <div className="relative max-w-2xl">
-                <div className="flex items-center border-b border-slate-800/70 bg-transparent transition-colors hover:border-slate-700/90 focus-within:border-cyan-400/70 focus-within:outline focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-cyan-400/25">
+                <div className="pacific-line-focus flex items-center border-b border-slate-800/70 bg-transparent transition-colors hover:border-slate-700/90">
                   <Search className="mr-2 shrink-0 text-slate-700" size={15} aria-hidden="true" />
                   <input
                     type="search"
@@ -771,7 +771,7 @@ export const AnalyticsPage: React.FC = () => {
                       <button
                         type="button"
                         onClick={() => handleRemoveCustomRoute(route)}
-                        className="text-slate-600 transition-colors hover:text-slate-300 focus:outline-none focus:ring-2 focus:ring-slate-700/40"
+                        className="pacific-icon-focus rounded-sm text-slate-600 transition-colors hover:text-slate-300"
                         aria-label={`Remove ${route}`}
                       >
                         <X size={13} aria-hidden="true" />
@@ -1081,7 +1081,7 @@ export const AnalyticsPage: React.FC = () => {
                             openClientDetail(client);
                           }
                         }}
-                        className={`transition-colors hover:bg-slate-900/25 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-slate-700/40 ${
+                        className={`transition-colors hover:bg-slate-900/25 focus:outline-none focus-visible:bg-slate-900/35 ${
                           hasClientId ? 'group cursor-pointer' : ''
                         }`}
                       >

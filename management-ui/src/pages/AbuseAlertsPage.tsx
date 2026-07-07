@@ -173,7 +173,7 @@ export const AbuseAlertsPage: React.FC = () => {
                 key={filter.value}
                 type="button"
                 onClick={() => handleStatusFilterChange(filter.value)}
-                className={`rounded px-3 py-1.5 text-xs font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-cyan-400/20 ${
+                className={`pacific-control-focus rounded px-3 py-1.5 text-xs font-medium transition-colors ${
                   selectedStatus === filter.value
                     ? 'bg-slate-800/45 text-slate-100'
                     : 'text-slate-500 hover:bg-slate-900/35 hover:text-slate-300'
@@ -260,7 +260,7 @@ export const AbuseAlertsPage: React.FC = () => {
                               disabled={!canMutate || actionAlertId === alert.id}
                               title={!canMutate ? 'Admin required' : undefined}
                               onClick={() => handleLifecycleAction(alert, 'acknowledge')}
-                              className="rounded-md bg-slate-900/55 px-2.5 py-1.5 text-xs font-medium text-slate-300 transition-colors hover:bg-slate-800/70 hover:text-slate-100 focus:outline-none focus:ring-2 focus:ring-slate-700/35 disabled:cursor-not-allowed disabled:text-slate-600 disabled:opacity-60"
+                              className="pacific-control-focus rounded-md bg-slate-900/55 px-2.5 py-1.5 text-xs font-medium text-slate-300 transition-colors hover:bg-slate-800/70 hover:text-slate-100 disabled:cursor-not-allowed disabled:text-slate-600 disabled:opacity-60"
                             >
                               Acknowledge
                             </button>

@@ -27,7 +27,7 @@ export const TopBar: React.FC<TopBarProps> = ({ title, onMenuClick }) => (
       type="button"
       onClick={onMenuClick}
       aria-label="Open navigation"
-      className="inline-flex h-9 w-9 items-center justify-center rounded-md text-slate-400 transition-colors hover:bg-slate-900/60 hover:text-slate-100 focus:outline-none focus:ring-2 focus:ring-slate-700/35"
+      className="pacific-icon-focus inline-flex h-9 w-9 items-center justify-center rounded-md text-slate-400 transition-colors hover:bg-slate-900/60 hover:text-slate-100"
     >
       <Menu size={19} aria-hidden="true" />
     </button>

@@ -262,7 +262,7 @@ const TrendHelpTooltip: React.FC = () => {
     >
       <button
         type="button"
-        className="inline-flex h-6 w-6 items-center justify-center rounded-md text-slate-600 transition-colors hover:bg-slate-950/40 hover:text-slate-300 focus:outline-none focus:ring-2 focus:ring-slate-700/35"
+        className="pacific-icon-focus inline-flex h-6 w-6 items-center justify-center rounded-md text-slate-600 transition-colors hover:bg-slate-950/40 hover:text-slate-300"
         aria-label="Traffic trend comparison details"
       >
         <Info size={14} aria-hidden="true" />
@@ -419,7 +419,7 @@ const GatewayHealthPanel: React.FC<GatewayHealthPanelProps> = ({
               <button
                 type="button"
                 onClick={() => onCopyUpstream(upstreamCopyValue)}
-                className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-slate-500 transition-colors hover:bg-slate-900/70 hover:text-slate-200 focus:outline-none focus:ring-2 focus:ring-slate-700/35"
+                className="pacific-icon-focus inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-slate-500 transition-colors hover:bg-slate-900/70 hover:text-slate-200"
                 aria-label="Copy configured upstream URL"
                 title="Copy upstream URL"
               >

@@ -354,7 +354,7 @@ export const ClientDetailPage: React.FC = () => {
                         key={`${alert.createdAt ?? 'alert'}-${index}`}
                         to={getAlertUrl(alert)}
                         aria-label={`View ${getStatusLabel(alert.status).toLowerCase()} alert with ${formatNumber(blockedCount)} blocked requests`}
-                        className="block rounded-lg bg-slate-950/20 p-4 transition-colors hover:bg-slate-950/35 focus:outline-none focus:ring-2 focus:ring-slate-700/40"
+                        className="block rounded-lg bg-slate-950/20 p-4 transition-colors hover:bg-slate-950/35 focus:outline-none focus-visible:bg-slate-900/35"
                       >
                         <div className="flex items-start justify-between gap-3">
                           <div className="min-w-0">

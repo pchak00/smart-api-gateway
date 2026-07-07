@@ -14,7 +14,7 @@ export const ListSearch: React.FC<ListSearchProps> = ({
   resultLabel
 }) => (
   <div className="flex w-full flex-col gap-2 sm:max-w-md 2xl:max-w-lg">
-    <div className="flex items-center border-b border-slate-800/70 bg-transparent transition-colors hover:border-slate-700/90 focus-within:border-cyan-400/70 focus-within:outline focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-cyan-400/25">
+    <div className="pacific-line-focus flex items-center border-b border-slate-800/70 bg-transparent transition-colors hover:border-slate-700/90">
       <input
         type="search"
         value={value}
@@ -26,7 +26,7 @@ export const ListSearch: React.FC<ListSearchProps> = ({
         <button
           type="button"
           onClick={() => onChange('')}
-          className="ml-2 shrink-0 text-xs font-medium text-slate-600 transition-colors hover:text-slate-300"
+          className="pacific-control-focus ml-2 shrink-0 rounded-sm px-1 text-xs font-medium text-slate-600 transition-colors hover:text-slate-300"
         >
           Clear
         </button>

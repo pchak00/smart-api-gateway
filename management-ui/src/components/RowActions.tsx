@@ -66,7 +66,7 @@ export const RowActions: React.FC<RowActionsProps> = ({ actions, label = 'Row ac
           event.stopPropagation();
           setIsOpen((open) => !open);
         }}
-        className="inline-flex h-8 w-8 items-center justify-center rounded-md text-slate-500 transition-colors hover:bg-slate-900/70 hover:text-slate-200 focus:outline-none focus:ring-2 focus:ring-slate-700/40"
+        className="pacific-icon-focus inline-flex h-8 w-8 items-center justify-center rounded-md text-slate-500 transition-colors hover:bg-slate-900/70 hover:text-slate-200"
       >
         <MoreHorizontal size={18} aria-hidden="true" />
       </button>

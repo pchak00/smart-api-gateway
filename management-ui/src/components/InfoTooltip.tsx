@@ -23,7 +23,7 @@ export const InfoTooltip: React.FC<InfoTooltipProps> = ({
     >
       <button
         type="button"
-        className="inline-flex h-5 w-5 items-center justify-center rounded-md text-slate-600 transition-colors hover:bg-slate-950/45 hover:text-slate-300 focus:outline-none focus:ring-2 focus:ring-slate-700/35"
+        className="pacific-icon-focus inline-flex h-5 w-5 items-center justify-center rounded-md text-slate-600 transition-colors hover:bg-slate-950/45 hover:text-slate-300"
         aria-label={label}
       >
         <Info size={13} aria-hidden="true" />
