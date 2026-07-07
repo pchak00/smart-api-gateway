@@ -23,6 +23,30 @@
     @apply focus-within:border-cyan-400/70 focus-within:outline-none focus-within:ring-0;
   }
 
+  .pacific-brand-mark {
+    transform-origin: 50% 58%;
+    transition:
+      filter 160ms ease,
+      opacity 160ms ease,
+      transform 180ms ease;
+    will-change: filter, transform;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .group:hover .pacific-brand-mark,
+    .group:focus-visible .pacific-brand-mark {
+      transform: translate3d(1px, -1px, 0) rotate(-2deg);
+      filter: brightness(1.12) saturate(1.12) drop-shadow(0 0 8px rgba(34, 211, 238, 0.12));
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .group:hover .pacific-brand-mark,
+    .group:focus-visible .pacific-brand-mark {
+      filter: brightness(1.08) saturate(1.06);
+    }
+  }
+
   .glass-popover {
     border: 1px solid rgba(125, 211, 252, 0.045);
     background:

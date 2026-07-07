@@ -176,7 +176,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                       <img
                         src={pacificWaveMark}
                         alt=""
-                        className="h-8 w-8 shrink-0 object-contain"
+                        className="pacific-brand-mark h-8 w-8 shrink-0 object-contain"
                       />
                       <span className="overflow-hidden whitespace-nowrap text-base font-semibold text-slate-100">
                         pacific
