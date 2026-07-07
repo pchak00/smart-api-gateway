@@ -93,7 +93,7 @@ const AdminPasswordField: React.FC<AdminPasswordFieldProps> = ({
 );
 
 const AdminFormActions: React.FC<{ children: React.ReactNode }> = ({ children }) => (
-  <div className="flex flex-wrap items-center gap-2 pt-1 md:pt-7">
+  <div className="flex flex-wrap items-center gap-2 pt-1 lg:pt-7">
     {children}
   </div>
 );
@@ -322,7 +322,7 @@ export const AdminUsersPage: React.FC = () => {
       />
 
       {isCreateOpen && (
-        <form onSubmit={handleCreateAdmin} className="mb-8 grid gap-x-4 gap-y-3 py-2 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_12rem_auto] md:items-start">
+        <form onSubmit={handleCreateAdmin} className="mb-8 grid max-w-6xl gap-x-4 gap-y-3 py-2 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_12rem_auto] lg:items-start">
           <AdminFormField label="Username">
             <input
               value={newUsername}
@@ -386,7 +386,7 @@ export const AdminUsersPage: React.FC = () => {
       )}
 
       {resettingAdmin && (
-        <form onSubmit={handleResetPassword} className="mb-8 grid gap-x-4 gap-y-3 py-2 md:grid-cols-[minmax(10rem,0.8fr)_minmax(0,1fr)_minmax(0,1fr)_auto] md:items-start">
+        <form onSubmit={handleResetPassword} className="mb-8 grid max-w-6xl gap-x-4 gap-y-3 py-2 lg:grid-cols-[minmax(10rem,0.8fr)_minmax(0,1fr)_minmax(0,1fr)_auto] lg:items-start">
           <div className="min-w-56">
             <p className="text-sm font-medium text-slate-100">{resettingAdmin.username}</p>
             <p className="mt-1 text-xs text-slate-500">Reset admin password</p>

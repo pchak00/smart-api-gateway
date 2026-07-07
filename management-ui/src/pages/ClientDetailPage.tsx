@@ -272,7 +272,7 @@ export const ClientDetailPage: React.FC = () => {
             description={errorMessage}
           />
         ) : (
-          <div className="grid grid-cols-1 gap-4 xl:grid-cols-[1fr_0.75fr]">
+          <div className="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,2fr)_minmax(20rem,32rem)]">
             <Panel className="p-4 sm:p-5">
               <div className="mb-5 flex items-center justify-between">
                 <div>

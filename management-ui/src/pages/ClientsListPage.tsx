@@ -321,7 +321,7 @@ export const ClientsListPage: React.FC = () => {
         meta={clientsMeta}
       />
 
-      <div className="mb-6 flex w-full flex-col gap-3 sm:max-w-3xl sm:flex-row sm:items-start">
+      <div className="mb-6 flex w-full flex-col gap-3 sm:flex-row sm:items-start">
         <ListSearch
           value={searchQuery}
           onChange={setSearchQuery}
@@ -358,7 +358,7 @@ export const ClientsListPage: React.FC = () => {
       </div>
 
       {isCreateOpen && (
-        <form onSubmit={handleCreateClient} className="mb-8 grid gap-4 py-2 md:grid-cols-[minmax(0,1fr)_12rem_8rem_auto] md:items-end">
+        <form onSubmit={handleCreateClient} className="mb-8 grid max-w-6xl gap-4 py-2 lg:grid-cols-[minmax(16rem,1fr)_12rem_8rem_auto] lg:items-end">
           <label className="block text-sm text-slate-500">
             Client name
             <input

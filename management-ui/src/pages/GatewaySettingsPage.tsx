@@ -171,7 +171,7 @@ export const GatewaySettingsPage: React.FC = () => {
           description={loadError}
         />
       ) : (
-        <form onSubmit={handleSubmit} noValidate className="max-w-3xl">
+        <form onSubmit={handleSubmit} noValidate className="max-w-6xl">
           {saveError && (
             <div className="mb-5 flex items-start gap-3 border-y border-red-950/35 py-4 text-sm text-red-300/90">
               <AlertCircle size={16} aria-hidden="true" className="mt-0.5 shrink-0" />
@@ -179,129 +179,133 @@ export const GatewaySettingsPage: React.FC = () => {
             </div>
           )}
 
-          <div className="grid gap-5 py-3">
-            <label className="block text-sm text-slate-500">
-              Upstream API URL
-              <input
-                value={formState.upstreamBaseUrl}
-                onChange={(event) => updateField('upstreamBaseUrl', event.target.value)}
-                className="mt-2 quiet-field"
-                placeholder="http://backend-service:8081"
-                disabled={!canMutate || isSaving || isTestingConnection}
-                required
-              />
-            </label>
+          <div className="grid gap-8 xl:grid-cols-[minmax(0,42rem)_minmax(18rem,26rem)] xl:items-start">
+            <div className="grid gap-5 py-3">
+              <label className="block text-sm text-slate-500">
+                Upstream API URL
+                <input
+                  value={formState.upstreamBaseUrl}
+                  onChange={(event) => updateField('upstreamBaseUrl', event.target.value)}
+                  className="mt-2 quiet-field"
+                  placeholder="http://backend-service:8081"
+                  disabled={!canMutate || isSaving || isTestingConnection}
+                  required
+                />
+              </label>
 
-            <label className="block text-sm text-slate-500">
-              Health check path
-              <input
-                value={formState.healthCheckPath}
-                onChange={(event) => updateField('healthCheckPath', event.target.value)}
-                className="mt-2 quiet-field"
-                placeholder="/health"
-                disabled={!canMutate || isSaving || isTestingConnection}
-                required
-              />
-            </label>
+              <label className="block text-sm text-slate-500">
+                Health check path
+                <input
+                  value={formState.healthCheckPath}
+                  onChange={(event) => updateField('healthCheckPath', event.target.value)}
+                  className="mt-2 quiet-field"
+                  placeholder="/health"
+                  disabled={!canMutate || isSaving || isTestingConnection}
+                  required
+                />
+              </label>
 
-            <label className="block text-sm text-slate-500">
-              Request timeout in milliseconds
-              <NumberField
-                min={1}
-                max={60000}
-                value={formState.timeoutMs}
-                onChange={(value) => updateField('timeoutMs', value)}
-                disabled={!canMutate || isSaving || isTestingConnection}
-                required
-              />
-            </label>
-          </div>
-
-          <section className="py-5">
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-              <div>
-                <p className="text-sm font-medium text-slate-300">Connection test</p>
-              </div>
-              <SecondaryButton
-                type="button"
-                onClick={handleTestConnection}
-                disabled={isTestingConnection || isSaving}
-              >
-                <Activity size={16} aria-hidden="true" />
-                {isTestingConnection ? 'Testing...' : 'Test connection'}
-              </SecondaryButton>
+              <label className="block text-sm text-slate-500">
+                Request timeout in milliseconds
+                <NumberField
+                  min={1}
+                  max={60000}
+                  value={formState.timeoutMs}
+                  onChange={(value) => updateField('timeoutMs', value)}
+                  disabled={!canMutate || isSaving || isTestingConnection}
+                  required
+                />
+              </label>
             </div>
 
-            {(testResult || testError) && (
-              <div className={`mt-4 flex items-start gap-3 border-y py-4 text-sm ${
-                testResult?.reachable
-                  ? 'border-emerald-950/30 text-emerald-200/90'
-                  : 'border-red-950/35 text-red-300/90'
-              }`}>
-                {testResult?.reachable ? (
-                  <CheckCircle2 size={16} aria-hidden="true" className="mt-0.5 shrink-0" />
-                ) : (
-                  <XCircle size={16} aria-hidden="true" className="mt-0.5 shrink-0" />
-                )}
-                <div className="min-w-0">
-                  <p className="font-medium">
-                    {testResult?.reachable ? 'Connected' : 'Unreachable'}
-                  </p>
-                  {testResult ? (
-                    <p className="mt-1 break-words text-slate-400">
-                      {testResult.reachable
-                        ? `${testResult.checkedUrl} responded with ${testResult.statusCode} in ${testResult.responseTimeMs}ms`
-                        : [
-                            testResult.message,
-                            testResult.checkedUrl ? `Checked ${testResult.checkedUrl}` : null,
-                            testResult.statusCode ? `Status ${testResult.statusCode}` : null
-                          ].filter(Boolean).join(' · ')}
-                    </p>
-                  ) : (
-                    <p className="mt-1 break-words text-slate-400">{testError}</p>
-                  )}
+            <div className="py-3">
+              <section className="pb-5">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-slate-300">Connection test</p>
+                  </div>
+                  <SecondaryButton
+                    type="button"
+                    onClick={handleTestConnection}
+                    disabled={isTestingConnection || isSaving}
+                  >
+                    <Activity size={16} aria-hidden="true" />
+                    {isTestingConnection ? 'Testing...' : 'Test connection'}
+                  </SecondaryButton>
                 </div>
+
+                {(testResult || testError) && (
+                  <div className={`mt-4 flex items-start gap-3 border-y py-4 text-sm ${
+                    testResult?.reachable
+                      ? 'border-emerald-950/30 text-emerald-200/90'
+                      : 'border-red-950/35 text-red-300/90'
+                  }`}>
+                    {testResult?.reachable ? (
+                      <CheckCircle2 size={16} aria-hidden="true" className="mt-0.5 shrink-0" />
+                    ) : (
+                      <XCircle size={16} aria-hidden="true" className="mt-0.5 shrink-0" />
+                    )}
+                    <div className="min-w-0">
+                      <p className="font-medium">
+                        {testResult?.reachable ? 'Connected' : 'Unreachable'}
+                      </p>
+                      {testResult ? (
+                        <p className="mt-1 break-words text-slate-400">
+                          {testResult.reachable
+                            ? `${testResult.checkedUrl} responded with ${testResult.statusCode} in ${testResult.responseTimeMs}ms`
+                            : [
+                                testResult.message,
+                                testResult.checkedUrl ? `Checked ${testResult.checkedUrl}` : null,
+                                testResult.statusCode ? `Status ${testResult.statusCode}` : null
+                              ].filter(Boolean).join(' · ')}
+                        </p>
+                      ) : (
+                        <p className="mt-1 break-words text-slate-400">{testError}</p>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </section>
+
+              <dl className="grid gap-4 py-3 sm:grid-cols-2 xl:grid-cols-1">
+                <div>
+                  <dt className="text-xs font-medium text-slate-600">Last updated</dt>
+                  <dd className="mt-1 text-sm text-slate-300">{formatDateTime(settings?.updatedAt)}</dd>
+                </div>
+                <div>
+                  <dt className="text-xs font-medium text-slate-600">Updated by</dt>
+                  <dd className="mt-1 text-sm text-slate-300">{settings?.updatedBy || 'System'}</dd>
+                </div>
+              </dl>
+
+              <div className="mt-5 flex flex-wrap gap-2">
+                {canMutate ? (
+                  <>
+                    <PrimaryButton
+                      type="submit"
+                      disabled={isSaving}
+                    >
+                      <Save size={16} aria-hidden="true" />
+                      {isSaving ? 'Saving...' : 'Save settings'}
+                    </PrimaryButton>
+                    <SecondaryButton type="button" onClick={handleReset} disabled={isSaving || isTestingConnection}>
+                      <RefreshCcw size={16} aria-hidden="true" />
+                      Reset
+                    </SecondaryButton>
+                  </>
+                ) : (
+                  <PrimaryButton
+                    type="button"
+                    disabled
+                    tooltip={writeTooltip}
+                    onClick={() => showToast({ message: permissionMessage, type: 'error' })}
+                  >
+                    <Save size={16} aria-hidden="true" />
+                    Save settings
+                  </PrimaryButton>
+                )}
               </div>
-            )}
-          </section>
-
-          <dl className="grid gap-4 py-3 sm:grid-cols-2">
-            <div>
-              <dt className="text-xs font-medium text-slate-600">Last updated</dt>
-              <dd className="mt-1 text-sm text-slate-300">{formatDateTime(settings?.updatedAt)}</dd>
             </div>
-            <div>
-              <dt className="text-xs font-medium text-slate-600">Updated by</dt>
-              <dd className="mt-1 text-sm text-slate-300">{settings?.updatedBy || 'System'}</dd>
-            </div>
-          </dl>
-
-          <div className="mt-5 flex flex-wrap gap-2">
-            {canMutate ? (
-              <>
-                <PrimaryButton
-                  type="submit"
-                  disabled={isSaving}
-                >
-                  <Save size={16} aria-hidden="true" />
-                  {isSaving ? 'Saving...' : 'Save settings'}
-                </PrimaryButton>
-                <SecondaryButton type="button" onClick={handleReset} disabled={isSaving || isTestingConnection}>
-                  <RefreshCcw size={16} aria-hidden="true" />
-                  Reset
-                </SecondaryButton>
-              </>
-            ) : (
-              <PrimaryButton
-                type="button"
-                disabled
-                tooltip={writeTooltip}
-                onClick={() => showToast({ message: permissionMessage, type: 'error' })}
-              >
-                <Save size={16} aria-hidden="true" />
-                Save settings
-              </PrimaryButton>
-            )}
           </div>
         </form>
       )}

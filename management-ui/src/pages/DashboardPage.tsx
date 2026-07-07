@@ -657,7 +657,7 @@ export const DashboardPage: React.FC = () => {
         isTrafficLoading={isTrafficLoading}
       />
 
-      <div className="mt-5 grid grid-cols-1 gap-4 lg:gap-5 xl:grid-cols-[minmax(0,2fr)_minmax(20rem,1fr)]">
+      <div className="mt-5 grid grid-cols-1 gap-4 lg:gap-5 xl:grid-cols-[minmax(0,2fr)_minmax(20rem,28rem)]">
         <GatewayHealthPanel
           settings={gatewaySettings}
           summary={summary}
@@ -717,7 +717,7 @@ export const DashboardPage: React.FC = () => {
         </DashboardSection>
       </div>
 
-      <div className={`mt-4 grid grid-cols-1 gap-4 lg:mt-5 lg:gap-5 ${canMutate ? 'xl:grid-cols-[minmax(0,2fr)_minmax(20rem,1fr)]' : ''}`}>
+      <div className={`mt-4 grid grid-cols-1 gap-4 lg:mt-5 lg:gap-5 ${canMutate ? 'xl:grid-cols-[minmax(0,2fr)_minmax(20rem,28rem)]' : ''}`}>
         <DashboardSection
           title="Top routes"
           action={

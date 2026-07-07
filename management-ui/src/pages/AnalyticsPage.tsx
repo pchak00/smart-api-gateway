@@ -663,7 +663,7 @@ export const AnalyticsPage: React.FC = () => {
         meta={errorMessage ? <span className="text-xs text-slate-500">{errorMessage}</span> : undefined}
       />
 
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1fr_16rem]">
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(16rem,20rem)]">
         <Panel className="p-4 sm:p-5">
           <div className="mb-5 flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
             <div className="min-w-0">
@@ -709,7 +709,7 @@ export const AnalyticsPage: React.FC = () => {
 
           {routeTrendMode === 'custom' && !isLoading && !errorMessage && routeTrendRouteCount > 0 && (
             <div className="mb-5 space-y-3">
-              <div className="relative max-w-xl">
+              <div className="relative max-w-2xl">
                 <div className="flex items-center border-b border-slate-800/70 bg-transparent transition-colors hover:border-slate-700/90 focus-within:border-cyan-400/70 focus-within:outline focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-cyan-400/25">
                   <Search className="mr-2 shrink-0 text-slate-700" size={15} aria-hidden="true" />
                   <input
@@ -819,7 +819,7 @@ export const AnalyticsPage: React.FC = () => {
               description="Send requests through the gateway to populate this chart."
             />
           ) : (
-            <div className="h-72">
+            <div className="h-72 2xl:h-80">
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={routeTrendData} margin={{ top: 8, right: 8, left: -16, bottom: 0 }}>
                   <CartesianGrid stroke="#1e293b" strokeOpacity={0.55} vertical={false} />

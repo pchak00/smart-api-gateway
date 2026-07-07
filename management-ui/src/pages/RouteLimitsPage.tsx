@@ -198,7 +198,7 @@ export const RouteLimitsPage: React.FC = () => {
         meta={errorMessage ? <span className="text-xs text-slate-500">{errorMessage}</span> : undefined}
       />
 
-      <div className="mb-6 flex w-full flex-col gap-3 sm:max-w-2xl sm:flex-row sm:items-start">
+      <div className="mb-6 flex w-full flex-col gap-3 sm:flex-row sm:items-start">
         <ListSearch
           value={searchQuery}
           onChange={setSearchQuery}
@@ -223,9 +223,9 @@ export const RouteLimitsPage: React.FC = () => {
       {(isCreateOpen || editingLimit) && (
         <form
           onSubmit={editingLimit ? handleUpdateRouteLimit : handleCreateRouteLimit}
-          className="mb-8 py-2"
+          className="mb-8 max-w-6xl py-2"
         >
-          <div className="grid gap-4 md:grid-cols-[12rem_minmax(0,1fr)_10rem_auto] md:items-end">
+          <div className="grid gap-4 lg:grid-cols-[12rem_minmax(18rem,1fr)_10rem_auto] lg:items-end">
             {!editingLimit && (
               <div className="block text-sm text-slate-500">
                 <span>Plan</span>

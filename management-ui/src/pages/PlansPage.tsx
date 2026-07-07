@@ -202,7 +202,7 @@ export const PlansPage: React.FC = () => {
         meta={errorMessage ? <span className="text-xs text-slate-500">{errorMessage}</span> : undefined}
       />
 
-      <div className="mb-6 flex w-full flex-col gap-3 sm:max-w-xl sm:flex-row sm:items-start">
+      <div className="mb-6 flex w-full flex-col gap-3 sm:flex-row sm:items-start">
         <ListSearch
           value={searchQuery}
           onChange={setSearchQuery}
@@ -223,7 +223,7 @@ export const PlansPage: React.FC = () => {
       {(isCreateOpen || editingPlan) && (
         <form
           onSubmit={editingPlan ? handleUpdatePlan : handleCreatePlan}
-          className="mb-8 grid gap-4 py-2 md:grid-cols-[minmax(0,1fr)_10rem_8rem_auto] md:items-end"
+          className="mb-8 grid max-w-5xl gap-4 py-2 lg:grid-cols-[minmax(14rem,1fr)_10rem_8rem_auto] lg:items-end"
         >
           <label className="block text-sm text-slate-500">
             Plan name

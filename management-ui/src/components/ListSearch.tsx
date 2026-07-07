@@ -13,7 +13,7 @@ export const ListSearch: React.FC<ListSearchProps> = ({
   placeholder,
   resultLabel
 }) => (
-  <div className="flex w-full flex-col gap-2 sm:max-w-sm">
+  <div className="flex w-full flex-col gap-2 sm:max-w-md 2xl:max-w-lg">
     <div className="flex items-center border-b border-slate-800/70 bg-transparent transition-colors hover:border-slate-700/90 focus-within:border-cyan-400/70 focus-within:outline focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-cyan-400/25">
       <input
         type="search"
