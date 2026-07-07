@@ -3,12 +3,15 @@ import { Link, useLocation } from 'react-router-dom';
 import {
   BarChart3,
   ChevronUp,
+  CircleUserRound,
   CreditCard,
   KeyRound,
   LayoutDashboard,
   LockKeyhole,
   LogOut,
   LucideIcon,
+  PanelLeftClose,
+  PanelLeftOpen,
   Route,
   ShieldAlert,
   SlidersHorizontal,
@@ -106,8 +109,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
   const displayUsername = username || 'admin';
   const roleLabel = getRoleLabel(role);
-  const accountInitial = displayUsername.trim().charAt(0).toUpperCase() || 'A';
   const toggleLabel = isCollapsed ? 'Expand sidebar' : 'Collapse sidebar';
+  const accountTooltipLabel = `Signed in as ${roleLabel}`;
 
   const handleRestrictedClick = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -136,22 +139,41 @@ export const Sidebar: React.FC<SidebarProps> = ({
               aria-expanded={!isCollapsed}
               className={cx(
                 'flex w-full items-center rounded-lg py-1.5 transition-colors duration-150 hover:bg-slate-900/45 focus:outline-none focus:ring-2 focus:ring-slate-700/35',
-                isCollapsed ? 'justify-center px-0' : 'gap-3 px-2'
+                isCollapsed ? 'justify-center px-0' : 'justify-between gap-3 px-2'
               )}
             >
-              <img
-                src={pacificWaveMark}
-                alt=""
-                className="h-8 w-8 shrink-0 object-contain"
-              />
-              <span
-                className={cx(
-                  'overflow-hidden whitespace-nowrap text-base font-semibold text-slate-100 transition-[opacity,width] duration-150 ease-out',
-                  isCollapsed ? 'w-0 opacity-0' : 'w-auto opacity-100'
-                )}
-              >
-                pacific
-              </span>
+              {isCollapsed ? (
+                <span className="relative flex h-8 w-8 shrink-0 items-center justify-center">
+                  <img
+                    src={pacificWaveMark}
+                    alt=""
+                    className="absolute h-8 w-8 object-contain opacity-100 transition-opacity duration-150 group-hover:opacity-0 group-focus-within:opacity-0"
+                  />
+                  <PanelLeftOpen
+                    size={20}
+                    aria-hidden="true"
+                    className="absolute text-slate-400 opacity-0 transition-opacity duration-150 group-hover:opacity-100 group-focus-within:opacity-100"
+                  />
+                </span>
+              ) : (
+                <>
+                  <span className="flex min-w-0 items-center gap-3">
+                    <img
+                      src={pacificWaveMark}
+                      alt=""
+                      className="h-8 w-8 shrink-0 object-contain"
+                    />
+                    <span className="overflow-hidden whitespace-nowrap text-base font-semibold text-slate-100">
+                      pacific
+                    </span>
+                  </span>
+                  <PanelLeftClose
+                    size={17}
+                    aria-hidden="true"
+                    className="shrink-0 text-slate-600 opacity-55 transition-opacity duration-150 group-hover:opacity-100 group-focus-within:opacity-100"
+                  />
+                </>
+              )}
             </button>
           ) : (
             <Link
@@ -287,8 +309,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
           <div
             role="menu"
             className={cx(
-              'absolute rounded-lg bg-slate-900/95 p-1 shadow-xl shadow-black/20 ring-1 ring-slate-800/60 backdrop-blur',
-              isCollapsed ? 'bottom-4 left-full ml-3 w-56' : 'bottom-16 left-3 right-3'
+              'absolute z-50 rounded-lg bg-slate-900/95 p-1 shadow-xl shadow-black/20 ring-1 ring-slate-800/60 backdrop-blur',
+              isCollapsed ? 'bottom-3 left-full ml-3 w-56' : 'bottom-16 left-3 right-3'
             )}
           >
             <div className="px-3 py-2 text-xs text-slate-500">
@@ -311,7 +333,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             type="button"
             aria-haspopup="menu"
             aria-expanded={isProfileOpen}
-            aria-label={isCollapsed ? `Account: ${displayUsername}` : undefined}
+            aria-label="Open account menu"
             onClick={() => setIsProfileOpen((open) => !open)}
             className={cx(
               'flex w-full items-center rounded-lg py-2.5 text-left text-sm text-slate-400 transition-colors hover:bg-slate-900/55 hover:text-slate-100 focus:outline-none focus:ring-2 focus:ring-slate-700/35',
@@ -319,8 +341,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
             )}
           >
             {isCollapsed ? (
-              <span className="flex h-7 w-7 items-center justify-center rounded-md bg-slate-900/65 text-xs font-semibold text-slate-300">
-                {accountInitial}
+              <span className="flex h-8 w-8 items-center justify-center rounded-md text-slate-500 transition-colors group-hover:text-slate-200 group-focus-within:text-slate-200">
+                <CircleUserRound size={18} aria-hidden="true" />
               </span>
             ) : (
               <>
@@ -333,7 +355,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               </>
             )}
           </button>
-          {isCollapsed && <CollapsedTooltip label={`Account · ${displayUsername}`} />}
+          {isCollapsed && !isProfileOpen && <CollapsedTooltip label={accountTooltipLabel} />}
         </div>
       </div>
     </aside>
