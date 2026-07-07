@@ -38,6 +38,7 @@
 
 :root {
   color-scheme: dark;
+  --pacific-z-tooltip: 70;
 }
 
 html,
