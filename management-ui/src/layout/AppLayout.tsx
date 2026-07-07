@@ -86,7 +86,7 @@ export const AppLayout: React.FC = () => {
             aria-label="Close navigation"
             onClick={() => setIsMobileNavOpen(false)}
           />
-          <div className="absolute inset-y-0 left-0 w-[min(18rem,85vw)] shadow-2xl shadow-black/40">
+          <div className="absolute inset-y-0 left-0 w-[min(18rem,85vw)]">
             <button
               type="button"
               onClick={() => setIsMobileNavOpen(false)}

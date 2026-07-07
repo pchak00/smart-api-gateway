@@ -10,7 +10,7 @@ interface TopBarProps {
 export const TopBar: React.FC<TopBarProps> = ({ title, onMenuClick }) => (
   <header
     aria-label="Application header"
-    className="glass-surface flex h-14 shrink-0 items-center justify-between rounded-none border-x-0 border-t-0 px-4 lg:hidden"
+    className="flex h-14 shrink-0 items-center justify-between px-4 lg:hidden"
   >
     <div className="flex min-w-0 items-center gap-3">
       <img

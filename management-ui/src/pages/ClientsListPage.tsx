@@ -525,7 +525,7 @@ export const ClientsListPage: React.FC = () => {
                               {lastActiveLabel}
                             </span>
                             {isStale && (
-                              <span className="inline-flex rounded-md bg-slate-950/20 px-2 py-0.5 text-xs font-medium text-slate-500">
+                              <span className="inline-flex text-xs font-medium text-slate-500">
                                 Stale
                               </span>
                             )}

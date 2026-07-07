@@ -62,7 +62,7 @@ export const PageContainer: React.FC<PageContainerProps> = ({ children }) => (
 );
 
 export const Panel: React.FC<PanelProps> = ({ children, className = '' }) => (
-  <section className={`glass-panel min-w-0 rounded-lg ${className}`}>
+  <section className={`min-w-0 ${className}`}>
     {children}
   </section>
 );

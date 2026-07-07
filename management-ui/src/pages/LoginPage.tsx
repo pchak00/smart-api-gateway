@@ -87,7 +87,7 @@ export const LoginPage: React.FC = () => {
         </section>
 
         <section className="hidden min-h-[32rem] items-center justify-center lg:flex">
-          <div className="glass-panel flex items-center justify-center gap-5 rounded-lg px-12 py-10">
+          <div className="flex items-center justify-center gap-5 px-12 py-10">
             <img
               src={pacificWaveMark}
               alt="pacific logo"

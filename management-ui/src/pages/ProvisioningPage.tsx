@@ -234,7 +234,7 @@ export const ProvisioningPage: React.FC = () => {
               <p className="mt-1 text-sm text-slate-500">
                 Copy this token now. You will not be able to view it again.
               </p>
-              <div className="mt-4 overflow-x-auto rounded-md border border-slate-800 bg-slate-950 px-3 py-2">
+              <div className="mt-4 overflow-x-auto py-2">
                 <code className="whitespace-nowrap font-mono text-xs text-slate-200">
                   {oneTimeToken.token}
                 </code>

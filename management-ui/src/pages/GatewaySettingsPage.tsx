@@ -173,7 +173,7 @@ export const GatewaySettingsPage: React.FC = () => {
       ) : (
         <form onSubmit={handleSubmit} noValidate className="max-w-4xl">
           {saveError && (
-            <div className="mb-5 flex max-w-3xl items-start gap-3 border-y border-red-950/35 py-4 text-sm text-red-300/90">
+            <div className="mb-5 flex max-w-3xl items-start gap-3 py-2 text-sm text-red-300/90">
               <AlertCircle size={16} aria-hidden="true" className="mt-0.5 shrink-0" />
               <p>{saveError}</p>
             </div>
@@ -233,10 +233,10 @@ export const GatewaySettingsPage: React.FC = () => {
             </div>
 
             {(testResult || testError) && (
-              <div className={`mt-4 flex items-start gap-3 border-y py-4 text-sm ${
+              <div className={`mt-4 flex items-start gap-3 py-2 text-sm ${
                 testResult?.reachable
-                  ? 'border-emerald-950/30 text-emerald-200/90'
-                  : 'border-red-950/35 text-red-300/90'
+                  ? 'text-emerald-200/90'
+                  : 'text-red-300/90'
               }`}>
                 {testResult?.reachable ? (
                   <CheckCircle2 size={16} aria-hidden="true" className="mt-0.5 shrink-0" />

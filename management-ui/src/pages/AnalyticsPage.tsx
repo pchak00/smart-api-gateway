@@ -664,7 +664,7 @@ export const AnalyticsPage: React.FC = () => {
       />
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(16rem,20rem)]">
-        <Panel className="p-4 sm:p-5">
+        <Panel className="py-2">
           <div className="mb-5 flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
             <div className="min-w-0">
               <h2 className="text-sm font-semibold text-slate-100">Route trends</h2>
@@ -765,7 +765,7 @@ export const AnalyticsPage: React.FC = () => {
                   {selectedCustomRoutes.map((route) => (
                     <span
                       key={route}
-                      className="inline-flex max-w-full items-center gap-1.5 rounded-md bg-slate-950/65 px-2 py-1 text-xs text-slate-400 ring-1 ring-slate-800/70"
+                      className="inline-flex max-w-full items-center gap-1.5 px-1 py-0.5 text-xs text-slate-400"
                     >
                       <span className="max-w-56 truncate font-mono" title={route}>{route}</span>
                       <button
@@ -889,7 +889,7 @@ export const AnalyticsPage: React.FC = () => {
           )}
         </Panel>
 
-        <Panel className="p-4 sm:p-5">
+        <Panel className="py-2">
           <div className="flex items-center justify-between">
             <h2 className="text-sm font-semibold text-slate-100">Summary</h2>
             <div className="flex items-center gap-2">
@@ -927,7 +927,7 @@ export const AnalyticsPage: React.FC = () => {
       </div>
 
       <div className="mt-4 grid grid-cols-1 gap-4 xl:grid-cols-2">
-        <Panel className="p-4 sm:p-5">
+        <Panel className="py-2">
           <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
             <div>
               <h2 className="text-sm font-semibold text-slate-100">Routes</h2>
@@ -993,7 +993,7 @@ export const AnalyticsPage: React.FC = () => {
           )}
         </Panel>
 
-        <Panel className="p-4 sm:p-5">
+        <Panel className="py-2">
           <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
             <div>
               <h2 className="text-sm font-semibold text-slate-100">Clients</h2>

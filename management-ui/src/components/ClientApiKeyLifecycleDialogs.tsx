@@ -71,7 +71,7 @@ export const ClientApiKeyLifecycleDialogs: React.FC<ClientApiKeyLifecycleDialogs
             </div>
           </div>
 
-          <div className="glass-highlight mt-4 rounded-md p-3">
+          <div className="mt-4 py-3">
             <p className="mb-2 text-xs font-medium text-slate-500">{rotatedKey.clientName}</p>
             <p className="break-all font-mono text-sm leading-6 text-slate-100">{rotatedKey.apiKey}</p>
           </div>

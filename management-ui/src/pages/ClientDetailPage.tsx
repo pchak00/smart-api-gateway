@@ -218,7 +218,7 @@ export const ClientDetailPage: React.FC = () => {
       />
 
       <div className="grid grid-cols-1 gap-3 lg:grid-cols-3">
-        <Panel className="p-4 sm:p-5 transition-colors hover:bg-slate-900/45">
+        <Panel className="py-2">
           <div className="flex items-center gap-3">
             <Server className="text-slate-600" size={18} aria-hidden="true" />
             <div>
@@ -233,7 +233,7 @@ export const ClientDetailPage: React.FC = () => {
             </div>
           </div>
         </Panel>
-        <Panel className="p-4 sm:p-5 transition-colors hover:bg-slate-900/45">
+        <Panel className="py-2">
           <div className="flex items-center gap-3">
             <KeyRound className="text-slate-600" size={18} aria-hidden="true" />
             <div className="min-w-0">
@@ -249,7 +249,7 @@ export const ClientDetailPage: React.FC = () => {
             </div>
           </div>
         </Panel>
-        <Panel className="p-4 sm:p-5 transition-colors hover:bg-slate-900/45">
+        <Panel className="py-2">
           <div className="flex items-center gap-3">
             <Activity className="text-slate-600" size={18} aria-hidden="true" />
             <div>
@@ -273,7 +273,7 @@ export const ClientDetailPage: React.FC = () => {
           />
         ) : (
           <div className="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,2fr)_minmax(20rem,32rem)]">
-            <Panel className="p-4 sm:p-5">
+            <Panel className="py-2">
               <div className="mb-5 flex items-center justify-between">
                 <div>
                   <h2 className="text-sm font-semibold text-slate-100">Usage logs</h2>
@@ -295,7 +295,7 @@ export const ClientDetailPage: React.FC = () => {
               ) : (
                 <div className="max-h-[480px] overflow-auto">
                   <table className="w-full min-w-[720px]">
-                    <thead className="sticky top-0 z-10 border-b border-slate-800/40 bg-slate-900">
+                    <thead className="sticky top-0 z-10 border-b border-slate-800/40 bg-slate-950/95">
                       <tr>
                         <th className="px-4 py-3 text-left text-xs font-medium text-slate-400">Path</th>
                         <th className="px-4 py-3 text-left text-xs font-medium text-slate-400">Method</th>
@@ -330,7 +330,7 @@ export const ClientDetailPage: React.FC = () => {
               )}
             </Panel>
 
-            <Panel className="p-4 sm:p-5">
+            <Panel className="py-2">
               <div className="mb-5 flex items-center justify-between">
                 <div>
                   <h2 className="text-sm font-semibold text-slate-100">Recent alerts</h2>
@@ -354,7 +354,7 @@ export const ClientDetailPage: React.FC = () => {
                         key={`${alert.createdAt ?? 'alert'}-${index}`}
                         to={getAlertUrl(alert)}
                         aria-label={`View ${getStatusLabel(alert.status).toLowerCase()} alert with ${formatNumber(blockedCount)} blocked requests`}
-                        className="glass-highlight block rounded-lg p-4 transition-colors hover:bg-slate-950/35 focus:outline-none focus-visible:bg-slate-900/35"
+                        className="block py-3 transition-colors hover:bg-slate-900/20 focus:outline-none focus-visible:bg-slate-900/35"
                       >
                         <div className="flex items-start justify-between gap-3">
                           <div className="min-w-0">
