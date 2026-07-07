@@ -2,6 +2,8 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import {
   BarChart3,
+  ChevronLeft,
+  ChevronRight,
   ChevronUp,
   CircleUserRound,
   CreditCard,
@@ -10,8 +12,6 @@ import {
   LockKeyhole,
   LogOut,
   LucideIcon,
-  PanelLeftClose,
-  PanelLeftOpen,
   Route,
   ShieldAlert,
   SlidersHorizontal,
@@ -147,12 +147,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   <img
                     src={pacificWaveMark}
                     alt=""
-                    className="absolute h-8 w-8 object-contain opacity-100 transition-opacity duration-150 group-hover:opacity-0 group-focus-within:opacity-0"
+                    className="absolute h-8 w-8 object-contain opacity-100 transition-opacity duration-150 group-hover:opacity-0 group-focus-visible:opacity-0"
                   />
-                  <PanelLeftOpen
-                    size={20}
+                  <ChevronRight
+                    size={19}
                     aria-hidden="true"
-                    className="absolute text-slate-400 opacity-0 transition-opacity duration-150 group-hover:opacity-100 group-focus-within:opacity-100"
+                    className="absolute text-slate-400 opacity-0 transition-opacity duration-150 group-hover:opacity-100 group-focus-visible:opacity-100"
                   />
                 </span>
               ) : (
@@ -167,10 +167,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
                       pacific
                     </span>
                   </span>
-                  <PanelLeftClose
+                  <ChevronLeft
                     size={17}
                     aria-hidden="true"
-                    className="shrink-0 text-slate-600 opacity-55 transition-opacity duration-150 group-hover:opacity-100 group-focus-within:opacity-100"
+                    className="shrink-0 text-slate-600 opacity-55 transition-opacity duration-150 group-hover:opacity-100 group-focus-visible:opacity-100"
                   />
                 </>
               )}
