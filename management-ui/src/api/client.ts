@@ -10,6 +10,8 @@ import {
   UpdatePlanRequest,
   RouteLimitDto,
   CreateRouteLimitRequest,
+  RouteGroupDto,
+  RouteGroupRequest,
   UsageLogDto,
   AbuseAlertDto,
   AbuseAlertQueryParams,
@@ -24,6 +26,7 @@ import {
   RouteTrafficAnalyticsDto,
   ClientAnalyticsDto,
   TrafficAnalyticsDto,
+  RouteAnalyticsGroupBy,
   ProvisioningTokenDto,
   CreateProvisioningTokenRequest,
   CreateProvisioningTokenResponse,
@@ -241,6 +244,25 @@ class ApiClient {
     await this.axiosInstance.delete(`/admin/clients/route-limits/${id}`);
   }
 
+  async getRouteGroups(): Promise<RouteGroupDto[]> {
+    const response = await this.axiosInstance.get<RouteGroupDto[]>('/admin/route-groups');
+    return response.data;
+  }
+
+  async createRouteGroup(payload: RouteGroupRequest): Promise<RouteGroupDto> {
+    const response = await this.axiosInstance.post<RouteGroupDto>('/admin/route-groups', payload);
+    return response.data;
+  }
+
+  async updateRouteGroup(id: number, payload: RouteGroupRequest): Promise<RouteGroupDto> {
+    const response = await this.axiosInstance.patch<RouteGroupDto>(`/admin/route-groups/${id}`, payload);
+    return response.data;
+  }
+
+  async deleteRouteGroup(id: number): Promise<void> {
+    await this.axiosInstance.delete(`/admin/route-groups/${id}`);
+  }
+
   // Provisioning token endpoints
   async getProvisioningTokens(): Promise<ProvisioningTokenDto[]> {
     const response = await this.axiosInstance.get<ProvisioningTokenDto[]>('/admin/provisioning-tokens');
@@ -342,16 +364,16 @@ class ApiClient {
     return response.data;
   }
 
-  async getRouteAnalytics(planName?: string, range?: { startDate?: string; endDate?: string }): Promise<RouteAnalyticsDto[]> {
+  async getRouteAnalytics(planName?: string, range?: { startDate?: string; endDate?: string }, groupBy?: RouteAnalyticsGroupBy): Promise<RouteAnalyticsDto[]> {
     const response = await this.axiosInstance.get<RouteAnalyticsDto[]>('/admin/analytics/routes', {
-      params: { ...(planName ? { planName } : {}), ...range }
+      params: { ...(planName ? { planName } : {}), ...range, ...(groupBy ? { groupBy } : {}) }
     });
     return response.data;
   }
 
-  async getRouteTrafficAnalytics(planName?: string, range?: { startDate?: string; endDate?: string }): Promise<RouteTrafficAnalyticsDto[]> {
+  async getRouteTrafficAnalytics(planName?: string, range?: { startDate?: string; endDate?: string }, groupBy?: RouteAnalyticsGroupBy): Promise<RouteTrafficAnalyticsDto[]> {
     const response = await this.axiosInstance.get<RouteTrafficAnalyticsDto[]>('/admin/analytics/route-traffic', {
-      params: { ...(planName ? { planName } : {}), ...range }
+      params: { ...(planName ? { planName } : {}), ...range, ...(groupBy ? { groupBy } : {}) }
     });
     return response.data;
   }

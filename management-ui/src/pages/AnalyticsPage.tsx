@@ -12,6 +12,7 @@ import {
 import { api } from '../api/client';
 import {
   ClientAnalyticsDto,
+  RouteAnalyticsGroupBy,
   RouteAnalyticsDto,
   RouteTrafficAnalyticsDto,
   TrafficAnalyticsDto
@@ -57,6 +58,8 @@ type RouteTrendRouteTotals = {
   totalRequests: number;
   allowedRequests: number;
   blockedRequests: number;
+  endpointCount: number;
+  rawRoutes: string[];
 };
 
 type RouteTrendRoute = {
@@ -66,6 +69,7 @@ type RouteTrendRoute = {
   strokeDasharray?: string;
   strokeWidth: number;
   opacity: number;
+  endpointCount: number;
 };
 
 type ActivityHint = {
@@ -163,6 +167,15 @@ const getBlockRate = (totalRequests: number | null | undefined, blockedRequests:
 const getRouteName = (route: string | null | undefined) => {
   const routeName = route?.trim();
   return routeName || 'Unknown route';
+};
+
+const getGroupedRouteLabel = (route: Pick<RouteAnalyticsDto | RouteTrafficAnalyticsDto, 'label' | 'route'>) => (
+  getRouteName(route.label ?? route.route)
+);
+
+const getRouteEndpointCount = (route: Pick<RouteAnalyticsDto | RouteTrafficAnalyticsDto, 'endpointCount' | 'rawRoutes'>) => {
+  if (typeof route.endpointCount === 'number') return route.endpointCount;
+  return route.rawRoutes?.length ?? 1;
 };
 
 const getLocalDateKey = (date: Date) => {
@@ -331,6 +344,12 @@ const analyticsTimeRangeOptions: Array<{ key: AnalyticsTimeRange; label: string 
   { key: '30d', label: '30d' },
   { key: '90d', label: '90d' },
   { key: '12m', label: '12m' }
+];
+
+const routeAnalyticsGroupByOptions: Array<{ key: RouteAnalyticsGroupBy; label: string }> = [
+  { key: 'OPERATION', label: 'Operation' },
+  { key: 'PATTERN', label: 'Pattern' },
+  { key: 'RAW_PATH', label: 'Raw path' }
 ];
 
 const routeAnalyticsSortDropdownOptions: DropdownOption[] = [
@@ -685,6 +704,11 @@ const RouteTrendTooltip: React.FC<RouteTrendTooltipProps> = ({
             <span className="font-medium text-slate-100">
               {formatNumber(value)} {routeTrendMetricUnit[metric]}
             </span>
+            {route.endpointCount > 1 && (
+              <span className="col-start-2 col-end-4 text-[11px] text-slate-600">
+                Includes {route.endpointCount} endpoints
+              </span>
+            )}
           </div>
         ))}
       </div>
@@ -862,7 +886,7 @@ const sortRouteAnalytics = (routes: RouteAnalyticsDto[], sort: AnalyticsSortSele
     const { field, direction } = sort;
 
     if (field === 'name') {
-      return compareText(first.route, second.route, direction);
+      return compareText(getGroupedRouteLabel(first), getGroupedRouteLabel(second), direction);
     }
 
     const metricDifference = compareMetric(
@@ -871,7 +895,7 @@ const sortRouteAnalytics = (routes: RouteAnalyticsDto[], sort: AnalyticsSortSele
       direction
     );
 
-    return metricDifference || compareText(first.route, second.route, 'asc');
+    return metricDifference || compareText(getGroupedRouteLabel(first), getGroupedRouteLabel(second), 'asc');
   })
 );
 
@@ -934,6 +958,7 @@ export const AnalyticsPage: React.FC = () => {
   const [trafficAnalytics, setTrafficAnalytics] = useState<TrafficAnalyticsDto[]>([]);
   const [selectedRouteMetric, setSelectedRouteMetric] = useState<RouteTrendMetric>('totalRequests');
   const [selectedTimeRange, setSelectedTimeRange] = useState<AnalyticsTimeRange>('7d');
+  const [selectedGroupBy, setSelectedGroupBy] = useState<RouteAnalyticsGroupBy>('OPERATION');
   const [routeTrendMode, setRouteTrendMode] = useState<RouteTrendDisplayMode>('top5');
   const [routeAnalyticsSortField, setRouteAnalyticsSortField] = useState<RouteAnalyticsSortField>('totalRequests');
   const [routeAnalyticsSortDirection, setRouteAnalyticsSortDirection] = useState<AnalyticsSortDirection>('desc');
@@ -942,6 +967,7 @@ export const AnalyticsPage: React.FC = () => {
   const [clientPlanFilter, setClientPlanFilter] = useState('');
   const [routeSearch, setRouteSearch] = useState('');
   const [selectedCustomRoutes, setSelectedCustomRoutes] = useState<string[]>([]);
+  const [expandedRouteKeys, setExpandedRouteKeys] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [routeTrendHoverGuide, setRouteTrendHoverGuide] = useState<RouteTrendHoverGuide | null>(null);
@@ -1016,8 +1042,8 @@ export const AnalyticsPage: React.FC = () => {
 
       try {
         const [routes, routeTraffic, clients, traffic] = await Promise.all([
-          api.getRouteAnalytics(undefined, analyticsQueryRange),
-          api.getRouteTrafficAnalytics(undefined, analyticsQueryRange),
+          api.getRouteAnalytics(undefined, analyticsQueryRange, selectedGroupBy),
+          api.getRouteTrafficAnalytics(undefined, analyticsQueryRange, selectedGroupBy),
           api.getClientAnalytics(undefined, analyticsQueryRange),
           api.getTrafficAnalytics(analyticsQueryRange)
         ]);
@@ -1040,25 +1066,30 @@ export const AnalyticsPage: React.FC = () => {
     };
 
     loadAnalytics();
-  }, [analyticsQueryRange]);
+  }, [analyticsQueryRange, selectedGroupBy]);
 
   const routeTrendRouteOptions = useMemo<RouteTrendRouteTotals[]>(() => {
     const totals = new Map<string, RouteTrendRouteTotals>();
 
     routeTrafficAnalytics.forEach((point) => {
-      const route = getRouteName(point.route);
+      const route = getGroupedRouteLabel(point);
       const current = totals.get(route) ?? {
         route,
         totalRequests: 0,
         allowedRequests: 0,
-        blockedRequests: 0
+        blockedRequests: 0,
+        endpointCount: 0,
+        rawRoutes: []
       };
+      const rawRoutes = new Set([...(current.rawRoutes ?? []), ...(point.rawRoutes ?? [])]);
 
       totals.set(route, {
         route,
         totalRequests: current.totalRequests + safeCount(point.totalRequests),
         allowedRequests: current.allowedRequests + safeCount(point.allowedRequests),
-        blockedRequests: current.blockedRequests + safeCount(point.blockedRequests)
+        blockedRequests: current.blockedRequests + safeCount(point.blockedRequests),
+        endpointCount: Math.max(current.endpointCount, getRouteEndpointCount(point), rawRoutes.size),
+        rawRoutes: [...rawRoutes]
       });
     });
 
@@ -1092,6 +1123,7 @@ export const AnalyticsPage: React.FC = () => {
       key: `route_${index}`,
       route,
       color: routeTrendColors[index % routeTrendColors.length],
+      endpointCount: routeOptionByName.get(route)?.endpointCount ?? 1,
       ...getRouteTrendStyle(index)
     }));
   }, [routeTrendMode, routeTrendRouteOptions, selectedCustomRoutes, selectedRouteMetric]);
@@ -1150,7 +1182,7 @@ export const AnalyticsPage: React.FC = () => {
 
     routeTrafficAnalytics.forEach((point) => {
       const bucket = getBucketKeyForDate(getBucketDateKey(point.bucket), analyticsWindow.buckets);
-      const route = getRouteName(point.route);
+      const route = getGroupedRouteLabel(point);
       const routeKey = routeKeyByName.get(route);
 
       if (!bucket || !routeKey || !buckets.has(bucket)) return;
@@ -1180,6 +1212,12 @@ export const AnalyticsPage: React.FC = () => {
     routeTrendDotPositionsRef.current.clear();
     updateRouteTrendHoverGuide(null);
   }, [routeTrendRoutes, routeTrendData, updateRouteTrendHoverGuide]);
+
+  useEffect(() => {
+    setSelectedCustomRoutes([]);
+    setRouteSearch('');
+    setExpandedRouteKeys([]);
+  }, [selectedGroupBy]);
 
   const summaryTrend = useMemo(() => getSummaryTrend(filledTrafficAnalytics), [filledTrafficAnalytics]);
   const routeAnalyticsSort = useMemo<AnalyticsSortSelection>(() => ({
@@ -1305,6 +1343,23 @@ export const AnalyticsPage: React.FC = () => {
                     onClick={() => setRouteTrendMode(option.key)}
                     className={`pacific-control-focus rounded px-2.5 py-1 text-xs font-medium transition-colors ${
                       routeTrendMode === option.key
+                        ? 'bg-slate-800/45 text-slate-100'
+                        : 'text-slate-400 hover:bg-slate-900/35 hover:text-slate-200'
+                    }`}
+                  >
+                    {option.label}
+                  </button>
+                ))}
+              </div>
+              <div className="flex items-center gap-1">
+                <span className="text-xs text-slate-600">Group by</span>
+                {routeAnalyticsGroupByOptions.map((option) => (
+                  <button
+                    key={option.key}
+                    type="button"
+                    onClick={() => setSelectedGroupBy(option.key)}
+                    className={`pacific-control-focus rounded px-2.5 py-1 text-xs font-medium transition-colors ${
+                      selectedGroupBy === option.key
                         ? 'bg-slate-800/45 text-slate-100'
                         : 'text-slate-400 hover:bg-slate-900/35 hover:text-slate-200'
                     }`}
@@ -1597,20 +1652,62 @@ export const AnalyticsPage: React.FC = () => {
                     <th className="px-4 py-3 text-right text-xs font-medium text-slate-400">Allowed</th>
                     <th className="px-4 py-3 text-right text-xs font-medium text-slate-400">Blocked</th>
                     <th className="px-4 py-3 text-right text-xs font-medium text-slate-400">Block rate</th>
+                    <th className="px-4 py-3 text-right text-xs font-medium text-slate-400">Endpoints</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {sortedRouteAnalytics.map((route, index) => (
-                    <tr key={route.route ?? index} className="transition-colors hover:bg-slate-900/25">
-                      <td className="px-4 py-4 font-mono text-xs text-slate-300">{route.route ?? 'Unknown route'}</td>
-                      <td className="px-4 py-4 text-right text-sm text-slate-300">{formatNumber(route.totalRequests)}</td>
-                      <td className="px-4 py-4 text-right text-sm text-slate-400">{formatNumber(route.allowedRequests)}</td>
-                      <td className="px-4 py-4 text-right text-sm text-slate-300">{formatNumber(route.blockedRequests)}</td>
-                      <td className="px-4 py-4 text-right text-sm text-slate-300">
-                        {formatBlockRate(route.totalRequests, route.blockedRequests)}
-                      </td>
-                    </tr>
-                  ))}
+                  {sortedRouteAnalytics.map((route, index) => {
+                    const routeLabel = getGroupedRouteLabel(route);
+                    const endpointCount = getRouteEndpointCount(route);
+                    const rawRoutes = route.rawRoutes ?? [];
+                    const rowKey = route.key ?? route.route ?? `${routeLabel}-${index}`;
+                    const canExpand = rawRoutes.length > 1;
+                    const isExpanded = expandedRouteKeys.includes(rowKey);
+
+                    return (
+                      <React.Fragment key={rowKey}>
+                        <tr className="transition-colors hover:bg-slate-900/25">
+                          <td className="px-4 py-4 font-mono text-xs text-slate-300">{routeLabel}</td>
+                          <td className="px-4 py-4 text-right text-sm text-slate-300">{formatNumber(route.totalRequests)}</td>
+                          <td className="px-4 py-4 text-right text-sm text-slate-400">{formatNumber(route.allowedRequests)}</td>
+                          <td className="px-4 py-4 text-right text-sm text-slate-300">{formatNumber(route.blockedRequests)}</td>
+                          <td className="px-4 py-4 text-right text-sm text-slate-300">
+                            {formatBlockRate(route.totalRequests, route.blockedRequests)}
+                          </td>
+                          <td className="px-4 py-4 text-right text-xs text-slate-500">
+                            {endpointCount > 1 ? (
+                              <button
+                                type="button"
+                                onClick={() => setExpandedRouteKeys((keys) => (
+                                  keys.includes(rowKey)
+                                    ? keys.filter((key) => key !== rowKey)
+                                    : [...keys, rowKey]
+                                ))}
+                                className="pacific-line-focus text-xs text-slate-500 transition-colors hover:text-slate-300"
+                              >
+                                {endpointCount} endpoints
+                              </button>
+                            ) : (
+                              '1 endpoint'
+                            )}
+                          </td>
+                        </tr>
+                        {canExpand && isExpanded && (
+                          <tr className="bg-transparent">
+                            <td colSpan={6} className="px-4 pb-4">
+                              <div className="grid gap-1 pl-2 text-xs text-slate-500 sm:grid-cols-2">
+                                {rawRoutes.map((rawRoute) => (
+                                  <span key={rawRoute} className="min-w-0 truncate font-mono" title={rawRoute}>
+                                    {rawRoute}
+                                  </span>
+                                ))}
+                              </div>
+                            </td>
+                          </tr>
+                        )}
+                      </React.Fragment>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>

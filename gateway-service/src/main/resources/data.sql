@@ -17,6 +17,49 @@ INSERT INTO route_limit (plan_id, route_pattern, requests_per_minute)
 SELECT id, '/api/reports', 2 FROM plan WHERE name = 'FREE'
     ON CONFLICT DO NOTHING;
 
+INSERT INTO route_group (name, description, active, priority, created_at, updated_at)
+VALUES
+    ('Products', 'Demo product endpoints', true, 100, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+    ('Reports', 'Demo report endpoints', true, 90, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+    ('Orders', 'Demo order endpoints', true, 80, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+    ON CONFLICT (name) DO NOTHING;
+
+INSERT INTO route_group_rule (route_group_id, method, pattern, match_type, created_at, updated_at)
+SELECT rg.id, null, '/api/products', 'EXACT', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
+FROM route_group rg
+WHERE rg.name = 'Products'
+  AND NOT EXISTS (
+      SELECT 1 FROM route_group_rule rgr
+      WHERE rgr.route_group_id = rg.id
+        AND rgr.method IS NULL
+        AND rgr.pattern = '/api/products'
+        AND rgr.match_type = 'EXACT'
+  );
+
+INSERT INTO route_group_rule (route_group_id, method, pattern, match_type, created_at, updated_at)
+SELECT rg.id, null, '/api/reports', 'EXACT', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
+FROM route_group rg
+WHERE rg.name = 'Reports'
+  AND NOT EXISTS (
+      SELECT 1 FROM route_group_rule rgr
+      WHERE rgr.route_group_id = rg.id
+        AND rgr.method IS NULL
+        AND rgr.pattern = '/api/reports'
+        AND rgr.match_type = 'EXACT'
+  );
+
+INSERT INTO route_group_rule (route_group_id, method, pattern, match_type, created_at, updated_at)
+SELECT rg.id, null, '/api/orders', 'EXACT', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
+FROM route_group rg
+WHERE rg.name = 'Orders'
+  AND NOT EXISTS (
+      SELECT 1 FROM route_group_rule rgr
+      WHERE rgr.route_group_id = rg.id
+        AND rgr.method IS NULL
+        AND rgr.pattern = '/api/orders'
+        AND rgr.match_type = 'EXACT'
+  );
+
 INSERT INTO admin_user (username, password, role)
 VALUES (
            'owner',

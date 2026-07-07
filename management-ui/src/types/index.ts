@@ -118,6 +118,40 @@ export interface UpdateRouteLimitRequest {
   requestPerMinute: number;
 }
 
+export type RouteGroupMatchType = 'EXACT' | 'PREFIX' | 'GLOB';
+
+export interface RouteGroupRuleDto {
+  id?: number;
+  method?: string | null;
+  pattern: string;
+  matchType: RouteGroupMatchType;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface RouteGroupDto {
+  id?: number;
+  name: string;
+  description?: string | null;
+  active: boolean;
+  priority: number;
+  createdAt?: string;
+  updatedAt?: string;
+  rules: RouteGroupRuleDto[];
+}
+
+export interface RouteGroupRequest {
+  name: string;
+  description?: string | null;
+  active: boolean;
+  priority: number;
+  rules: Array<{
+    method?: string | null;
+    pattern: string;
+    matchType: RouteGroupMatchType;
+  }>;
+}
+
 // Provisioning tokens
 export interface ProvisioningTokenDto {
   id: number;
@@ -208,6 +242,8 @@ export interface AbuseAlertDto {
 }
 
 // Analytics
+export type RouteAnalyticsGroupBy = 'OPERATION' | 'PATTERN' | 'RAW_PATH';
+
 export interface AnalyticsDataPoint {
   timestamp: string;
   allowedRequests: number;
@@ -226,17 +262,28 @@ export interface DashboardSummaryDto {
 
 export interface RouteAnalyticsDto {
   route?: string;
+  key?: string;
+  label?: string;
+  groupBy?: RouteAnalyticsGroupBy | string;
   totalRequests?: number;
   allowedRequests?: number;
   blockedRequests?: number;
+  blockRate?: number;
+  endpointCount?: number;
+  rawRoutes?: string[];
 }
 
 export interface RouteTrafficAnalyticsDto {
   bucket?: string;
   route?: string;
+  key?: string;
+  label?: string;
+  groupBy?: RouteAnalyticsGroupBy | string;
   totalRequests?: number;
   allowedRequests?: number;
   blockedRequests?: number;
+  endpointCount?: number;
+  rawRoutes?: string[];
 }
 
 export interface ClientAnalyticsDto {

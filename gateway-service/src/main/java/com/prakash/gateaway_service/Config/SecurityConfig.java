@@ -55,6 +55,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/admin/clients", "/admin/clients/**").hasAnyRole("OWNER", "SUPER_ADMIN", "READ_ONLY_ADMIN")
                         .requestMatchers(HttpMethod.GET, "/admin/plans", "/admin/plans/**").hasAnyRole("OWNER", "SUPER_ADMIN", "READ_ONLY_ADMIN")
                         .requestMatchers(HttpMethod.GET, "/admin/route-limits", "/admin/route-limits/**").hasAnyRole("OWNER", "SUPER_ADMIN", "READ_ONLY_ADMIN")
+                        .requestMatchers(HttpMethod.GET, "/admin/route-groups", "/admin/route-groups/**").hasAnyRole("OWNER", "SUPER_ADMIN", "READ_ONLY_ADMIN")
                         .requestMatchers(HttpMethod.GET, "/admin/abuse-alerts", "/admin/abuse-alerts/**").hasAnyRole("OWNER", "SUPER_ADMIN", "READ_ONLY_ADMIN")
                         .requestMatchers(HttpMethod.GET, "/admin/users", "/admin/users/**").hasAnyRole("OWNER", "SUPER_ADMIN", "READ_ONLY_ADMIN")
                         .requestMatchers(HttpMethod.GET, "/admin/provisioning-tokens", "/admin/provisioning-tokens/**").hasAnyRole("OWNER", "SUPER_ADMIN", "READ_ONLY_ADMIN")
@@ -62,6 +63,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/admin/settings/gateway/test-connection").hasAnyRole("OWNER", "SUPER_ADMIN", "READ_ONLY_ADMIN")
 
                         .requestMatchers("/admin/clients/**").hasAnyRole("OWNER", "SUPER_ADMIN")
+                        .requestMatchers("/admin/route-groups", "/admin/route-groups/**").hasAnyRole("OWNER", "SUPER_ADMIN")
                         .requestMatchers("/admin/users/**").hasAnyRole("OWNER", "SUPER_ADMIN")
                         .requestMatchers("/admin/provisioning-tokens", "/admin/provisioning-tokens/**").hasAnyRole("OWNER", "SUPER_ADMIN")
                         .requestMatchers("/admin/settings/gateway").hasAnyRole("OWNER", "SUPER_ADMIN")

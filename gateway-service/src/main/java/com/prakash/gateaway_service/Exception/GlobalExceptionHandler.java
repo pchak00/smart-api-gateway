@@ -23,7 +23,8 @@ public class GlobalExceptionHandler {
                       AdminNotFoundException.class,
                       AdminRecoveryUnavailableException.class,
                       ProvisioningTokenNotFoundException.class,
-                      AbuseAlertNotFoundException.class})
+                      AbuseAlertNotFoundException.class,
+                      RouteGroupNotFoundException.class})
     public ResponseEntity<ExceptionResponse> handleNotFound(
             RuntimeException e, HttpServletRequest request
     ) {
@@ -32,7 +33,7 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
     }
 
-    @ExceptionHandler({DuplicatePlanException.class, DuplicateClientException.class, PlanInUseException.class, RouteLimitExistException.class, DuplicateAdminException.class, LastOwnerException.class, AdminRoleHierarchyException.class, DuplicateProvisioningTokenException.class, InvalidAbuseAlertTransitionException.class})
+    @ExceptionHandler({DuplicatePlanException.class, DuplicateClientException.class, PlanInUseException.class, RouteLimitExistException.class, DuplicateAdminException.class, LastOwnerException.class, AdminRoleHierarchyException.class, DuplicateProvisioningTokenException.class, InvalidAbuseAlertTransitionException.class, DuplicateRouteGroupException.class})
     public ResponseEntity<ExceptionResponse> handleConflict(
             RuntimeException e, HttpServletRequest request
     ) {
@@ -47,7 +48,8 @@ public class GlobalExceptionHandler {
                       InvalidGatewaySettingsException.class,
                       InvalidRouteLimitException.class,
                       InvalidAbuseAlertStatusException.class,
-                      InvalidAdminPasswordException.class})
+                      InvalidAdminPasswordException.class,
+                      InvalidRouteGroupException.class})
     public ResponseEntity<ExceptionResponse> handleBadRequest(
             RuntimeException e, HttpServletRequest request
     ) {

@@ -67,6 +67,44 @@ public interface UsageLogRepository extends JpaRepository<UsageLog, Long> {
 
     @Query(value = """
             SELECT
+                COALESCE(u.method, '') AS method,
+                u.path AS route,
+                COUNT(u.id) AS total_requests,
+                SUM(CASE WHEN u.allowed = true THEN 1 ELSE 0 END) AS allowed_requests,
+                SUM(CASE WHEN u.allowed = false THEN 1 ELSE 0 END) AS blocked_requests
+            FROM usage_log u
+            JOIN client c ON c.id = u.client_id
+            JOIN plan p ON p.id = c.plan_id
+            WHERE (:planName IS NULL OR LOWER(p.name) = LOWER(:planName))
+            GROUP BY COALESCE(u.method, ''), u.path
+            ORDER BY COUNT(u.id) DESC
+            """, nativeQuery = true)
+    List<Object[]> findRouteAnalyticsByMethodPath(@Param("planName") String planName);
+
+    @Query(value = """
+            SELECT
+                COALESCE(u.method, '') AS method,
+                u.path AS route,
+                COUNT(u.id) AS total_requests,
+                SUM(CASE WHEN u.allowed = true THEN 1 ELSE 0 END) AS allowed_requests,
+                SUM(CASE WHEN u.allowed = false THEN 1 ELSE 0 END) AS blocked_requests
+            FROM usage_log u
+            JOIN client c ON c.id = u.client_id
+            JOIN plan p ON p.id = c.plan_id
+            WHERE (:planName IS NULL OR LOWER(p.name) = LOWER(:planName))
+              AND u.timestamp >= :startDate
+              AND u.timestamp < :endDate
+            GROUP BY COALESCE(u.method, ''), u.path
+            ORDER BY COUNT(u.id) DESC
+            """, nativeQuery = true)
+    List<Object[]> findRouteAnalyticsByMethodPathInDateRange(
+            @Param("planName") String planName,
+            @Param("startDate") LocalDateTime startDate,
+            @Param("endDate") LocalDateTime endDate
+    );
+
+    @Query(value = """
+            SELECT
                 c.id AS client_id,
                 c.name AS client_name,
                 p.id AS plan_id,
@@ -169,6 +207,46 @@ public interface UsageLogRepository extends JpaRepository<UsageLog, Long> {
             ORDER BY CAST(u.timestamp AS date), u.path
             """, nativeQuery = true)
     List<Object[]> findDailyRouteTrafficAnalyticsInDateRange(
+            @Param("planName") String planName,
+            @Param("startDate") LocalDateTime startDate,
+            @Param("endDate") LocalDateTime endDate
+    );
+
+    @Query(value = """
+            SELECT
+                CAST(u.timestamp AS date) AS bucket,
+                COALESCE(u.method, '') AS method,
+                u.path AS route,
+                COUNT(u.id) AS total_requests,
+                SUM(CASE WHEN u.allowed = true THEN 1 ELSE 0 END) AS allowed_requests,
+                SUM(CASE WHEN u.allowed = false THEN 1 ELSE 0 END) AS blocked_requests
+            FROM usage_log u
+            JOIN client c ON c.id = u.client_id
+            JOIN plan p ON p.id = c.plan_id
+            WHERE (:planName IS NULL OR LOWER(p.name) = LOWER(:planName))
+            GROUP BY CAST(u.timestamp AS date), COALESCE(u.method, ''), u.path
+            ORDER BY CAST(u.timestamp AS date), u.path
+            """, nativeQuery = true)
+    List<Object[]> findDailyRouteTrafficAnalyticsByMethodPath(@Param("planName") String planName);
+
+    @Query(value = """
+            SELECT
+                CAST(u.timestamp AS date) AS bucket,
+                COALESCE(u.method, '') AS method,
+                u.path AS route,
+                COUNT(u.id) AS total_requests,
+                SUM(CASE WHEN u.allowed = true THEN 1 ELSE 0 END) AS allowed_requests,
+                SUM(CASE WHEN u.allowed = false THEN 1 ELSE 0 END) AS blocked_requests
+            FROM usage_log u
+            JOIN client c ON c.id = u.client_id
+            JOIN plan p ON p.id = c.plan_id
+            WHERE (:planName IS NULL OR LOWER(p.name) = LOWER(:planName))
+              AND u.timestamp >= :startDate
+              AND u.timestamp < :endDate
+            GROUP BY CAST(u.timestamp AS date), COALESCE(u.method, ''), u.path
+            ORDER BY CAST(u.timestamp AS date), u.path
+            """, nativeQuery = true)
+    List<Object[]> findDailyRouteTrafficAnalyticsByMethodPathInDateRange(
             @Param("planName") String planName,
             @Param("startDate") LocalDateTime startDate,
             @Param("endDate") LocalDateTime endDate

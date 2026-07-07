@@ -2,6 +2,7 @@ package com.prakash.gateaway_service.Controller;
 
 import com.prakash.gateaway_service.DTO.ClientAnalyticsResponseDto;
 import com.prakash.gateaway_service.DTO.DashboardSummaryResponseDto;
+import com.prakash.gateaway_service.DTO.RouteAnalyticsGroupBy;
 import com.prakash.gateaway_service.DTO.RouteAnalyticsResponseDto;
 import com.prakash.gateaway_service.DTO.RouteTrafficAnalyticsResponseDto;
 import com.prakash.gateaway_service.DTO.TrafficAnalyticsResponseDto;
@@ -34,13 +35,14 @@ public class AnalyticsController {
     public List<RouteAnalyticsResponseDto> getRouteAnalytics(
             @RequestParam(required = false) String planName,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
+            @RequestParam(defaultValue = "OPERATION") RouteAnalyticsGroupBy groupBy
     ) {
         if (startDate == null && endDate == null) {
-            return analyticsService.getRouteAnalytics(planName);
+            return analyticsService.getRouteAnalytics(planName, null, null, groupBy);
         }
 
-        return analyticsService.getRouteAnalytics(planName, startDate, endDate);
+        return analyticsService.getRouteAnalytics(planName, startDate, endDate, groupBy);
     }
 
     @GetMapping("/analytics/clients")
@@ -72,12 +74,13 @@ public class AnalyticsController {
     public List<RouteTrafficAnalyticsResponseDto> getRouteTrafficAnalytics(
             @RequestParam(required = false) String planName,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
+            @RequestParam(defaultValue = "OPERATION") RouteAnalyticsGroupBy groupBy
     ) {
         if (startDate == null && endDate == null) {
-            return analyticsService.getRouteTrafficAnalytics(planName);
+            return analyticsService.getRouteTrafficAnalytics(planName, null, null, groupBy);
         }
 
-        return analyticsService.getRouteTrafficAnalytics(planName, startDate, endDate);
+        return analyticsService.getRouteTrafficAnalytics(planName, startDate, endDate, groupBy);
     }
 }
