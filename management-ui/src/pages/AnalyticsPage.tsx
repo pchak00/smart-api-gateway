@@ -24,6 +24,8 @@ import { useToast } from '../hooks/useToast';
 
 type RouteTrendMetric = 'totalRequests' | 'allowedRequests' | 'blockedRequests';
 type RouteTrendDisplayMode = 'top5' | 'top10' | 'custom';
+type AnalyticsTimeRange = '7d' | '30d' | '90d' | '12m';
+type AnalyticsBucketGranularity = 'day' | 'week' | 'month';
 type NumericAnalyticsSortField = 'totalRequests' | 'allowedRequests' | 'blockedRequests' | 'blockRate';
 type RouteAnalyticsSortField = NumericAnalyticsSortField | 'name';
 type ClientAnalyticsSortField = NumericAnalyticsSortField | 'name' | 'planName';
@@ -38,7 +40,16 @@ interface AnalyticsSortSelection {
 type RouteTrendChartPoint = {
   bucket: string;
   bucketLabel: string;
+  bucketTooltipLabel: string;
   [key: string]: string | number;
+};
+
+type AnalyticsBucket = {
+  key: string;
+  startDate: string;
+  endDate: string;
+  label: string;
+  tooltipLabel: string;
 };
 
 type RouteTrendRouteTotals = {
@@ -169,17 +180,125 @@ const getBucketDateKey = (bucket: string | null | undefined) => {
   return date ? getLocalDateKey(date) : null;
 };
 
-const getCurrentAnalyticsWindow = (days = ANALYTICS_WINDOW_DAYS) => {
+const addDays = (date: Date, days: number) => {
+  const nextDate = new Date(date);
+  nextDate.setDate(nextDate.getDate() + days);
+  return nextDate;
+};
+
+const addMonths = (date: Date, months: number) => {
+  const nextDate = new Date(date);
+  nextDate.setMonth(nextDate.getMonth() + months);
+  return nextDate;
+};
+
+const getDateFromKey = (dateKey: string) => getServerTimestampDate(dateKey) ?? new Date(dateKey);
+
+const formatMonthBucket = (dateKey: string) => {
+  const date = getDateFromKey(dateKey);
+
+  return new Intl.DateTimeFormat(undefined, {
+    month: 'short',
+    year: 'numeric'
+  }).format(date);
+};
+
+const getAnalyticsRangeGranularity = (range: AnalyticsTimeRange): AnalyticsBucketGranularity => {
+  if (range === '90d') return 'week';
+  if (range === '12m') return 'month';
+
+  return 'day';
+};
+
+const getAnalyticsWindowDays = (range: AnalyticsTimeRange) => {
+  if (range === '30d') return 30;
+  if (range === '90d') return 90;
+
+  return ANALYTICS_WINDOW_DAYS;
+};
+
+const createDailyBuckets = (startDate: Date, days: number): AnalyticsBucket[] => (
+  Array.from({ length: days }, (_, index) => {
+    const date = addDays(startDate, index);
+    const key = getLocalDateKey(date);
+
+    return {
+      key,
+      startDate: key,
+      endDate: key,
+      label: formatBucket(key),
+      tooltipLabel: formatBucket(key)
+    };
+  })
+);
+
+const createWeeklyBuckets = (startDate: Date, endDate: Date): AnalyticsBucket[] => {
+  const buckets: AnalyticsBucket[] = [];
+  let bucketStart = new Date(startDate);
+
+  while (bucketStart <= endDate) {
+    const bucketEnd = new Date(Math.min(addDays(bucketStart, 6).getTime(), endDate.getTime()));
+    const startKey = getLocalDateKey(bucketStart);
+    const endKey = getLocalDateKey(bucketEnd);
+
+    buckets.push({
+      key: startKey,
+      startDate: startKey,
+      endDate: endKey,
+      label: formatBucket(startKey),
+      tooltipLabel: `Week of ${formatBucket(startKey)}`
+    });
+
+    bucketStart = addDays(bucketStart, 7);
+  }
+
+  return buckets;
+};
+
+const createMonthlyBuckets = (startDate: Date, endDate: Date): AnalyticsBucket[] => {
+  const buckets: AnalyticsBucket[] = [];
+  let bucketStart = new Date(startDate.getFullYear(), startDate.getMonth(), 1);
+
+  while (bucketStart <= endDate) {
+    const nextMonth = addMonths(bucketStart, 1);
+    const bucketEnd = new Date(Math.min(addDays(nextMonth, -1).getTime(), endDate.getTime()));
+    const startKey = getLocalDateKey(bucketStart);
+    const endKey = getLocalDateKey(bucketEnd);
+    const label = formatMonthBucket(startKey);
+
+    buckets.push({
+      key: startKey,
+      startDate: startKey,
+      endDate: endKey,
+      label,
+      tooltipLabel: label
+    });
+
+    bucketStart = nextMonth;
+  }
+
+  return buckets;
+};
+
+const getCurrentAnalyticsWindow = (range: AnalyticsTimeRange) => {
   const today = new Date();
   const endDate = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-  const startDate = new Date(endDate);
-  startDate.setDate(endDate.getDate() - (days - 1));
+  const granularity = getAnalyticsRangeGranularity(range);
+  const startDate = range === '12m'
+    ? new Date(endDate.getFullYear(), endDate.getMonth() - 11, 1)
+    : addDays(endDate, -(getAnalyticsWindowDays(range) - 1));
+  const buckets = granularity === 'month'
+    ? createMonthlyBuckets(startDate, endDate)
+    : granularity === 'week'
+      ? createWeeklyBuckets(startDate, endDate)
+      : createDailyBuckets(startDate, getAnalyticsWindowDays(range));
 
-  return Array.from({ length: days }, (_, index) => {
-    const date = new Date(startDate);
-    date.setDate(startDate.getDate() + index);
-    return getLocalDateKey(date);
-  });
+  return {
+    startDate: getLocalDateKey(startDate),
+    endDate: getLocalDateKey(endDate),
+    granularity,
+    buckets
+  };
 };
 
 const getPointActivity = (
@@ -205,6 +324,13 @@ const routeTrendDisplayOptions: Array<{ key: RouteTrendDisplayMode; label: strin
   { key: 'top5', label: 'Top 5' },
   { key: 'top10', label: 'Top 10' },
   { key: 'custom', label: 'Custom' }
+];
+
+const analyticsTimeRangeOptions: Array<{ key: AnalyticsTimeRange; label: string }> = [
+  { key: '7d', label: '7d' },
+  { key: '30d', label: '30d' },
+  { key: '90d', label: '90d' },
+  { key: '12m', label: '12m' }
 ];
 
 const routeAnalyticsSortDropdownOptions: DropdownOption[] = [
@@ -260,25 +386,28 @@ const formatBlockRate = (totalRequests: number | null | undefined, blockedReques
   `${(getBlockRate(totalRequests, blockedRequests) * 100).toFixed(1)}%`
 );
 
-const getAnalyticsWindowLabel = (buckets: Array<string | undefined>) => {
-  const sortedBuckets = [...new Set(buckets.filter((bucket): bucket is string => Boolean(bucket)))]
-    .sort((first, second) => first.localeCompare(second));
+const getAnalyticsWindowLabel = (buckets: AnalyticsBucket[]) => {
+  if (buckets.length === 0) return 'Current analytics window';
+  if (buckets.length === 1) return buckets[0].tooltipLabel;
 
-  if (sortedBuckets.length === 0) return 'Current analytics window';
-  if (sortedBuckets.length === 1) return formatBucket(sortedBuckets[0]);
+  return `${buckets[0].tooltipLabel} - ${buckets[buckets.length - 1].tooltipLabel}`;
+};
 
-  return `${formatBucket(sortedBuckets[0])} - ${formatBucket(sortedBuckets[sortedBuckets.length - 1])}`;
+const getBucketKeyForDate = (dateKey: string | null, buckets: AnalyticsBucket[]) => {
+  if (!dateKey) return null;
+
+  return buckets.find((bucket) => dateKey >= bucket.startDate && dateKey <= bucket.endDate)?.key ?? null;
 };
 
 const fillTrafficWindow = (
   traffic: TrafficAnalyticsDto[],
-  windowBuckets: string[]
+  analyticsBuckets: AnalyticsBucket[]
 ): TrafficAnalyticsDto[] => {
-  const buckets = new Map<string, TrafficAnalyticsDto>(
-    windowBuckets.map((bucket) => [
-      bucket,
+  const bucketsByKey = new Map<string, TrafficAnalyticsDto>(
+    analyticsBuckets.map((bucket) => [
+      bucket.key,
       {
-        bucket,
+        bucket: bucket.key,
         totalRequests: 0,
         allowedRequests: 0,
         blockedRequests: 0
@@ -287,13 +416,13 @@ const fillTrafficWindow = (
   );
 
   traffic.forEach((point) => {
-    const bucket = getBucketDateKey(point.bucket);
-    if (!bucket || !buckets.has(bucket)) return;
+    const bucket = getBucketKeyForDate(getBucketDateKey(point.bucket), analyticsBuckets);
+    if (!bucket || !bucketsByKey.has(bucket)) return;
 
-    const existing = buckets.get(bucket);
+    const existing = bucketsByKey.get(bucket);
     if (!existing) return;
 
-    buckets.set(bucket, {
+    bucketsByKey.set(bucket, {
       bucket,
       totalRequests: safePositiveCount(existing.totalRequests) + safePositiveCount(point.totalRequests),
       allowedRequests: safePositiveCount(existing.allowedRequests) + safePositiveCount(point.allowedRequests),
@@ -301,33 +430,34 @@ const fillTrafficWindow = (
     });
   });
 
-  return windowBuckets.map((bucket) => buckets.get(bucket)).filter((point): point is TrafficAnalyticsDto => Boolean(point));
+  return analyticsBuckets.map((bucket) => bucketsByKey.get(bucket.key)).filter((point): point is TrafficAnalyticsDto => Boolean(point));
 };
 
 const getActivityHint = (
   traffic: TrafficAnalyticsDto[],
   routeTraffic: RouteTrafficAnalyticsDto[],
-  windowBuckets: string[]
+  startDate: string,
+  endDate: string
 ): ActivityHint => {
-  const activityByBucket = new Map(windowBuckets.map((bucket) => [bucket, 0]));
+  const activityByDate = new Map<string, number>();
   const trackActivity = (point: TrafficAnalyticsDto | RouteTrafficAnalyticsDto) => {
-    const bucket = getBucketDateKey(point.bucket);
-    if (!bucket || !activityByBucket.has(bucket)) return;
+    const dateKey = getBucketDateKey(point.bucket);
+    if (!dateKey || dateKey < startDate || dateKey > endDate) return;
 
-    activityByBucket.set(bucket, (activityByBucket.get(bucket) ?? 0) + getPointActivity(point));
+    activityByDate.set(dateKey, (activityByDate.get(dateKey) ?? 0) + getPointActivity(point));
   };
 
   traffic.forEach(trackActivity);
   routeTraffic.forEach(trackActivity);
 
-  const todayBucket = windowBuckets[windowBuckets.length - 1];
-  if ((activityByBucket.get(todayBucket) ?? 0) > 0) return null;
+  if ((activityByDate.get(endDate) ?? 0) > 0) return null;
 
-  const latestActiveBucket = [...windowBuckets]
-    .reverse()
-    .find((bucket) => (activityByBucket.get(bucket) ?? 0) > 0);
+  const latestActiveDate = [...activityByDate.entries()]
+    .filter(([, activity]) => activity > 0)
+    .map(([dateKey]) => dateKey)
+    .sort((first, second) => second.localeCompare(first))[0];
 
-  if (!latestActiveBucket) {
+  if (!latestActiveDate) {
     return {
       tone: 'empty',
       label: 'No traffic in selected window'
@@ -336,7 +466,7 @@ const getActivityHint = (
 
   return {
     tone: 'idle',
-    label: `No traffic since ${formatBucket(latestActiveBucket)}`
+    label: `No traffic since ${formatBucket(latestActiveDate)}`
   };
 };
 
@@ -523,6 +653,9 @@ const RouteTrendTooltip: React.FC<RouteTrendTooltipProps> = ({
   if (!active || !payload?.length) return null;
 
   const payloadByKey = new Map(payload.map((item) => [String(item.dataKey), item]));
+  const tooltipLabel = typeof payload[0]?.payload?.bucketTooltipLabel === 'string'
+    ? payload[0].payload.bucketTooltipLabel
+    : String(label);
   const visibleValues = routes
     .map((route) => {
       const item = payloadByKey.get(route.key);
@@ -537,7 +670,7 @@ const RouteTrendTooltip: React.FC<RouteTrendTooltipProps> = ({
 
   return (
     <div className="min-w-44 max-w-72 rounded-md bg-slate-950/95 px-3 py-2 text-xs shadow-[0_18px_45px_rgba(2,6,23,0.34)] ring-1 ring-cyan-200/10">
-      <p className="mb-2 font-medium text-slate-300">{String(label)}</p>
+      <p className="mb-2 font-medium text-slate-300">{tooltipLabel}</p>
       <div className="max-h-48 space-y-1 overflow-y-auto">
         {visibleValues.map(({ route, value }) => (
           <div key={route.key} className="grid min-w-0 grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-2">
@@ -800,6 +933,7 @@ export const AnalyticsPage: React.FC = () => {
   const [clientAnalytics, setClientAnalytics] = useState<ClientAnalyticsDto[]>([]);
   const [trafficAnalytics, setTrafficAnalytics] = useState<TrafficAnalyticsDto[]>([]);
   const [selectedRouteMetric, setSelectedRouteMetric] = useState<RouteTrendMetric>('totalRequests');
+  const [selectedTimeRange, setSelectedTimeRange] = useState<AnalyticsTimeRange>('7d');
   const [routeTrendMode, setRouteTrendMode] = useState<RouteTrendDisplayMode>('top5');
   const [routeAnalyticsSortField, setRouteAnalyticsSortField] = useState<RouteAnalyticsSortField>('totalRequests');
   const [routeAnalyticsSortDirection, setRouteAnalyticsSortDirection] = useState<AnalyticsSortDirection>('desc');
@@ -813,7 +947,11 @@ export const AnalyticsPage: React.FC = () => {
   const [routeTrendHoverGuide, setRouteTrendHoverGuide] = useState<RouteTrendHoverGuide | null>(null);
   const routeTrendHoverGuideRef = useRef<RouteTrendHoverGuide | null>(null);
   const routeTrendDotPositionsRef = useRef<Map<number, Map<string, RouteTrendDotPosition>>>(new Map());
-  const analyticsWindowBuckets = useMemo(() => getCurrentAnalyticsWindow(), []);
+  const analyticsWindow = useMemo(() => getCurrentAnalyticsWindow(selectedTimeRange), [selectedTimeRange]);
+  const analyticsQueryRange = useMemo(() => ({
+    startDate: analyticsWindow.startDate,
+    endDate: analyticsWindow.endDate
+  }), [analyticsWindow.endDate, analyticsWindow.startDate]);
 
   const updateRouteTrendHoverGuide = useCallback((guide: RouteTrendHoverGuide | null) => {
     routeTrendHoverGuideRef.current = guide;
@@ -878,10 +1016,10 @@ export const AnalyticsPage: React.FC = () => {
 
       try {
         const [routes, routeTraffic, clients, traffic] = await Promise.all([
-          api.getRouteAnalytics(),
-          api.getRouteTrafficAnalytics(),
-          api.getClientAnalytics(),
-          api.getTrafficAnalytics()
+          api.getRouteAnalytics(undefined, analyticsQueryRange),
+          api.getRouteTrafficAnalytics(undefined, analyticsQueryRange),
+          api.getClientAnalytics(undefined, analyticsQueryRange),
+          api.getTrafficAnalytics(analyticsQueryRange)
         ]);
 
         setRouteAnalytics(Array.isArray(routes) ? routes : []);
@@ -902,7 +1040,7 @@ export const AnalyticsPage: React.FC = () => {
     };
 
     loadAnalytics();
-  }, []);
+  }, [analyticsQueryRange]);
 
   const routeTrendRouteOptions = useMemo<RouteTrendRouteTotals[]>(() => {
     const totals = new Map<string, RouteTrendRouteTotals>();
@@ -960,16 +1098,16 @@ export const AnalyticsPage: React.FC = () => {
 
   const routeTrendRouteCount = routeTrendRouteOptions.length;
   const filledTrafficAnalytics = useMemo(
-    () => fillTrafficWindow(trafficAnalytics, analyticsWindowBuckets),
-    [analyticsWindowBuckets, trafficAnalytics]
+    () => fillTrafficWindow(trafficAnalytics, analyticsWindow.buckets),
+    [analyticsWindow.buckets, trafficAnalytics]
   );
   const analyticsWindowLabel = useMemo(
-    () => getAnalyticsWindowLabel(analyticsWindowBuckets),
-    [analyticsWindowBuckets]
+    () => getAnalyticsWindowLabel(analyticsWindow.buckets),
+    [analyticsWindow.buckets]
   );
   const activityHint = useMemo(
-    () => getActivityHint(trafficAnalytics, routeTrafficAnalytics, analyticsWindowBuckets),
-    [analyticsWindowBuckets, routeTrafficAnalytics, trafficAnalytics]
+    () => getActivityHint(trafficAnalytics, routeTrafficAnalytics, analyticsWindow.startDate, analyticsWindow.endDate),
+    [analyticsWindow.endDate, analyticsWindow.startDate, routeTrafficAnalytics, trafficAnalytics]
   );
 
   const routeSearchResults = useMemo(() => {
@@ -999,18 +1137,19 @@ export const AnalyticsPage: React.FC = () => {
 
   const routeTrendData = useMemo<RouteTrendChartPoint[]>(() => {
     const buckets = new Map<string, RouteTrendChartPoint>(
-      analyticsWindowBuckets.map((bucket) => [
-        bucket,
+      analyticsWindow.buckets.map((bucket) => [
+        bucket.key,
         {
-          bucket,
-          bucketLabel: formatBucket(bucket)
+          bucket: bucket.key,
+          bucketLabel: bucket.label,
+          bucketTooltipLabel: bucket.tooltipLabel
         }
       ])
     );
     const routeKeyByName = new Map(routeTrendRoutes.map((route) => [route.route, route.key]));
 
     routeTrafficAnalytics.forEach((point) => {
-      const bucket = getBucketDateKey(point.bucket);
+      const bucket = getBucketKeyForDate(getBucketDateKey(point.bucket), analyticsWindow.buckets);
       const route = getRouteName(point.route);
       const routeKey = routeKeyByName.get(route);
 
@@ -1023,8 +1162,8 @@ export const AnalyticsPage: React.FC = () => {
       buckets.set(bucket, existing);
     });
 
-    return analyticsWindowBuckets
-      .map((bucket) => buckets.get(bucket))
+    return analyticsWindow.buckets
+      .map((bucket) => buckets.get(bucket.key))
       .filter((point): point is RouteTrendChartPoint => Boolean(point))
       .map((point) => {
         routeTrendRoutes.forEach((route) => {
@@ -1035,7 +1174,7 @@ export const AnalyticsPage: React.FC = () => {
 
         return point;
       });
-  }, [analyticsWindowBuckets, routeTrafficAnalytics, routeTrendRoutes, selectedRouteMetric]);
+  }, [analyticsWindow.buckets, routeTrafficAnalytics, routeTrendRoutes, selectedRouteMetric]);
 
   useEffect(() => {
     routeTrendDotPositionsRef.current.clear();
@@ -1126,6 +1265,22 @@ export const AnalyticsPage: React.FC = () => {
               </div>
             </div>
             <div className="flex flex-wrap items-center gap-3">
+              <div className="flex gap-1">
+                {analyticsTimeRangeOptions.map((option) => (
+                  <button
+                    key={option.key}
+                    type="button"
+                    onClick={() => setSelectedTimeRange(option.key)}
+                    className={`pacific-control-focus rounded px-2.5 py-1 text-xs font-medium transition-colors ${
+                      selectedTimeRange === option.key
+                        ? 'bg-slate-800/45 text-slate-100'
+                        : 'text-slate-400 hover:bg-slate-900/35 hover:text-slate-200'
+                    }`}
+                  >
+                    {option.label}
+                  </button>
+                ))}
+              </div>
               <div className="flex gap-1">
                 {routeTrendMetricOptions.map((option) => (
                   <button
