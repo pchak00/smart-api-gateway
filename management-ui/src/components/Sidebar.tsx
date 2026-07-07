@@ -44,16 +44,41 @@ const SETTINGS_ITEMS: SidebarItem[] = [
 
 interface SidebarProps {
   isSuperAdmin: boolean;
+  isCollapsed?: boolean;
   className?: string;
   onNavigate?: () => void;
+  onToggleCollapse?: () => void;
 }
 
-export const Sidebar: React.FC<SidebarProps> = ({ isSuperAdmin, className = 'h-screen w-72', onNavigate }) => {
+interface CollapsedTooltipProps {
+  label: string;
+}
+
+const cx = (...classes: Array<string | false | undefined>) =>
+  classes.filter(Boolean).join(' ');
+
+const CollapsedTooltip: React.FC<CollapsedTooltipProps> = ({ label }) => (
+  <span
+    role="tooltip"
+    className="pointer-events-none absolute left-full top-1/2 z-40 ml-3 -translate-y-1/2 whitespace-nowrap rounded-md bg-slate-900/95 px-2 py-1 text-xs font-medium text-slate-200 opacity-0 shadow-lg shadow-black/25 ring-1 ring-slate-800/70 transition-opacity duration-150 group-hover:opacity-100 group-focus-within:opacity-100"
+  >
+    {label}
+  </span>
+);
+
+export const Sidebar: React.FC<SidebarProps> = ({
+  isSuperAdmin,
+  isCollapsed = false,
+  className = 'h-screen w-72',
+  onNavigate,
+  onToggleCollapse
+}) => {
   const location = useLocation();
   const { showToast } = useToast();
   const { logout, role, username } = useAuth();
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const profileRef = useRef<HTMLDivElement | null>(null);
+  const canCollapse = Boolean(onToggleCollapse);
 
   useEffect(() => {
     if (!isProfileOpen) return undefined;
@@ -81,6 +106,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ isSuperAdmin, className = 'h-s
 
   const displayUsername = username || 'admin';
   const roleLabel = getRoleLabel(role);
+  const accountInitial = displayUsername.trim().charAt(0).toUpperCase() || 'A';
+  const toggleLabel = isCollapsed ? 'Expand sidebar' : 'Collapse sidebar';
 
   const handleRestrictedClick = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -99,23 +126,53 @@ export const Sidebar: React.FC<SidebarProps> = ({ isSuperAdmin, className = 'h-s
 
   return (
     <aside className={`flex flex-col bg-slate-950 text-slate-300 ${className}`}>
-      <div className="px-4 py-5">
-        <Link
-          to="/"
-          onClick={onNavigate}
-          className="flex items-center gap-3 rounded-lg px-2 py-1.5 transition-colors hover:bg-slate-900/45"
-          aria-label="pacific dashboard"
-        >
-          <img
-            src={pacificWaveMark}
-            alt="pacific logo"
-            className="h-8 w-8 shrink-0 object-contain"
-          />
-          <span className="text-base font-semibold text-slate-100">pacific</span>
-        </Link>
+      <div className={cx('px-4 py-5', isCollapsed && 'px-3')}>
+        <div className="group relative">
+          {canCollapse ? (
+            <button
+              type="button"
+              onClick={onToggleCollapse}
+              aria-label={toggleLabel}
+              aria-expanded={!isCollapsed}
+              className={cx(
+                'flex w-full items-center rounded-lg py-1.5 transition-colors duration-150 hover:bg-slate-900/45 focus:outline-none focus:ring-2 focus:ring-slate-700/35',
+                isCollapsed ? 'justify-center px-0' : 'gap-3 px-2'
+              )}
+            >
+              <img
+                src={pacificWaveMark}
+                alt=""
+                className="h-8 w-8 shrink-0 object-contain"
+              />
+              <span
+                className={cx(
+                  'overflow-hidden whitespace-nowrap text-base font-semibold text-slate-100 transition-[opacity,width] duration-150 ease-out',
+                  isCollapsed ? 'w-0 opacity-0' : 'w-auto opacity-100'
+                )}
+              >
+                pacific
+              </span>
+            </button>
+          ) : (
+            <Link
+              to="/"
+              onClick={onNavigate}
+              className="flex items-center gap-3 rounded-lg px-2 py-1.5 transition-colors hover:bg-slate-900/45"
+              aria-label="pacific dashboard"
+            >
+              <img
+                src={pacificWaveMark}
+                alt="pacific logo"
+                className="h-8 w-8 shrink-0 object-contain"
+              />
+              <span className="text-base font-semibold text-slate-100">pacific</span>
+            </Link>
+          )}
+          {canCollapse && <CollapsedTooltip label={toggleLabel} />}
+        </div>
       </div>
 
-      <nav className="flex-1 overflow-y-auto px-3 py-2">
+      <nav className={cx('flex-1 px-3 py-2', isCollapsed ? 'overflow-visible' : 'overflow-y-auto')}>
         {MENU_ITEMS.map((item) => {
           const Icon = item.icon;
           const isActive =
@@ -125,38 +182,68 @@ export const Sidebar: React.FC<SidebarProps> = ({ isSuperAdmin, className = 'h-s
 
           if (isRestricted) {
             return (
-              <button
-                key={item.path}
-                type="button"
-                onClick={handleRestrictedClick}
-                className="mb-1 flex w-full cursor-not-allowed items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm text-slate-600 transition-colors hover:bg-slate-900/45"
-                aria-disabled="true"
-              >
-                <Icon size={17} aria-hidden="true" />
-                <span className="flex-1">{item.label}</span>
-                <LockKeyhole size={14} aria-hidden="true" />
-              </button>
+              <div key={item.path} className="group relative mb-1">
+                <button
+                  type="button"
+                  onClick={handleRestrictedClick}
+                  className={cx(
+                    'flex w-full cursor-not-allowed items-center rounded-lg py-2.5 text-left text-sm text-slate-600 transition-colors hover:bg-slate-900/45 focus:outline-none focus:ring-2 focus:ring-slate-700/35',
+                    isCollapsed ? 'justify-center px-0' : 'gap-3 px-3'
+                  )}
+                  aria-disabled="true"
+                  aria-label={isCollapsed ? `${item.label}. Admin required` : undefined}
+                >
+                  <Icon size={17} aria-hidden="true" className="shrink-0" />
+                  <span
+                    className={cx(
+                      'min-w-0 flex-1 overflow-hidden whitespace-nowrap transition-[opacity,width] duration-150 ease-out',
+                      isCollapsed ? 'w-0 opacity-0' : 'w-auto opacity-100'
+                    )}
+                  >
+                    {item.label}
+                  </span>
+                  {!isCollapsed && <LockKeyhole size={14} aria-hidden="true" className="shrink-0" />}
+                </button>
+                {isCollapsed && <CollapsedTooltip label={`${item.label} · Admin required`} />}
+              </div>
             );
           }
 
           return (
-            <Link
-              key={item.path}
-              to={item.path}
-              onClick={onNavigate}
-              className={`mb-1 flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition-colors ${
-                isActive
-                  ? 'bg-slate-900/65 text-slate-100'
-                  : 'text-slate-400 hover:bg-slate-900/45 hover:text-slate-200'
-              }`}
-            >
-              <Icon size={17} aria-hidden="true" />
-              <span>{item.label}</span>
-            </Link>
+            <div key={item.path} className="group relative mb-1">
+              <Link
+                to={item.path}
+                onClick={onNavigate}
+                aria-label={isCollapsed ? item.label : undefined}
+                className={cx(
+                  'flex items-center rounded-lg py-2.5 text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-slate-700/35',
+                  isCollapsed ? 'justify-center px-0' : 'gap-3 px-3',
+                  isActive
+                    ? 'bg-slate-900/65 text-slate-100'
+                    : 'text-slate-400 hover:bg-slate-900/45 hover:text-slate-200'
+                )}
+              >
+                <Icon size={17} aria-hidden="true" className="shrink-0" />
+                <span
+                  className={cx(
+                    'overflow-hidden whitespace-nowrap transition-[opacity,width] duration-150 ease-out',
+                    isCollapsed ? 'w-0 opacity-0' : 'w-auto opacity-100'
+                  )}
+                >
+                  {item.label}
+                </span>
+              </Link>
+              {isCollapsed && <CollapsedTooltip label={item.label} />}
+            </div>
           );
         })}
 
-        <div className="mt-5 px-3 pb-2 text-xs font-medium uppercase tracking-wide text-slate-700">
+        <div
+          className={cx(
+            'mt-5 overflow-hidden px-3 pb-2 text-xs font-medium uppercase tracking-wide text-slate-700 transition-[height,opacity] duration-150 ease-out',
+            isCollapsed ? 'h-0 opacity-0' : 'h-6 opacity-100'
+          )}
+        >
           Settings
         </div>
         {SETTINGS_ITEMS.map((item) => {
@@ -166,19 +253,31 @@ export const Sidebar: React.FC<SidebarProps> = ({ isSuperAdmin, className = 'h-s
             (item.path !== '/' && location.pathname.startsWith(`${item.path}/`));
 
           return (
-            <Link
-              key={item.path}
-              to={item.path}
-              onClick={onNavigate}
-              className={`mb-1 flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition-colors ${
-                isActive
-                  ? 'bg-slate-900/65 text-slate-100'
-                  : 'text-slate-400 hover:bg-slate-900/45 hover:text-slate-200'
-              }`}
-            >
-              <Icon size={17} aria-hidden="true" />
-              <span>{item.label}</span>
-            </Link>
+            <div key={item.path} className="group relative mb-1">
+              <Link
+                to={item.path}
+                onClick={onNavigate}
+                aria-label={isCollapsed ? item.label : undefined}
+                className={cx(
+                  'flex items-center rounded-lg py-2.5 text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-slate-700/35',
+                  isCollapsed ? 'justify-center px-0' : 'gap-3 px-3',
+                  isActive
+                    ? 'bg-slate-900/65 text-slate-100'
+                    : 'text-slate-400 hover:bg-slate-900/45 hover:text-slate-200'
+                )}
+              >
+                <Icon size={17} aria-hidden="true" className="shrink-0" />
+                <span
+                  className={cx(
+                    'overflow-hidden whitespace-nowrap transition-[opacity,width] duration-150 ease-out',
+                    isCollapsed ? 'w-0 opacity-0' : 'w-auto opacity-100'
+                  )}
+                >
+                  {item.label}
+                </span>
+              </Link>
+              {isCollapsed && <CollapsedTooltip label={item.label} />}
+            </div>
           );
         })}
       </nav>
@@ -187,7 +286,10 @@ export const Sidebar: React.FC<SidebarProps> = ({ isSuperAdmin, className = 'h-s
         {isProfileOpen && (
           <div
             role="menu"
-            className="absolute bottom-16 left-3 right-3 rounded-lg bg-slate-900/95 p-1 shadow-xl shadow-black/20 ring-1 ring-slate-800/60 backdrop-blur"
+            className={cx(
+              'absolute rounded-lg bg-slate-900/95 p-1 shadow-xl shadow-black/20 ring-1 ring-slate-800/60 backdrop-blur',
+              isCollapsed ? 'bottom-4 left-full ml-3 w-56' : 'bottom-16 left-3 right-3'
+            )}
           >
             <div className="px-3 py-2 text-xs text-slate-500">
               Signed in as <span className="text-slate-300">{roleLabel}</span>
@@ -204,20 +306,35 @@ export const Sidebar: React.FC<SidebarProps> = ({ isSuperAdmin, className = 'h-s
           </div>
         )}
 
-        <button
-          type="button"
-          aria-haspopup="menu"
-          aria-expanded={isProfileOpen}
-          onClick={() => setIsProfileOpen((open) => !open)}
-          className="flex w-full items-center justify-between rounded-lg px-3 py-2.5 text-left text-sm text-slate-400 transition-colors hover:bg-slate-900/55 hover:text-slate-100 focus:outline-none focus:ring-2 focus:ring-slate-700/35"
-        >
-          <span className="truncate font-medium">{displayUsername}</span>
-          <ChevronUp
-            size={15}
-            aria-hidden="true"
-            className={`text-slate-600 transition-transform ${isProfileOpen ? 'rotate-180' : ''}`}
-          />
-        </button>
+        <div className="group relative">
+          <button
+            type="button"
+            aria-haspopup="menu"
+            aria-expanded={isProfileOpen}
+            aria-label={isCollapsed ? `Account: ${displayUsername}` : undefined}
+            onClick={() => setIsProfileOpen((open) => !open)}
+            className={cx(
+              'flex w-full items-center rounded-lg py-2.5 text-left text-sm text-slate-400 transition-colors hover:bg-slate-900/55 hover:text-slate-100 focus:outline-none focus:ring-2 focus:ring-slate-700/35',
+              isCollapsed ? 'justify-center px-0' : 'justify-between px-3'
+            )}
+          >
+            {isCollapsed ? (
+              <span className="flex h-7 w-7 items-center justify-center rounded-md bg-slate-900/65 text-xs font-semibold text-slate-300">
+                {accountInitial}
+              </span>
+            ) : (
+              <>
+                <span className="truncate font-medium">{displayUsername}</span>
+                <ChevronUp
+                  size={15}
+                  aria-hidden="true"
+                  className={`shrink-0 text-slate-600 transition-transform ${isProfileOpen ? 'rotate-180' : ''}`}
+                />
+              </>
+            )}
+          </button>
+          {isCollapsed && <CollapsedTooltip label={`Account · ${displayUsername}`} />}
+        </div>
       </div>
     </aside>
   );

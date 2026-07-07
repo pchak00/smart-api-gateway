@@ -6,6 +6,18 @@ import { Sidebar } from '../components/Sidebar';
 import { TopBar } from '../components/TopBar';
 import { PageContainer } from '../components/PageShell';
 
+const SIDEBAR_COLLAPSED_STORAGE_KEY = 'pacific:sidebar-collapsed';
+
+const getInitialSidebarCollapsed = () => {
+  if (typeof window === 'undefined') return false;
+
+  try {
+    return window.localStorage.getItem(SIDEBAR_COLLAPSED_STORAGE_KEY) === 'true';
+  } catch {
+    return false;
+  }
+};
+
 const getPageTitle = (pathname: string) => {
   if (pathname === '/') return 'Dashboard';
   if (pathname.startsWith('/clients')) return 'Clients';
@@ -24,7 +36,16 @@ export const AppLayout: React.FC = () => {
   const { isSuperAdmin } = useAuth();
   const location = useLocation();
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(getInitialSidebarCollapsed);
   const pageTitle = getPageTitle(location.pathname);
+
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(SIDEBAR_COLLAPSED_STORAGE_KEY, String(isSidebarCollapsed));
+    } catch {
+      // Ignore storage failures so navigation remains usable in restricted browsers.
+    }
+  }, [isSidebarCollapsed]);
 
   useEffect(() => {
     setIsMobileNavOpen(false);
@@ -48,7 +69,14 @@ export const AppLayout: React.FC = () => {
 
   return (
     <div className="flex h-dvh overflow-hidden bg-slate-950 text-slate-100">
-      <Sidebar isSuperAdmin={isSuperAdmin} className="hidden h-dvh w-72 shrink-0 lg:flex" />
+      <Sidebar
+        isSuperAdmin={isSuperAdmin}
+        isCollapsed={isSidebarCollapsed}
+        onToggleCollapse={() => setIsSidebarCollapsed((collapsed) => !collapsed)}
+        className={`hidden h-dvh shrink-0 transition-[width] duration-200 ease-out lg:flex ${
+          isSidebarCollapsed ? 'w-20' : 'w-72'
+        }`}
+      />
 
       {isMobileNavOpen && (
         <div className="fixed inset-0 z-50 lg:hidden" role="dialog" aria-modal="true" aria-label="Navigation menu">
@@ -70,6 +98,7 @@ export const AppLayout: React.FC = () => {
             <Sidebar
               isSuperAdmin={isSuperAdmin}
               className="h-full w-full"
+              isCollapsed={false}
               onNavigate={() => setIsMobileNavOpen(false)}
             />
           </div>
