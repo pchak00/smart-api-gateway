@@ -295,7 +295,7 @@ export const ClientDetailPage: React.FC = () => {
               ) : (
                 <div className="max-h-[480px] overflow-auto">
                   <table className="w-full min-w-[720px]">
-                    <thead className="sticky top-0 z-10 border-b border-slate-800/40 bg-slate-950/95">
+                    <thead className="sticky top-0 z-10 bg-slate-950/95">
                       <tr>
                         <th className="px-4 py-3 text-left text-xs font-medium text-slate-400">Path</th>
                         <th className="px-4 py-3 text-left text-xs font-medium text-slate-400">Method</th>

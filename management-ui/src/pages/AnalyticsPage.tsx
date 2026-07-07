@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Activity, ArrowDown, ArrowUp, BarChart3, Minus, Route, Search, Users, X } from 'lucide-react';
+import { ArrowDown, ArrowUp, Minus, Route, Search, Users, X } from 'lucide-react';
 import {
   CartesianGrid,
   Line,
@@ -703,7 +703,6 @@ export const AnalyticsPage: React.FC = () => {
                   </button>
                 ))}
               </div>
-              <BarChart3 className="text-slate-600" size={20} aria-hidden="true" />
             </div>
           </div>
 
@@ -896,7 +895,6 @@ export const AnalyticsPage: React.FC = () => {
               <InfoTooltip label="Analytics summary trend details" align="right">
                 Trend compares the latest analytics bucket with the previous bucket.
               </InfoTooltip>
-              <Activity className="text-slate-600" size={18} aria-hidden="true" />
             </div>
           </div>
 
@@ -949,7 +947,6 @@ export const AnalyticsPage: React.FC = () => {
                 direction={routeAnalyticsSortDirection}
                 onToggle={toggleRouteAnalyticsSortDirection}
               />
-              <Route className="text-slate-600" size={18} aria-hidden="true" />
             </div>
           </div>
 
@@ -966,7 +963,7 @@ export const AnalyticsPage: React.FC = () => {
           ) : (
             <div className="max-h-[400px] overflow-auto">
               <table className="w-full min-w-[640px]">
-                <thead className="border-b border-slate-800/40">
+                <thead>
                   <tr>
                     <th className="px-4 py-3 text-left text-xs font-medium text-slate-400">Route</th>
                     <th className="px-4 py-3 text-right text-xs font-medium text-slate-400">Total</th>
@@ -1026,7 +1023,6 @@ export const AnalyticsPage: React.FC = () => {
                 direction={clientAnalyticsSortDirection}
                 onToggle={toggleClientAnalyticsSortDirection}
               />
-              <Users className="text-slate-600" size={18} aria-hidden="true" />
             </div>
           </div>
 
@@ -1049,7 +1045,7 @@ export const AnalyticsPage: React.FC = () => {
           ) : (
             <div className="max-h-[400px] overflow-auto">
               <table className="w-full min-w-[720px]">
-                <thead className="border-b border-slate-800/40">
+                <thead>
                   <tr>
                     <th className="px-4 py-3 text-left text-xs font-medium text-slate-400">Client</th>
                     <th className="px-4 py-3 text-right text-xs font-medium text-slate-400">Total</th>

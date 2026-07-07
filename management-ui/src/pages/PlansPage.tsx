@@ -295,7 +295,7 @@ export const PlansPage: React.FC = () => {
         ) : (
           <div className="overflow-x-auto pb-16">
             <table className="w-full min-w-[640px]">
-              <thead className="border-b border-slate-800/40">
+              <thead>
                 <tr>
                   <th className="px-4 py-3 text-left text-xs font-medium text-slate-500">Plan</th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-slate-500">Requests/min</th>
