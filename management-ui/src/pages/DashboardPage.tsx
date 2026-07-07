@@ -31,7 +31,7 @@ interface StateMessageProps {
 }
 
 const DashboardSection: React.FC<DashboardSectionProps> = ({ children, className = '', title, action }) => (
-  <section className={`min-w-0 rounded-lg bg-slate-900/[0.06] p-4 sm:p-5 ${className}`}>
+  <section className={`glass-panel min-w-0 rounded-lg p-4 sm:p-5 ${className}`}>
     <div className="mb-4 flex min-w-0 flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
       <h2 className="text-sm font-semibold text-slate-100">{title}</h2>
       {action}
@@ -258,7 +258,7 @@ const TrendHelpTooltip: React.FC = () => {
     <Tooltip
       content="Trends compare the latest analytics bucket with the previous bucket. Block rate changes are shown in percentage points."
       wrapperClassName="relative inline-flex"
-      tooltipClassName="pointer-events-none absolute right-0 top-full z-20 mt-2 w-64 rounded-md border border-slate-800/80 bg-slate-950 px-3 py-2 text-xs leading-5 text-slate-400 shadow-xl shadow-black/25"
+      tooltipClassName="glass-popover pointer-events-none absolute right-0 top-full z-20 mt-2 w-64 rounded-md px-3 py-2 text-xs leading-5 text-slate-400"
     >
       <button
         type="button"
@@ -311,7 +311,7 @@ const GatewaySummaryStrip: React.FC<{
   ];
 
   return (
-    <section className="min-w-0 rounded-lg bg-slate-900/[0.06] px-4 py-4 sm:px-5 sm:py-5">
+    <section className="glass-panel min-w-0 rounded-lg px-4 py-4 sm:px-5 sm:py-5">
       <div className="flex min-w-0 flex-col gap-2 sm:flex-row sm:items-baseline sm:justify-between">
         <h2 className="text-sm font-semibold text-slate-100">Gateway summary</h2>
         <div className="flex min-w-0 items-center gap-2">
@@ -409,7 +409,7 @@ const GatewayHealthPanel: React.FC<GatewayHealthPanelProps> = ({
       }
     >
       <dl className="grid min-w-0 gap-3 sm:grid-cols-2">
-        <div className="min-w-0 rounded-md bg-slate-950/15 px-4 py-3">
+        <div className="glass-highlight min-w-0 rounded-md px-4 py-3">
           <dt className="text-xs font-medium text-slate-400">Configured upstream</dt>
           <dd className="mt-1 flex min-w-0 items-center gap-2">
             <span className="min-w-0 truncate text-sm font-medium text-slate-100" title={upstreamValue}>
@@ -428,11 +428,11 @@ const GatewayHealthPanel: React.FC<GatewayHealthPanelProps> = ({
             )}
           </dd>
         </div>
-        <div className="min-w-0 rounded-md bg-slate-950/15 px-4 py-3">
+        <div className="glass-highlight min-w-0 rounded-md px-4 py-3">
           <dt className="text-xs font-medium text-slate-400">Allowed / blocked</dt>
           <dd className={healthValueClass}>{allowedRequests} / {blockedRequests}</dd>
         </div>
-        <div className="min-w-0 rounded-md bg-slate-950/15 px-4 py-3">
+        <div className="glass-highlight min-w-0 rounded-md px-4 py-3">
           <dt className="text-xs font-medium text-slate-400">Block rate</dt>
           <dd className="mt-1 flex min-w-0 items-baseline gap-2">
             <span className="truncate text-sm font-medium text-slate-100">
@@ -446,7 +446,7 @@ const GatewayHealthPanel: React.FC<GatewayHealthPanelProps> = ({
             )}
           </dd>
         </div>
-        <div className="min-w-0 rounded-md bg-slate-950/15 px-4 py-3">
+        <div className="glass-highlight min-w-0 rounded-md px-4 py-3">
           <dt className="text-xs font-medium text-slate-400">Most active route</dt>
           <dd className={healthValueClass} title={mostActiveRouteLabel}>{mostActiveRouteLabel}</dd>
         </div>
@@ -479,7 +479,7 @@ const TopRoutesPanel: React.FC<TopRoutesPanelProps> = ({ routes }) => {
         const routeLabel = route.route ?? 'Unknown route';
 
         return (
-          <div key={`${routeLabel}-${index}`} className="rounded-md bg-slate-950/10 px-4 py-3">
+          <div key={`${routeLabel}-${index}`} className="glass-highlight rounded-md px-4 py-3">
             <div className="flex min-w-0 flex-col gap-2 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
               <p className="min-w-0 truncate font-mono text-xs text-slate-300" title={routeLabel}>
                 {routeLabel}
@@ -754,7 +754,7 @@ export const DashboardPage: React.FC = () => {
                   <Link
                     key={action.to}
                     to={action.to}
-                    className="flex min-w-0 items-center gap-3 rounded-md bg-slate-950/10 px-4 py-3 text-sm font-medium text-slate-300 transition-colors hover:bg-slate-950/25 hover:text-slate-100"
+                    className="glass-highlight flex min-w-0 items-center gap-3 rounded-md px-4 py-3 text-sm font-medium text-slate-300 transition-colors hover:bg-slate-950/25 hover:text-slate-100"
                   >
                     <Icon size={16} aria-hidden="true" className="shrink-0 text-slate-600" />
                     <span className="min-w-0 truncate">{action.label}</span>

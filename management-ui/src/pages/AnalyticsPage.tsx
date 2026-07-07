@@ -730,7 +730,7 @@ export const AnalyticsPage: React.FC = () => {
                   )}
                 </div>
                 {routeSearch.trim() && (
-                  <div className="absolute left-0 right-0 top-11 z-20 overflow-hidden rounded-md border border-slate-800/80 bg-slate-950/95 shadow-xl shadow-black/20">
+                  <div className="glass-popover absolute left-0 right-0 top-11 z-20 overflow-hidden rounded-md">
                     {routeSearchResults.length === 0 ? (
                       <p className="px-3 py-3 text-sm text-slate-500">No routes match this search.</p>
                     ) : (
@@ -827,10 +827,10 @@ export const AnalyticsPage: React.FC = () => {
                   <YAxis tick={{ fill: '#94a3b8', fontSize: 12 }} tickLine={false} axisLine={false} />
                   <Tooltip
                     contentStyle={{
-                      background: '#020617',
-                      border: '1px solid #1e293b',
+                      background: 'rgba(2, 6, 23, 0.94)',
+                      border: '1px solid rgba(125, 211, 252, 0.08)',
                       borderRadius: 8,
-                      boxShadow: '0 18px 45px rgba(2, 6, 23, 0.32)',
+                      boxShadow: '0 18px 45px rgba(2, 6, 23, 0.32), inset 0 1px 0 rgba(186, 230, 253, 0.055)',
                       color: '#e2e8f0'
                     }}
                     itemStyle={{ color: '#cbd5e1', fontSize: 12 }}

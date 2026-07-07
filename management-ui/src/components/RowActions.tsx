@@ -75,7 +75,7 @@ export const RowActions: React.FC<RowActionsProps> = ({ actions, label = 'Row ac
         <div
           role="menu"
           onClick={(event) => event.stopPropagation()}
-          className="absolute right-0 top-9 z-30 min-w-36 rounded-lg bg-slate-900/95 p-1 shadow-xl shadow-black/20 ring-1 ring-slate-800/60 backdrop-blur"
+          className="glass-popover absolute right-0 top-9 z-30 min-w-36 rounded-lg p-1"
         >
           {actions.map((action) => {
             const className = itemClass(action.tone, action.disabled);

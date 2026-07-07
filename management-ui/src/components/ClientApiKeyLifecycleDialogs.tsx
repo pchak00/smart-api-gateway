@@ -20,7 +20,7 @@ interface ClientApiKeyLifecycleDialogsProps {
 }
 
 const modalBackdropClass = 'fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4 py-6 backdrop-blur-sm';
-const modalPanelClass = 'w-full max-w-lg rounded-lg border border-slate-800 bg-slate-950 p-5 shadow-2xl shadow-black/40';
+const modalPanelClass = 'glass-popover w-full max-w-lg rounded-lg p-5';
 
 export const ClientApiKeyLifecycleDialogs: React.FC<ClientApiKeyLifecycleDialogsProps> = ({
   pendingAction,
@@ -71,7 +71,7 @@ export const ClientApiKeyLifecycleDialogs: React.FC<ClientApiKeyLifecycleDialogs
             </div>
           </div>
 
-          <div className="mt-4 rounded-md border border-slate-800 bg-slate-900/50 p-3">
+          <div className="glass-highlight mt-4 rounded-md p-3">
             <p className="mb-2 text-xs font-medium text-slate-500">{rotatedKey.clientName}</p>
             <p className="break-all font-mono text-sm leading-6 text-slate-100">{rotatedKey.apiKey}</p>
           </div>

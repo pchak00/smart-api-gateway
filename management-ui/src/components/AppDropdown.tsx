@@ -101,7 +101,7 @@ export const AppDropdown: React.FC<AppDropdownProps> = ({
           role="listbox"
           aria-label={ariaLabel}
           className={cx(
-            'absolute top-full z-30 mt-1 max-h-64 min-w-full overflow-y-auto rounded-md border border-slate-800/80 bg-slate-950 py-1 shadow-xl shadow-black/25',
+            'glass-popover absolute top-full z-30 mt-1 max-h-64 min-w-full overflow-y-auto rounded-md py-1',
             align === 'right' ? 'right-0' : 'left-0',
             fullWidth && 'right-0',
             menuClassName

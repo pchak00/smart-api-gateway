@@ -94,7 +94,7 @@ export const IconButton: React.FC<IconButtonProps> = ({
     <Tooltip
       content={tooltip}
       wrapperClassName="relative inline-flex"
-      tooltipClassName="pointer-events-none absolute right-0 top-full z-20 mt-2 whitespace-nowrap rounded-md bg-slate-900/95 px-2 py-1 text-xs font-medium text-slate-200 shadow-lg shadow-black/25 ring-1 ring-slate-800/70"
+      tooltipClassName="glass-popover pointer-events-none absolute right-0 top-full z-20 mt-2 whitespace-nowrap rounded-md px-2 py-1 text-xs font-medium text-slate-200"
     >
       <button
         disabled={disabled}

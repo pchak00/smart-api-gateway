@@ -68,7 +68,7 @@ export const AppLayout: React.FC = () => {
   }, [isMobileNavOpen]);
 
   return (
-    <div className="flex h-dvh overflow-hidden bg-slate-950 text-slate-100">
+    <div className="pacific-app-shell flex h-dvh overflow-hidden text-slate-100">
       <Sidebar
         isSuperAdmin={isSuperAdmin}
         isCollapsed={isSidebarCollapsed}
@@ -86,7 +86,7 @@ export const AppLayout: React.FC = () => {
             aria-label="Close navigation"
             onClick={() => setIsMobileNavOpen(false)}
           />
-          <div className="absolute inset-y-0 left-0 w-[min(18rem,85vw)] bg-slate-950 shadow-2xl shadow-black/40">
+          <div className="absolute inset-y-0 left-0 w-[min(18rem,85vw)] shadow-2xl shadow-black/40">
             <button
               type="button"
               onClick={() => setIsMobileNavOpen(false)}
@@ -108,7 +108,7 @@ export const AppLayout: React.FC = () => {
       <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
         <TopBar title={pageTitle} onMenuClick={() => setIsMobileNavOpen(true)} />
 
-        <main className="min-w-0 flex-1 overflow-y-auto overflow-x-hidden bg-slate-950">
+        <main className="pacific-main-surface min-w-0 flex-1 overflow-y-auto overflow-x-hidden">
           <PageContainer>
             <Outlet />
           </PageContainer>

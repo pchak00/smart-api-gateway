@@ -77,7 +77,7 @@ const CollapsedTooltip: React.FC<CollapsedTooltipProps> = ({
     disabled={disabled}
     resetKey={resetKey}
     wrapperClassName={wrapperClassName}
-    tooltipClassName="pointer-events-none absolute left-full top-1/2 z-40 ml-3 -translate-y-1/2 whitespace-nowrap rounded-md bg-slate-900/95 px-2 py-1 text-xs font-medium text-slate-200 shadow-lg shadow-black/25 ring-1 ring-slate-800/70"
+    tooltipClassName="glass-popover pointer-events-none absolute left-full top-1/2 z-40 ml-3 -translate-y-1/2 whitespace-nowrap rounded-md px-2 py-1 text-xs font-medium text-slate-200"
   >
     {children}
   </Tooltip>
@@ -142,7 +142,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   };
 
   return (
-    <aside className={`flex flex-col bg-slate-950 text-slate-300 ${className}`}>
+    <aside className={`glass-sidebar flex flex-col text-slate-300 ${className}`}>
       <div className={cx('px-4 py-5', isCollapsed && 'px-3')}>
         <div className="relative">
           {canCollapse ? (
@@ -339,7 +339,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           <div
             role="menu"
             className={cx(
-              'absolute z-50 rounded-lg bg-slate-900/95 p-1 shadow-xl shadow-black/20 ring-1 ring-slate-800/60 backdrop-blur',
+              'glass-popover absolute z-50 rounded-lg p-1',
               isCollapsed ? 'bottom-3 left-full ml-3 w-56' : 'bottom-16 left-3 right-3'
             )}
           >

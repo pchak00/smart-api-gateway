@@ -37,7 +37,7 @@ export const LoginPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 px-6 py-8 text-slate-100">
+    <div className="pacific-app-shell min-h-screen px-6 py-8 text-slate-100">
       <main className="mx-auto grid min-h-[calc(100vh-4rem)] w-full max-w-6xl items-center gap-12 lg:grid-cols-[minmax(0,26rem)_1fr]">
         <section className="w-full">
           <p className="text-sm font-medium text-slate-500">pacific</p>
@@ -87,7 +87,7 @@ export const LoginPage: React.FC = () => {
         </section>
 
         <section className="hidden min-h-[32rem] items-center justify-center lg:flex">
-          <div className="flex items-center justify-center gap-5">
+          <div className="glass-panel flex items-center justify-center gap-5 rounded-lg px-12 py-10">
             <img
               src={pacificWaveMark}
               alt="pacific logo"

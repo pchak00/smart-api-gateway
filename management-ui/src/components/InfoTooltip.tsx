@@ -19,7 +19,7 @@ export const InfoTooltip: React.FC<InfoTooltipProps> = ({
     <Tooltip
       content={children}
       wrapperClassName="relative inline-flex shrink-0"
-      tooltipClassName={`pointer-events-none absolute ${alignmentClass} top-full z-30 mt-2 w-64 rounded-md border border-slate-800/80 bg-slate-950 px-3 py-2 text-xs leading-5 text-slate-400 shadow-xl shadow-black/25`}
+      tooltipClassName={`glass-popover pointer-events-none absolute ${alignmentClass} top-full z-30 mt-2 w-64 rounded-md px-3 py-2 text-xs leading-5 text-slate-400`}
     >
       <button
         type="button"
