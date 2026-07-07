@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowDown, ArrowUp, Minus, Route, Search, Users, X } from 'lucide-react';
 import {
@@ -77,6 +77,59 @@ interface RouteTrendTooltipProps {
   routes: RouteTrendRoute[];
   metric: RouteTrendMetric;
 }
+
+type RouteTrendHoverGuide = {
+  activeTooltipIndex: number;
+  mouseY: number;
+  x: number;
+  activeKey?: string;
+  y?: number;
+};
+
+type RouteTrendDotPosition = {
+  activeTooltipIndex: number;
+  dataKey: string;
+  cx: number;
+  cy: number;
+  value: number;
+};
+
+type RouteTrendMouseState = {
+  isTooltipActive?: boolean;
+  activeTooltipIndex?: number;
+  activeCoordinate?: {
+    x?: number;
+    y?: number;
+  };
+};
+
+type RouteTrendActiveDotProps = {
+  cx?: number;
+  cy?: number;
+  r?: number;
+  fill?: string;
+  stroke?: string;
+  strokeWidth?: number;
+  dataKey?: string | number;
+  index?: number;
+  value?: number | string;
+  onMeasure: (position: RouteTrendDotPosition) => void;
+};
+
+type RouteTrendCursorProps = {
+  points?: Array<{ x?: number; y?: number }>;
+  offset?: {
+    left?: number;
+    top?: number;
+    width?: number;
+    height?: number;
+  };
+  activeCoordinate?: {
+    x?: number;
+    y?: number;
+  };
+  hoverGuide?: RouteTrendHoverGuide | null;
+};
 
 const ANALYTICS_WINDOW_DAYS = 7;
 
@@ -433,6 +486,24 @@ const getRouteTrendCountLabel = (
   return `Showing top ${limit} routes`;
 };
 
+const getNearestRouteTrendDot = (
+  dots: Iterable<RouteTrendDotPosition>,
+  mouseY: number
+): RouteTrendDotPosition | null => {
+  let nearest: RouteTrendDotPosition | null = null;
+  let nearestDistance = Number.POSITIVE_INFINITY;
+
+  for (const dot of dots) {
+    const distance = Math.abs(dot.cy - mouseY);
+    if (distance < nearestDistance) {
+      nearest = dot;
+      nearestDistance = distance;
+    }
+  }
+
+  return nearest;
+};
+
 const routeTrendMetricUnit: Record<RouteTrendMetric, string> = {
   totalRequests: 'requests',
   allowedRequests: 'allowed',
@@ -482,6 +553,107 @@ const RouteTrendTooltip: React.FC<RouteTrendTooltipProps> = ({
         ))}
       </div>
     </div>
+  );
+};
+
+const RouteTrendCursor: React.FC<RouteTrendCursorProps> = ({
+  points,
+  offset,
+  activeCoordinate,
+  hoverGuide
+}) => {
+  const x = points?.[0]?.x ?? activeCoordinate?.x;
+  const verticalStartY = points?.[0]?.y ?? offset?.top;
+  const verticalEndY = points?.[1]?.y ?? (
+    typeof offset?.top === 'number' && typeof offset?.height === 'number'
+      ? offset.top + offset.height
+      : undefined
+  );
+  const plotLeft = offset?.left;
+  const plotTop = offset?.top;
+  const plotBottom = typeof offset?.top === 'number' && typeof offset?.height === 'number'
+    ? offset.top + offset.height
+    : undefined;
+  const shouldShowHorizontalGuide = (
+    hoverGuide?.activeKey &&
+    typeof hoverGuide.y === 'number' &&
+    typeof plotLeft === 'number' &&
+    typeof x === 'number' &&
+    (typeof plotTop !== 'number' || hoverGuide.y >= plotTop) &&
+    (typeof plotBottom !== 'number' || hoverGuide.y <= plotBottom)
+  );
+
+  return (
+    <g className="recharts-tooltip-cursor" pointerEvents="none">
+      {typeof x === 'number' && typeof verticalStartY === 'number' && typeof verticalEndY === 'number' && (
+        <line
+          x1={x}
+          x2={x}
+          y1={verticalStartY}
+          y2={verticalEndY}
+          stroke="#94a3b8"
+          strokeOpacity={0.22}
+          strokeWidth={1}
+        />
+      )}
+      {shouldShowHorizontalGuide && (
+        <line
+          x1={plotLeft}
+          x2={x}
+          y1={hoverGuide.y}
+          y2={hoverGuide.y}
+          stroke="#7dd3fc"
+          strokeOpacity={0.16}
+          strokeWidth={1}
+        />
+      )}
+    </g>
+  );
+};
+
+const RouteTrendActiveDot: React.FC<RouteTrendActiveDotProps> = ({
+  cx,
+  cy,
+  r = 4,
+  fill = '#94a3b8',
+  stroke = '#020617',
+  strokeWidth = 2,
+  dataKey,
+  index,
+  value,
+  onMeasure
+}) => {
+  useEffect(() => {
+    if (
+      typeof cx !== 'number' ||
+      typeof cy !== 'number' ||
+      typeof index !== 'number' ||
+      dataKey === undefined
+    ) {
+      return;
+    }
+
+    const numericValue = typeof value === 'number' ? value : Number(value);
+    onMeasure({
+      activeTooltipIndex: index,
+      dataKey: String(dataKey),
+      cx,
+      cy,
+      value: Number.isFinite(numericValue) ? numericValue : 0
+    });
+  }, [cx, cy, dataKey, index, onMeasure, value]);
+
+  if (typeof cx !== 'number' || typeof cy !== 'number') return null;
+
+  return (
+    <circle
+      cx={cx}
+      cy={cy}
+      r={r}
+      fill={fill}
+      stroke={stroke}
+      strokeWidth={strokeWidth}
+    />
   );
 };
 
@@ -624,7 +796,67 @@ export const AnalyticsPage: React.FC = () => {
   const [selectedCustomRoutes, setSelectedCustomRoutes] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [routeTrendHoverGuide, setRouteTrendHoverGuide] = useState<RouteTrendHoverGuide | null>(null);
+  const routeTrendHoverGuideRef = useRef<RouteTrendHoverGuide | null>(null);
+  const routeTrendDotPositionsRef = useRef<Map<number, Map<string, RouteTrendDotPosition>>>(new Map());
   const analyticsWindowBuckets = useMemo(() => getCurrentAnalyticsWindow(), []);
+
+  const updateRouteTrendHoverGuide = useCallback((guide: RouteTrendHoverGuide | null) => {
+    routeTrendHoverGuideRef.current = guide;
+    setRouteTrendHoverGuide(guide);
+  }, []);
+
+  const applyNearestRouteTrendGuide = useCallback((
+    guide: RouteTrendHoverGuide,
+    dotPositions: Map<string, RouteTrendDotPosition> | undefined
+  ) => {
+    const nearestDot = dotPositions ? getNearestRouteTrendDot(dotPositions.values(), guide.mouseY) : null;
+
+    updateRouteTrendHoverGuide({
+      ...guide,
+      activeKey: nearestDot?.dataKey,
+      y: nearestDot?.cy
+    });
+  }, [updateRouteTrendHoverGuide]);
+
+  const registerRouteTrendActiveDot = useCallback((position: RouteTrendDotPosition) => {
+    const positionsForBucket = routeTrendDotPositionsRef.current.get(position.activeTooltipIndex) ?? new Map<string, RouteTrendDotPosition>();
+    positionsForBucket.set(position.dataKey, position);
+    routeTrendDotPositionsRef.current.set(position.activeTooltipIndex, positionsForBucket);
+
+    const currentGuide = routeTrendHoverGuideRef.current;
+    if (currentGuide?.activeTooltipIndex === position.activeTooltipIndex) {
+      applyNearestRouteTrendGuide(currentGuide, positionsForBucket);
+    }
+  }, [applyNearestRouteTrendGuide]);
+
+  const handleRouteTrendMouseMove = useCallback((state: RouteTrendMouseState) => {
+    const activeTooltipIndex = state?.activeTooltipIndex;
+    const activeX = state?.activeCoordinate?.x;
+    const mouseY = state?.activeCoordinate?.y;
+
+    if (
+      !state?.isTooltipActive ||
+      typeof activeTooltipIndex !== 'number' ||
+      typeof activeX !== 'number' ||
+      typeof mouseY !== 'number'
+    ) {
+      updateRouteTrendHoverGuide(null);
+      return;
+    }
+
+    const nextGuide: RouteTrendHoverGuide = {
+      activeTooltipIndex,
+      mouseY,
+      x: activeX
+    };
+
+    applyNearestRouteTrendGuide(nextGuide, routeTrendDotPositionsRef.current.get(activeTooltipIndex));
+  }, [applyNearestRouteTrendGuide, updateRouteTrendHoverGuide]);
+
+  const handleRouteTrendMouseLeave = useCallback(() => {
+    updateRouteTrendHoverGuide(null);
+  }, [updateRouteTrendHoverGuide]);
 
   useEffect(() => {
     const loadAnalytics = async () => {
@@ -790,6 +1022,11 @@ export const AnalyticsPage: React.FC = () => {
         return point;
       });
   }, [analyticsWindowBuckets, routeTrafficAnalytics, routeTrendRoutes, selectedRouteMetric]);
+
+  useEffect(() => {
+    routeTrendDotPositionsRef.current.clear();
+    updateRouteTrendHoverGuide(null);
+  }, [routeTrendRoutes, routeTrendData, updateRouteTrendHoverGuide]);
 
   const summaryTrend = useMemo(() => getSummaryTrend(filledTrafficAnalytics), [filledTrafficAnalytics]);
   const routeAnalyticsSort = useMemo<AnalyticsSortSelection>(() => ({
@@ -1024,7 +1261,12 @@ export const AnalyticsPage: React.FC = () => {
           ) : (
             <div className="h-72 2xl:h-80">
               <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={routeTrendData} margin={{ top: 8, right: 8, left: -16, bottom: 0 }}>
+                <LineChart
+                  data={routeTrendData}
+                  margin={{ top: 8, right: 8, left: -16, bottom: 0 }}
+                  onMouseMove={handleRouteTrendMouseMove}
+                  onMouseLeave={handleRouteTrendMouseLeave}
+                >
                   <XAxis
                     dataKey="bucketLabel"
                     tick={{ fill: '#94a3b8', fontSize: 12 }}
@@ -1043,7 +1285,7 @@ export const AnalyticsPage: React.FC = () => {
                   <Tooltip
                     allowEscapeViewBox={{ x: true, y: true }}
                     content={<RouteTrendTooltip routes={routeTrendRoutes} metric={selectedRouteMetric} />}
-                    cursor={{ stroke: '#94a3b8', strokeOpacity: 0.22, strokeWidth: 1 }}
+                    cursor={<RouteTrendCursor hoverGuide={routeTrendHoverGuide} />}
                     isAnimationActive={false}
                     wrapperStyle={{ outline: 'none', zIndex: 30 }}
                   />
@@ -1058,12 +1300,15 @@ export const AnalyticsPage: React.FC = () => {
                       strokeOpacity={route.opacity}
                       strokeWidth={route.strokeWidth}
                       dot={false}
-                      activeDot={{
-                        r: 4,
-                        fill: route.color,
-                        stroke: '#020617',
-                        strokeWidth: 2
-                      }}
+                      activeDot={(props: unknown) => (
+                        <RouteTrendActiveDot
+                          {...(props as Omit<RouteTrendActiveDotProps, 'onMeasure'>)}
+                          fill={route.color}
+                          stroke="#020617"
+                          strokeWidth={2}
+                          onMeasure={registerRouteTrendActiveDot}
+                        />
+                      )}
                     />
                   ))}
                 </LineChart>
