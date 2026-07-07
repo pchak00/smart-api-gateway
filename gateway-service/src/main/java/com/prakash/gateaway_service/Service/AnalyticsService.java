@@ -58,7 +58,7 @@ public class AnalyticsService {
 
         DateWindow dateWindow = toDateWindow(startDate, endDate);
 
-        return mapRouteAnalytics(usageLogRepository.findRouteAnalytics(
+        return mapRouteAnalytics(usageLogRepository.findRouteAnalyticsInDateRange(
                         normalizePlanFilter(planName),
                         dateWindow.startInclusive(),
                         dateWindow.endExclusive()
@@ -76,7 +76,7 @@ public class AnalyticsService {
 
         DateWindow dateWindow = toDateWindow(startDate, endDate);
 
-        return mapClientAnalytics(usageLogRepository.findClientAnalytics(
+        return mapClientAnalytics(usageLogRepository.findClientAnalyticsInDateRange(
                         normalizePlanFilter(planName),
                         dateWindow.startInclusive(),
                         dateWindow.endExclusive()
@@ -94,7 +94,7 @@ public class AnalyticsService {
 
         DateWindow dateWindow = toDateWindow(startDate, endDate);
 
-        return mapTrafficAnalytics(usageLogRepository.findDailyTrafficAnalytics(
+        return mapTrafficAnalytics(usageLogRepository.findDailyTrafficAnalyticsInDateRange(
                         dateWindow.startInclusive(),
                         dateWindow.endExclusive()
                 ));
@@ -111,7 +111,7 @@ public class AnalyticsService {
 
         DateWindow dateWindow = toDateWindow(startDate, endDate);
 
-        return mapRouteTrafficAnalytics(usageLogRepository.findDailyRouteTrafficAnalytics(
+        return mapRouteTrafficAnalytics(usageLogRepository.findDailyRouteTrafficAnalyticsInDateRange(
                         normalizePlanFilter(planName),
                         dateWindow.startInclusive(),
                         dateWindow.endExclusive()
@@ -191,8 +191,14 @@ public class AnalyticsService {
     }
 
     private DateWindow toDateWindow(LocalDate startDate, LocalDate endDate) {
-        LocalDateTime startInclusive = startDate == null ? null : startDate.atStartOfDay();
-        LocalDateTime endExclusive = endDate == null ? null : endDate.plusDays(1).atStartOfDay();
+        LocalDate normalizedStartDate = startDate == null ? LocalDate.of(1970, 1, 1) : startDate;
+        LocalDate normalizedEndDate = endDate == null ? LocalDate.of(3000, 1, 1) : endDate;
+        if (normalizedEndDate.isBefore(normalizedStartDate)) {
+            normalizedEndDate = normalizedStartDate.minusDays(1);
+        }
+
+        LocalDateTime startInclusive = normalizedStartDate.atStartOfDay();
+        LocalDateTime endExclusive = normalizedEndDate.plusDays(1).atStartOfDay();
 
         return new DateWindow(startInclusive, endExclusive);
     }

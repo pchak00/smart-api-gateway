@@ -39,20 +39,31 @@ public interface UsageLogRepository extends JpaRepository<UsageLog, Long> {
             JOIN client c ON c.id = u.client_id
             JOIN plan p ON p.id = c.plan_id
             WHERE (:planName IS NULL OR LOWER(p.name) = LOWER(:planName))
-              AND (:startDate IS NULL OR u.timestamp >= :startDate)
-              AND (:endDate IS NULL OR u.timestamp < :endDate)
             GROUP BY u.path
             ORDER BY COUNT(u.id) DESC
             """, nativeQuery = true)
-    List<Object[]> findRouteAnalytics(
+    List<Object[]> findRouteAnalytics(@Param("planName") String planName);
+
+    @Query(value = """
+            SELECT
+                u.path AS route,
+                COUNT(u.id) AS total_requests,
+                SUM(CASE WHEN u.allowed = true THEN 1 ELSE 0 END) AS allowed_requests,
+                SUM(CASE WHEN u.allowed = false THEN 1 ELSE 0 END) AS blocked_requests
+            FROM usage_log u
+            JOIN client c ON c.id = u.client_id
+            JOIN plan p ON p.id = c.plan_id
+            WHERE (:planName IS NULL OR LOWER(p.name) = LOWER(:planName))
+              AND u.timestamp >= :startDate
+              AND u.timestamp < :endDate
+            GROUP BY u.path
+            ORDER BY COUNT(u.id) DESC
+            """, nativeQuery = true)
+    List<Object[]> findRouteAnalyticsInDateRange(
             @Param("planName") String planName,
             @Param("startDate") LocalDateTime startDate,
             @Param("endDate") LocalDateTime endDate
     );
-
-    default List<Object[]> findRouteAnalytics(String planName) {
-        return findRouteAnalytics(planName, null, null);
-    }
 
     @Query(value = """
             SELECT
@@ -66,21 +77,35 @@ public interface UsageLogRepository extends JpaRepository<UsageLog, Long> {
             FROM client c
             JOIN plan p ON p.id = c.plan_id
             LEFT JOIN usage_log u ON u.client_id = c.id
-                AND (:startDate IS NULL OR u.timestamp >= :startDate)
-                AND (:endDate IS NULL OR u.timestamp < :endDate)
             WHERE (:planName IS NULL OR LOWER(p.name) = LOWER(:planName))
             GROUP BY c.id, c.name, p.id, p.name
             ORDER BY COUNT(u.id) DESC
             """, nativeQuery = true)
-    List<Object[]> findClientAnalytics(
+    List<Object[]> findClientAnalytics(@Param("planName") String planName);
+
+    @Query(value = """
+            SELECT
+                c.id AS client_id,
+                c.name AS client_name,
+                p.id AS plan_id,
+                p.name AS plan_name,
+                COUNT(u.id) AS total_requests,
+                SUM(CASE WHEN u.allowed = true THEN 1 ELSE 0 END) AS allowed_requests,
+                SUM(CASE WHEN u.allowed = false THEN 1 ELSE 0 END) AS blocked_requests
+            FROM client c
+            JOIN plan p ON p.id = c.plan_id
+            LEFT JOIN usage_log u ON u.client_id = c.id
+                AND u.timestamp >= :startDate
+                AND u.timestamp < :endDate
+            WHERE (:planName IS NULL OR LOWER(p.name) = LOWER(:planName))
+            GROUP BY c.id, c.name, p.id, p.name
+            ORDER BY COUNT(u.id) DESC
+            """, nativeQuery = true)
+    List<Object[]> findClientAnalyticsInDateRange(
             @Param("planName") String planName,
             @Param("startDate") LocalDateTime startDate,
             @Param("endDate") LocalDateTime endDate
     );
-
-    default List<Object[]> findClientAnalytics(String planName) {
-        return findClientAnalytics(planName, null, null);
-    }
 
     @Query(value = """
             SELECT
@@ -89,19 +114,27 @@ public interface UsageLogRepository extends JpaRepository<UsageLog, Long> {
                 SUM(CASE WHEN u.allowed = true THEN 1 ELSE 0 END) AS allowed_requests,
                 SUM(CASE WHEN u.allowed = false THEN 1 ELSE 0 END) AS blocked_requests
             FROM usage_log u
-            WHERE (:startDate IS NULL OR u.timestamp >= :startDate)
-              AND (:endDate IS NULL OR u.timestamp < :endDate)
             GROUP BY CAST(u.timestamp AS date)
             ORDER BY CAST(u.timestamp AS date)
             """, nativeQuery = true)
-    List<Object[]> findDailyTrafficAnalytics(
+    List<Object[]> findDailyTrafficAnalytics();
+
+    @Query(value = """
+            SELECT
+                CAST(u.timestamp AS date) AS bucket,
+                COUNT(u.id) AS total_requests,
+                SUM(CASE WHEN u.allowed = true THEN 1 ELSE 0 END) AS allowed_requests,
+                SUM(CASE WHEN u.allowed = false THEN 1 ELSE 0 END) AS blocked_requests
+            FROM usage_log u
+            WHERE u.timestamp >= :startDate
+              AND u.timestamp < :endDate
+            GROUP BY CAST(u.timestamp AS date)
+            ORDER BY CAST(u.timestamp AS date)
+            """, nativeQuery = true)
+    List<Object[]> findDailyTrafficAnalyticsInDateRange(
             @Param("startDate") LocalDateTime startDate,
             @Param("endDate") LocalDateTime endDate
     );
-
-    default List<Object[]> findDailyTrafficAnalytics() {
-        return findDailyTrafficAnalytics(null, null);
-    }
 
     @Query(value = """
             SELECT
@@ -114,18 +147,30 @@ public interface UsageLogRepository extends JpaRepository<UsageLog, Long> {
             JOIN client c ON c.id = u.client_id
             JOIN plan p ON p.id = c.plan_id
             WHERE (:planName IS NULL OR LOWER(p.name) = LOWER(:planName))
-              AND (:startDate IS NULL OR u.timestamp >= :startDate)
-              AND (:endDate IS NULL OR u.timestamp < :endDate)
             GROUP BY CAST(u.timestamp AS date), u.path
             ORDER BY CAST(u.timestamp AS date), u.path
             """, nativeQuery = true)
-    List<Object[]> findDailyRouteTrafficAnalytics(
+    List<Object[]> findDailyRouteTrafficAnalytics(@Param("planName") String planName);
+
+    @Query(value = """
+            SELECT
+                CAST(u.timestamp AS date) AS bucket,
+                u.path AS route,
+                COUNT(u.id) AS total_requests,
+                SUM(CASE WHEN u.allowed = true THEN 1 ELSE 0 END) AS allowed_requests,
+                SUM(CASE WHEN u.allowed = false THEN 1 ELSE 0 END) AS blocked_requests
+            FROM usage_log u
+            JOIN client c ON c.id = u.client_id
+            JOIN plan p ON p.id = c.plan_id
+            WHERE (:planName IS NULL OR LOWER(p.name) = LOWER(:planName))
+              AND u.timestamp >= :startDate
+              AND u.timestamp < :endDate
+            GROUP BY CAST(u.timestamp AS date), u.path
+            ORDER BY CAST(u.timestamp AS date), u.path
+            """, nativeQuery = true)
+    List<Object[]> findDailyRouteTrafficAnalyticsInDateRange(
             @Param("planName") String planName,
             @Param("startDate") LocalDateTime startDate,
             @Param("endDate") LocalDateTime endDate
     );
-
-    default List<Object[]> findDailyRouteTrafficAnalytics(String planName) {
-        return findDailyRouteTrafficAnalytics(planName, null, null);
-    }
 }

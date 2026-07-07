@@ -13,6 +13,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -167,5 +168,27 @@ class AnalyticsServiceTest {
         assertEquals(1, trends.size());
         assertEquals("/api/admin", trends.get(0).route());
         verify(usageLogRepository).findDailyRouteTrafficAnalytics("Enterprise");
+    }
+
+    @Test
+    void trafficAnalyticsDateRangeUsesConcreteBounds() {
+        LocalDate startDate = LocalDate.of(2026, 7, 1);
+        LocalDate endDate = LocalDate.of(2026, 7, 7);
+        when(usageLogRepository.findDailyTrafficAnalyticsInDateRange(
+                LocalDateTime.of(2026, 7, 1, 0, 0),
+                LocalDateTime.of(2026, 7, 8, 0, 0)
+        )).thenReturn(List.<Object[]>of(
+                new Object[] { LocalDate.of(2026, 7, 7), 3L, 2L, 1L }
+        ));
+
+        List<com.prakash.gateaway_service.DTO.TrafficAnalyticsResponseDto> traffic =
+                analyticsService.getTrafficAnalytics(startDate, endDate);
+
+        assertEquals(1, traffic.size());
+        assertEquals("2026-07-07", traffic.get(0).bucket());
+        verify(usageLogRepository).findDailyTrafficAnalyticsInDateRange(
+                LocalDateTime.of(2026, 7, 1, 0, 0),
+                LocalDateTime.of(2026, 7, 8, 0, 0)
+        );
     }
 }
