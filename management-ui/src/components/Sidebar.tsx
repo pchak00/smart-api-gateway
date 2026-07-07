@@ -142,7 +142,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   };
 
   return (
-    <aside className={`flex flex-col text-slate-300 ${className}`}>
+    <aside className={`glass-sidebar flex flex-col text-slate-300 ${className}`}>
       <div className={cx('px-4 py-5', isCollapsed && 'px-3')}>
         <div className="relative">
           {canCollapse ? (

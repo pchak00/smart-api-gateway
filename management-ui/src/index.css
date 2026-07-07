@@ -24,15 +24,23 @@
   }
 
   .glass-popover {
-    border: 1px solid rgba(125, 211, 252, 0.07);
+    border: 1px solid rgba(125, 211, 252, 0.045);
     background:
-      linear-gradient(180deg, rgba(15, 23, 42, 0.88), rgba(8, 15, 32, 0.82)),
-      rgba(2, 6, 23, 0.9);
+      linear-gradient(180deg, rgba(15, 23, 42, 0.86), rgba(8, 15, 32, 0.8)),
+      rgba(2, 6, 23, 0.88);
     box-shadow:
-      inset 0 1px 0 rgba(186, 230, 253, 0.06),
-      0 18px 42px rgba(2, 6, 23, 0.34);
+      inset 0 1px 0 rgba(186, 230, 253, 0.04),
+      0 14px 34px rgba(2, 6, 23, 0.3);
     -webkit-backdrop-filter: blur(18px) saturate(116%);
     backdrop-filter: blur(18px) saturate(116%);
+  }
+
+  .glass-sidebar {
+    background:
+      linear-gradient(180deg, rgba(8, 15, 32, 0.38), rgba(2, 6, 23, 0.2)),
+      rgba(2, 6, 23, 0.34);
+    -webkit-backdrop-filter: blur(14px) saturate(108%);
+    backdrop-filter: blur(14px) saturate(108%);
   }
 }
 
@@ -79,9 +87,9 @@ body {
   pointer-events: none;
   content: '';
   background:
-    radial-gradient(1100px 520px at 62% -14%, rgba(8, 145, 178, 0.105), transparent 62%),
-    radial-gradient(980px 520px at 12% 18%, rgba(30, 64, 175, 0.08), transparent 64%),
-    linear-gradient(180deg, #020617 0%, #030713 48%, #020617 100%);
+    radial-gradient(1200px 760px at 88% 118%, rgba(8, 145, 178, 0.045), transparent 72%),
+    radial-gradient(1000px 720px at -28% 58%, rgba(30, 64, 175, 0.035), transparent 70%),
+    #020617;
 }
 
 .pacific-app-shell > * {
@@ -90,14 +98,16 @@ body {
 }
 
 .pacific-main-surface {
-  background:
-    linear-gradient(180deg, rgba(2, 6, 23, 0.12), rgba(2, 6, 23, 0.58) 56%, rgba(2, 6, 23, 0.72)),
-    transparent;
+  background: transparent;
 }
 
 @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
   .glass-popover {
     background: rgba(2, 6, 23, 0.98);
+  }
+
+  .glass-sidebar {
+    background: rgba(2, 6, 23, 0.72);
   }
 }
 
