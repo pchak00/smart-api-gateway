@@ -14,6 +14,7 @@ import {
 import { api } from '../api/client';
 import { AbuseAlertDto, DashboardSummaryDto, GatewaySettingsDto, RouteAnalyticsDto, TrafficAnalyticsDto } from '../types';
 import { PageHeader } from '../components/PageShell';
+import { Tooltip } from '../components/Tooltip';
 import { useAuth } from '../hooks/useAuth';
 import { useToast } from '../hooks/useToast';
 import { formatBucket, formatDateTime, formatNumber, getStatusLabel } from '../utils/display';
@@ -253,26 +254,20 @@ const TrendIndicator: React.FC<{ delta: TrendDelta; tone?: TrendTone }> = ({
 };
 
 const TrendHelpTooltip: React.FC = () => {
-  const tooltipId = 'dashboard-trend-help';
-
   return (
-    <span className="group relative inline-flex">
+    <Tooltip
+      content="Trends compare the latest analytics bucket with the previous bucket. Block rate changes are shown in percentage points."
+      wrapperClassName="relative inline-flex"
+      tooltipClassName="pointer-events-none absolute right-0 top-full z-20 mt-2 w-64 rounded-md border border-slate-800/80 bg-slate-950 px-3 py-2 text-xs leading-5 text-slate-400 shadow-xl shadow-black/25"
+    >
       <button
         type="button"
         className="inline-flex h-6 w-6 items-center justify-center rounded-md text-slate-600 transition-colors hover:bg-slate-950/40 hover:text-slate-300 focus:outline-none focus:ring-2 focus:ring-slate-700/35"
         aria-label="Traffic trend comparison details"
-        aria-describedby={tooltipId}
       >
         <Info size={14} aria-hidden="true" />
       </button>
-      <span
-        id={tooltipId}
-        role="tooltip"
-        className="pointer-events-none absolute right-0 top-full z-20 mt-2 w-64 rounded-md border border-slate-800/80 bg-slate-950 px-3 py-2 text-xs leading-5 text-slate-400 opacity-0 shadow-xl shadow-black/25 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100"
-      >
-        Trends compare the latest analytics bucket with the previous bucket. Block rate changes are shown in percentage points.
-      </span>
-    </span>
+    </Tooltip>
   );
 };
 

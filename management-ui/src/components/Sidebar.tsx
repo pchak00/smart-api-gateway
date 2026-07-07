@@ -22,6 +22,7 @@ import { useToast } from '../hooks/useToast';
 import { useAuth } from '../hooks/useAuth';
 import { getRoleLabel } from '../utils/roles';
 import { pacificWaveMark } from '../assets/brand';
+import { Tooltip } from './Tooltip';
 
 interface SidebarItem {
   label: string;
@@ -55,18 +56,31 @@ interface SidebarProps {
 
 interface CollapsedTooltipProps {
   label: string;
+  children: React.ReactElement;
+  disabled?: boolean;
+  resetKey?: React.Key | boolean | null;
+  wrapperClassName?: string;
 }
 
 const cx = (...classes: Array<string | false | undefined>) =>
   classes.filter(Boolean).join(' ');
 
-const CollapsedTooltip: React.FC<CollapsedTooltipProps> = ({ label }) => (
-  <span
-    role="tooltip"
-    className="pointer-events-none absolute left-full top-1/2 z-40 ml-3 -translate-y-1/2 whitespace-nowrap rounded-md bg-slate-900/95 px-2 py-1 text-xs font-medium text-slate-200 opacity-0 shadow-lg shadow-black/25 ring-1 ring-slate-800/70 transition-opacity duration-150 group-hover:opacity-100 group-focus-within:opacity-100"
+const CollapsedTooltip: React.FC<CollapsedTooltipProps> = ({
+  label,
+  children,
+  disabled,
+  resetKey,
+  wrapperClassName = 'relative block'
+}) => (
+  <Tooltip
+    content={label}
+    disabled={disabled}
+    resetKey={resetKey}
+    wrapperClassName={wrapperClassName}
+    tooltipClassName="pointer-events-none absolute left-full top-1/2 z-40 ml-3 -translate-y-1/2 whitespace-nowrap rounded-md bg-slate-900/95 px-2 py-1 text-xs font-medium text-slate-200 shadow-lg shadow-black/25 ring-1 ring-slate-800/70"
   >
-    {label}
-  </span>
+    {children}
+  </Tooltip>
 );
 
 export const Sidebar: React.FC<SidebarProps> = ({
@@ -130,51 +144,53 @@ export const Sidebar: React.FC<SidebarProps> = ({
   return (
     <aside className={`flex flex-col bg-slate-950 text-slate-300 ${className}`}>
       <div className={cx('px-4 py-5', isCollapsed && 'px-3')}>
-        <div className="group relative">
+        <div className="relative">
           {canCollapse ? (
-            <button
-              type="button"
-              onClick={onToggleCollapse}
-              aria-label={toggleLabel}
-              aria-expanded={!isCollapsed}
-              className={cx(
-                'flex w-full items-center rounded-lg py-1.5 transition-colors duration-150 hover:bg-slate-900/45 focus:outline-none focus:ring-2 focus:ring-slate-700/35',
-                isCollapsed ? 'justify-center px-0' : 'justify-between gap-3 px-2'
-              )}
-            >
-              {isCollapsed ? (
-                <span className="relative flex h-8 w-8 shrink-0 items-center justify-center">
-                  <img
-                    src={pacificWaveMark}
-                    alt=""
-                    className="absolute h-8 w-8 object-contain opacity-100 transition-opacity duration-150 group-hover:opacity-0 group-focus-visible:opacity-0"
-                  />
-                  <ChevronRight
-                    size={19}
-                    aria-hidden="true"
-                    className="absolute text-slate-400 opacity-0 transition-opacity duration-150 group-hover:opacity-100 group-focus-visible:opacity-100"
-                  />
-                </span>
-              ) : (
-                <>
-                  <span className="flex min-w-0 items-center gap-3">
+            <CollapsedTooltip label={toggleLabel} resetKey={isCollapsed}>
+              <button
+                type="button"
+                onClick={onToggleCollapse}
+                aria-label={toggleLabel}
+                aria-expanded={!isCollapsed}
+                className={cx(
+                  'group flex w-full items-center rounded-lg py-1.5 transition-colors duration-150 hover:bg-slate-900/45 focus:outline-none focus:ring-2 focus:ring-slate-700/35',
+                  isCollapsed ? 'justify-center px-0' : 'justify-between gap-3 px-2'
+                )}
+              >
+                {isCollapsed ? (
+                  <span className="relative flex h-8 w-8 shrink-0 items-center justify-center">
                     <img
                       src={pacificWaveMark}
                       alt=""
-                      className="h-8 w-8 shrink-0 object-contain"
+                      className="absolute h-8 w-8 object-contain opacity-100 transition-opacity duration-150 group-hover:opacity-0 group-focus-visible:opacity-0"
                     />
-                    <span className="overflow-hidden whitespace-nowrap text-base font-semibold text-slate-100">
-                      pacific
-                    </span>
+                    <ChevronRight
+                      size={19}
+                      aria-hidden="true"
+                      className="absolute text-slate-400 opacity-0 transition-opacity duration-150 group-hover:opacity-100 group-focus-visible:opacity-100"
+                    />
                   </span>
-                  <ChevronLeft
-                    size={17}
-                    aria-hidden="true"
-                    className="shrink-0 text-slate-600 opacity-55 transition-opacity duration-150 group-hover:opacity-100 group-focus-visible:opacity-100"
-                  />
-                </>
-              )}
-            </button>
+                ) : (
+                  <>
+                    <span className="flex min-w-0 items-center gap-3">
+                      <img
+                        src={pacificWaveMark}
+                        alt=""
+                        className="h-8 w-8 shrink-0 object-contain"
+                      />
+                      <span className="overflow-hidden whitespace-nowrap text-base font-semibold text-slate-100">
+                        pacific
+                      </span>
+                    </span>
+                    <ChevronLeft
+                      size={17}
+                      aria-hidden="true"
+                      className="shrink-0 text-slate-600 opacity-55 transition-opacity duration-150 group-hover:opacity-100 group-focus-visible:opacity-100"
+                    />
+                  </>
+                )}
+              </button>
+            </CollapsedTooltip>
           ) : (
             <Link
               to="/"
@@ -190,7 +206,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
               <span className="text-base font-semibold text-slate-100">pacific</span>
             </Link>
           )}
-          {canCollapse && <CollapsedTooltip label={toggleLabel} />}
         </div>
       </div>
 
@@ -204,7 +219,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
           if (isRestricted) {
             return (
-              <div key={item.path} className="group relative mb-1">
+              <CollapsedTooltip
+                key={item.path}
+                label={`${item.label} · Admin required`}
+                disabled={!isCollapsed}
+                resetKey={location.pathname}
+                wrapperClassName="relative mb-1 block"
+              >
                 <button
                   type="button"
                   onClick={handleRestrictedClick}
@@ -226,13 +247,18 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   </span>
                   {!isCollapsed && <LockKeyhole size={14} aria-hidden="true" className="shrink-0" />}
                 </button>
-                {isCollapsed && <CollapsedTooltip label={`${item.label} · Admin required`} />}
-              </div>
+              </CollapsedTooltip>
             );
           }
 
           return (
-            <div key={item.path} className="group relative mb-1">
+            <CollapsedTooltip
+              key={item.path}
+              label={item.label}
+              disabled={!isCollapsed}
+              resetKey={location.pathname}
+              wrapperClassName="relative mb-1 block"
+            >
               <Link
                 to={item.path}
                 onClick={onNavigate}
@@ -255,8 +281,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   {item.label}
                 </span>
               </Link>
-              {isCollapsed && <CollapsedTooltip label={item.label} />}
-            </div>
+            </CollapsedTooltip>
           );
         })}
 
@@ -275,7 +300,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
             (item.path !== '/' && location.pathname.startsWith(`${item.path}/`));
 
           return (
-            <div key={item.path} className="group relative mb-1">
+            <CollapsedTooltip
+              key={item.path}
+              label={item.label}
+              disabled={!isCollapsed}
+              resetKey={location.pathname}
+              wrapperClassName="relative mb-1 block"
+            >
               <Link
                 to={item.path}
                 onClick={onNavigate}
@@ -298,8 +329,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   {item.label}
                 </span>
               </Link>
-              {isCollapsed && <CollapsedTooltip label={item.label} />}
-            </div>
+            </CollapsedTooltip>
           );
         })}
       </nav>
@@ -328,7 +358,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
           </div>
         )}
 
-        <div className="group relative">
+        <CollapsedTooltip
+          label={accountTooltipLabel}
+          disabled={!isCollapsed || isProfileOpen}
+          resetKey={`${isProfileOpen}-${location.pathname}`}
+        >
           <button
             type="button"
             aria-haspopup="menu"
@@ -336,7 +370,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             aria-label="Open account menu"
             onClick={() => setIsProfileOpen((open) => !open)}
             className={cx(
-              'flex w-full items-center rounded-lg py-2.5 text-left text-sm text-slate-400 transition-colors hover:bg-slate-900/55 hover:text-slate-100 focus:outline-none focus:ring-2 focus:ring-slate-700/35',
+              'group flex w-full items-center rounded-lg py-2.5 text-left text-sm text-slate-400 transition-colors hover:bg-slate-900/55 hover:text-slate-100 focus:outline-none focus:ring-2 focus:ring-slate-700/35',
               isCollapsed ? 'justify-center px-0' : 'justify-between px-3'
             )}
           >
@@ -355,8 +389,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               </>
             )}
           </button>
-          {isCollapsed && !isProfileOpen && <CollapsedTooltip label={accountTooltipLabel} />}
-        </div>
+        </CollapsedTooltip>
       </div>
     </aside>
   );

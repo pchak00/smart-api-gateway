@@ -1,4 +1,5 @@
 import React from 'react';
+import { Tooltip } from './Tooltip';
 
 export interface DisabledButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   disabled?: boolean;
@@ -82,7 +83,6 @@ export const IconButton: React.FC<IconButtonProps> = ({
   className = '',
   ...props
 }) => {
-  const tooltipId = React.useId();
   const baseClass = [
     'inline-flex h-9 w-9 items-center justify-center rounded-md text-slate-400 transition-colors',
     'hover:bg-slate-900/35 hover:text-slate-100',
@@ -91,23 +91,19 @@ export const IconButton: React.FC<IconButtonProps> = ({
   ].join(' ');
 
   return (
-    <span className="group relative inline-flex">
+    <Tooltip
+      content={tooltip}
+      wrapperClassName="relative inline-flex"
+      tooltipClassName="pointer-events-none absolute right-0 top-full z-20 mt-2 whitespace-nowrap rounded-md bg-slate-900/95 px-2 py-1 text-xs font-medium text-slate-200 shadow-lg shadow-black/25 ring-1 ring-slate-800/70"
+    >
       <button
         disabled={disabled}
-        aria-describedby={tooltipId}
         aria-disabled={disabled}
         className={cx(baseClass, className)}
         {...props}
       >
         {children}
       </button>
-      <span
-        id={tooltipId}
-        role="tooltip"
-        className="pointer-events-none absolute right-0 top-full z-20 mt-2 whitespace-nowrap rounded-md bg-slate-900/95 px-2 py-1 text-xs font-medium text-slate-200 opacity-0 shadow-lg shadow-black/25 ring-1 ring-slate-800/70 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100"
-      >
-        {tooltip}
-      </span>
-    </span>
+    </Tooltip>
   );
 };
