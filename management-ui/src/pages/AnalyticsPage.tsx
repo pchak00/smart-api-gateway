@@ -113,6 +113,7 @@ type RouteTrendActiveDotProps = {
   dataKey?: string | number;
   index?: number;
   value?: number | string;
+  hoverGuide: RouteTrendHoverGuide | null;
   onMeasure: (position: RouteTrendDotPosition) => void;
 };
 
@@ -128,10 +129,12 @@ type RouteTrendCursorProps = {
     x?: number;
     y?: number;
   };
-  hoverGuide?: RouteTrendHoverGuide | null;
 };
 
 const ANALYTICS_WINDOW_DAYS = 7;
+const ROUTE_TREND_CHART_MARGIN = { top: 8, right: 8, left: -16, bottom: 0 };
+const ROUTE_TREND_Y_AXIS_WIDTH = 42;
+const ROUTE_TREND_GUIDE_LEFT_X = Math.max(0, ROUTE_TREND_Y_AXIS_WIDTH + ROUTE_TREND_CHART_MARGIN.left);
 
 const safeCount = (value: number | null | undefined) => (
   typeof value === 'number' && !Number.isNaN(value) ? value : 0
@@ -559,8 +562,7 @@ const RouteTrendTooltip: React.FC<RouteTrendTooltipProps> = ({
 const RouteTrendCursor: React.FC<RouteTrendCursorProps> = ({
   points,
   offset,
-  activeCoordinate,
-  hoverGuide
+  activeCoordinate
 }) => {
   const x = points?.[0]?.x ?? activeCoordinate?.x;
   const verticalStartY = points?.[0]?.y ?? offset?.top;
@@ -568,19 +570,6 @@ const RouteTrendCursor: React.FC<RouteTrendCursorProps> = ({
     typeof offset?.top === 'number' && typeof offset?.height === 'number'
       ? offset.top + offset.height
       : undefined
-  );
-  const plotLeft = offset?.left;
-  const plotTop = offset?.top;
-  const plotBottom = typeof offset?.top === 'number' && typeof offset?.height === 'number'
-    ? offset.top + offset.height
-    : undefined;
-  const shouldShowHorizontalGuide = (
-    hoverGuide?.activeKey &&
-    typeof hoverGuide.y === 'number' &&
-    typeof plotLeft === 'number' &&
-    typeof x === 'number' &&
-    (typeof plotTop !== 'number' || hoverGuide.y >= plotTop) &&
-    (typeof plotBottom !== 'number' || hoverGuide.y <= plotBottom)
   );
 
   return (
@@ -593,17 +582,6 @@ const RouteTrendCursor: React.FC<RouteTrendCursorProps> = ({
           y2={verticalEndY}
           stroke="#94a3b8"
           strokeOpacity={0.22}
-          strokeWidth={1}
-        />
-      )}
-      {shouldShowHorizontalGuide && (
-        <line
-          x1={plotLeft}
-          x2={x}
-          y1={hoverGuide.y}
-          y2={hoverGuide.y}
-          stroke="#7dd3fc"
-          strokeOpacity={0.16}
           strokeWidth={1}
         />
       )}
@@ -621,6 +599,7 @@ const RouteTrendActiveDot: React.FC<RouteTrendActiveDotProps> = ({
   dataKey,
   index,
   value,
+  hoverGuide,
   onMeasure
 }) => {
   useEffect(() => {
@@ -645,15 +624,50 @@ const RouteTrendActiveDot: React.FC<RouteTrendActiveDotProps> = ({
 
   if (typeof cx !== 'number' || typeof cy !== 'number') return null;
 
+  const activeGuide = hoverGuide;
+  const isActiveGuidePoint = (
+    activeGuide !== null &&
+    activeGuide.activeTooltipIndex === index &&
+    activeGuide.activeKey === String(dataKey)
+  );
+  const guideStartX = Math.min(cx, ROUTE_TREND_GUIDE_LEFT_X);
+
   return (
-    <circle
-      cx={cx}
-      cy={cy}
-      r={r}
-      fill={fill}
-      stroke={stroke}
-      strokeWidth={strokeWidth}
-    />
+    <g pointerEvents="none">
+      {isActiveGuidePoint && cx > guideStartX && (
+        <>
+          <line
+            x1={guideStartX}
+            x2={cx}
+            y1={cy}
+            y2={cy}
+            stroke="#020617"
+            strokeOpacity={0.55}
+            strokeWidth={3}
+            strokeLinecap="round"
+          />
+          <line
+            x1={guideStartX}
+            x2={cx}
+            y1={cy}
+            y2={cy}
+            stroke="#93c5fd"
+            strokeDasharray="4 4"
+            strokeOpacity={0.46}
+            strokeWidth={1.25}
+            strokeLinecap="round"
+          />
+        </>
+      )}
+      <circle
+        cx={cx}
+        cy={cy}
+        r={r}
+        fill={fill}
+        stroke={stroke}
+        strokeWidth={strokeWidth}
+      />
+    </g>
   );
 };
 
@@ -1263,7 +1277,7 @@ export const AnalyticsPage: React.FC = () => {
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart
                   data={routeTrendData}
-                  margin={{ top: 8, right: 8, left: -16, bottom: 0 }}
+                  margin={ROUTE_TREND_CHART_MARGIN}
                   onMouseMove={handleRouteTrendMouseMove}
                   onMouseLeave={handleRouteTrendMouseLeave}
                 >
@@ -1285,7 +1299,7 @@ export const AnalyticsPage: React.FC = () => {
                   <Tooltip
                     allowEscapeViewBox={{ x: true, y: true }}
                     content={<RouteTrendTooltip routes={routeTrendRoutes} metric={selectedRouteMetric} />}
-                    cursor={<RouteTrendCursor hoverGuide={routeTrendHoverGuide} />}
+                    cursor={<RouteTrendCursor />}
                     isAnimationActive={false}
                     wrapperStyle={{ outline: 'none', zIndex: 30 }}
                   />
@@ -1306,6 +1320,7 @@ export const AnalyticsPage: React.FC = () => {
                           fill={route.color}
                           stroke="#020617"
                           strokeWidth={2}
+                          hoverGuide={routeTrendHoverGuide}
                           onMeasure={registerRouteTrendActiveDot}
                         />
                       )}
