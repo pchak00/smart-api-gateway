@@ -345,9 +345,6 @@ export const RouteLimitsPage: React.FC = () => {
                 Rate limits override a plan&apos;s default quota for specific API paths.
               </InfoTooltip>
             </div>
-            <p className="mt-1 text-xs text-slate-500">
-              Per-route quota overrides for gateway traffic.
-            </p>
           </div>
           <IconButton
             type="button"
@@ -545,9 +542,6 @@ export const RouteLimitsPage: React.FC = () => {
                 Analytics operation groups use active groups first; higher priority wins when multiple rules match.
               </InfoTooltip>
             </div>
-            <p className="mt-1 text-xs text-slate-500">
-              {routeGroups.length} {routeGroups.length === 1 ? 'group' : 'groups'} for operation-level analytics.
-            </p>
           </div>
           <IconButton
             type="button"
