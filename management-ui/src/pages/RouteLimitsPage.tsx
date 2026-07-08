@@ -342,7 +342,7 @@ export const RouteLimitsPage: React.FC = () => {
       />
 
       <section>
-        <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div className="mb-5 flex items-start justify-between gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div>
             <div className="inline-flex items-center gap-1.5">
               <h2 className="text-sm font-semibold text-slate-100">Rate limits</h2>
@@ -354,6 +354,20 @@ export const RouteLimitsPage: React.FC = () => {
               Per-route quota overrides for gateway traffic.
             </p>
           </div>
+          <IconButton
+            type="button"
+            disabled={!canMutate}
+            tooltip={canMutate ? 'Add rate limit' : writeTooltip ?? 'Admin required'}
+            aria-label="Add rate limit"
+            className="sm:hidden"
+            onClick={() => {
+              setEditingLimit(null);
+              resetForm();
+              setIsCreateOpen((open) => !open);
+            }}
+          >
+            <Plus size={20} strokeWidth={2.2} aria-hidden="true" />
+          </IconButton>
         </div>
 
         <div className="mb-6 flex w-full flex-col gap-3 sm:flex-row sm:items-start">
@@ -368,6 +382,7 @@ export const RouteLimitsPage: React.FC = () => {
             disabled={!canMutate}
             tooltip={canMutate ? 'Add rate limit' : writeTooltip ?? 'Admin required'}
             aria-label="Add rate limit"
+            className="hidden sm:inline-flex"
             onClick={() => {
               setEditingLimit(null);
               resetForm();
@@ -527,7 +542,7 @@ export const RouteLimitsPage: React.FC = () => {
       </section>
 
       <section className="mt-12 pb-16">
-        <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div className="mb-5 flex items-start justify-between gap-3">
           <div>
             <div className="inline-flex items-center gap-1.5">
               <h2 className="text-sm font-semibold text-slate-100">Route groups</h2>

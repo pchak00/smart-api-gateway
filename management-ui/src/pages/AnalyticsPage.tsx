@@ -1383,7 +1383,7 @@ export const AnalyticsPage: React.FC = () => {
                   <div
                     role="menu"
                     aria-label="Route trend view options"
-                    className="glass-popover absolute right-0 top-full z-30 mt-1 w-56 rounded-md py-2"
+                    className="glass-popover fixed inset-x-3 bottom-3 z-30 max-h-[calc(100dvh-1.5rem)] overflow-y-auto rounded-md py-2 md:absolute md:inset-x-auto md:bottom-auto md:right-0 md:top-full md:mt-1 md:w-56"
                   >
                     <div className="px-2 pb-2">
                       <p className="px-2 pb-1 text-[11px] font-medium text-slate-600">Routes shown</p>

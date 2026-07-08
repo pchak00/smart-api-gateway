@@ -1,4 +1,5 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { Check, ChevronDown } from 'lucide-react';
 
 export interface DropdownOption {
@@ -43,14 +44,56 @@ export const AppDropdown: React.FC<AppDropdownProps> = ({
   showChevron = true
 }) => {
   const [isOpen, setIsOpen] = useState(false);
+  const [mobileMenuStyle, setMobileMenuStyle] = useState<React.CSSProperties | null>(null);
   const rootRef = useRef<HTMLDivElement | null>(null);
+  const menuRef = useRef<HTMLDivElement | null>(null);
   const selectedOption = options.find((option) => option.value === value) ?? options[0];
+  const updateMobileMenuPosition = useCallback(() => {
+    const root = rootRef.current;
+
+    if (!root || typeof window === 'undefined' || !window.matchMedia('(max-width: 767px)').matches) {
+      setMobileMenuStyle(null);
+      return;
+    }
+
+    const rect = root.getBoundingClientRect();
+    const viewportPadding = 12;
+    const viewportWidth = window.innerWidth;
+    const viewportHeight = window.innerHeight;
+    const width = Math.min(Math.max(rect.width, 220), viewportWidth - viewportPadding * 2);
+    const left = Math.min(
+      Math.max(rect.left, viewportPadding),
+      viewportWidth - viewportPadding - width
+    );
+    const spaceBelow = viewportHeight - rect.bottom - viewportPadding;
+    const spaceAbove = rect.top - viewportPadding;
+    const placeAbove = spaceBelow < 180 && spaceAbove > spaceBelow;
+    const availableHeight = Math.max(
+      140,
+      Math.min(256, (placeAbove ? spaceAbove : spaceBelow) - 8)
+    );
+    const top = placeAbove
+      ? Math.max(viewportPadding, rect.top - availableHeight - 8)
+      : Math.min(rect.bottom + 4, viewportHeight - viewportPadding - availableHeight);
+
+    setMobileMenuStyle({
+      left,
+      top,
+      width,
+      maxHeight: availableHeight,
+      position: 'fixed',
+      zIndex: 60
+    });
+  }, []);
 
   useEffect(() => {
     if (!isOpen) return;
 
+    updateMobileMenuPosition();
+
     const handlePointerDown = (event: MouseEvent) => {
-      if (!rootRef.current?.contains(event.target as Node)) {
+      const target = event.target as Node;
+      if (!rootRef.current?.contains(target) && !menuRef.current?.contains(target)) {
         setIsOpen(false);
       }
     };
@@ -61,14 +104,84 @@ export const AppDropdown: React.FC<AppDropdownProps> = ({
       }
     };
 
+    const handleViewportChange = () => {
+      updateMobileMenuPosition();
+    };
+
     document.addEventListener('mousedown', handlePointerDown);
     document.addEventListener('keydown', handleKeyDown);
+    window.addEventListener('resize', handleViewportChange);
+    window.addEventListener('scroll', handleViewportChange, true);
 
     return () => {
       document.removeEventListener('mousedown', handlePointerDown);
       document.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('resize', handleViewportChange);
+      window.removeEventListener('scroll', handleViewportChange, true);
     };
+  }, [isOpen, updateMobileMenuPosition]);
+
+  useEffect(() => {
+    if (!isOpen) {
+      setMobileMenuStyle(null);
+    }
   }, [isOpen]);
+
+  const menuNode = isOpen ? (
+    <div
+      ref={menuRef}
+      role="listbox"
+      aria-label={ariaLabel}
+      style={mobileMenuStyle ?? undefined}
+      className={cx(
+        'glass-popover overflow-y-auto rounded-md py-1',
+        mobileMenuStyle
+          ? ''
+          : cx(
+              'absolute top-full z-30 mt-1 max-h-64 min-w-full',
+              align === 'right' ? 'right-0' : 'left-0',
+              fullWidth && 'right-0'
+            ),
+        menuClassName
+      )}
+    >
+      {options.map((option) => {
+        const isSelected = option.value === value;
+
+        return (
+          <button
+            key={option.value}
+            type="button"
+            role="option"
+            aria-selected={isSelected}
+            disabled={option.disabled}
+            onClick={() => {
+              if (option.disabled) return;
+              onChange(option.value);
+              setIsOpen(false);
+            }}
+            className={cx(
+              'flex w-full items-center gap-3 px-3 py-2 text-left text-sm transition-colors',
+              isSelected ? 'text-slate-100' : 'text-slate-400',
+              option.disabled
+                ? 'cursor-not-allowed text-slate-700'
+                : 'hover:bg-slate-900/75 hover:text-slate-100'
+            )}
+          >
+            <span className="flex h-4 w-4 shrink-0 items-center justify-center text-slate-500">
+              {isSelected && <Check size={13} aria-hidden="true" />}
+            </span>
+            <span className="min-w-0 flex-1">
+              <span className="block truncate">{option.label}</span>
+              {option.description && (
+                <span className="mt-0.5 block truncate text-xs text-slate-600">{option.description}</span>
+              )}
+            </span>
+          </button>
+        );
+      })}
+    </div>
+  ) : null;
 
   return (
     <div ref={rootRef} className={cx('relative', className)}>
@@ -96,54 +209,7 @@ export const AppDropdown: React.FC<AppDropdownProps> = ({
         )}
       </button>
 
-      {isOpen && (
-        <div
-          role="listbox"
-          aria-label={ariaLabel}
-          className={cx(
-            'glass-popover absolute top-full z-30 mt-1 max-h-64 min-w-full overflow-y-auto rounded-md py-1',
-            align === 'right' ? 'right-0' : 'left-0',
-            fullWidth && 'right-0',
-            menuClassName
-          )}
-        >
-          {options.map((option) => {
-            const isSelected = option.value === value;
-
-            return (
-              <button
-                key={option.value}
-                type="button"
-                role="option"
-                aria-selected={isSelected}
-                disabled={option.disabled}
-                onClick={() => {
-                  if (option.disabled) return;
-                  onChange(option.value);
-                  setIsOpen(false);
-                }}
-                className={cx(
-                  'flex w-full items-center gap-3 px-3 py-2 text-left text-sm transition-colors',
-                  isSelected ? 'text-slate-100' : 'text-slate-400',
-                  option.disabled
-                    ? 'cursor-not-allowed text-slate-700'
-                    : 'hover:bg-slate-900/75 hover:text-slate-100'
-                )}
-              >
-                <span className="flex h-4 w-4 shrink-0 items-center justify-center text-slate-500">
-                  {isSelected && <Check size={13} aria-hidden="true" />}
-                </span>
-                <span className="min-w-0 flex-1">
-                  <span className="block truncate">{option.label}</span>
-                  {option.description && (
-                    <span className="mt-0.5 block truncate text-xs text-slate-600">{option.description}</span>
-                  )}
-                </span>
-              </button>
-            );
-          })}
-        </div>
-      )}
+      {mobileMenuStyle && menuNode ? createPortal(menuNode, document.body) : menuNode}
     </div>
   );
 };
