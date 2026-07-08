@@ -37,13 +37,24 @@ export const LoginPage: React.FC = () => {
   };
 
   return (
-    <div className="pacific-app-shell min-h-screen px-6 py-8 text-slate-100">
-      <main className="mx-auto grid min-h-[calc(100vh-4rem)] w-full max-w-6xl items-center gap-12 lg:grid-cols-[minmax(0,26rem)_1fr]">
+    <div className="pacific-app-shell min-h-screen px-5 py-6 text-slate-100 sm:px-6 sm:py-8">
+      <main className="mx-auto grid min-h-[calc(100vh-3rem)] w-full max-w-6xl items-center gap-8 lg:min-h-[calc(100vh-4rem)] lg:grid-cols-[minmax(0,26rem)_1fr] lg:gap-12">
         <section className="w-full">
-          <p className="text-sm font-medium text-slate-500">pacific</p>
-          <h1 className="mt-4 text-3xl font-semibold text-slate-50">Sign in</h1>
+          <div className="mb-8 flex items-center gap-4 lg:hidden">
+            <img
+              src={pacificWaveMark}
+              alt="pacific logo"
+              className="h-14 w-14 shrink-0 object-contain"
+            />
+            <div className="min-w-0">
+              <p className="text-2xl font-semibold leading-none text-slate-100">pacific</p>
+              <p className="mt-2 text-xs text-slate-500">smart api gateway</p>
+            </div>
+          </div>
+          <p className="hidden text-sm font-medium text-slate-500 lg:block">pacific</p>
+          <h1 className="text-3xl font-semibold text-slate-50 lg:mt-4">Sign in</h1>
 
-          <form onSubmit={handleSubmit} className="mt-8 space-y-7">
+          <form onSubmit={handleSubmit} className="mt-7 space-y-6 sm:mt-8 sm:space-y-7">
             <div>
               <label htmlFor="username" className="block text-sm text-slate-500">
                 Username
