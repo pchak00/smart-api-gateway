@@ -118,9 +118,14 @@ body {
     #020617;
 }
 
-.pacific-app-shell > * {
+.pacific-app-shell > :not(.pacific-overlay-layer) {
   position: relative;
   z-index: 1;
+}
+
+.pacific-app-shell > .pacific-overlay-layer {
+  position: fixed;
+  z-index: 50;
 }
 
 .pacific-main-surface {

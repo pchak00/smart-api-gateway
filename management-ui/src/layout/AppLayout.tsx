@@ -87,7 +87,7 @@ export const AppLayout: React.FC = () => {
       />
 
       {isMobileNavOpen && (
-        <div className="fixed inset-0 z-50 overflow-hidden lg:hidden" role="dialog" aria-modal="true" aria-label="Navigation menu">
+        <div className="pacific-overlay-layer fixed inset-0 z-50 overflow-hidden lg:hidden" role="dialog" aria-modal="true" aria-label="Navigation menu">
           <button
             type="button"
             className="absolute inset-0 bg-slate-950/80 backdrop-blur-sm"
