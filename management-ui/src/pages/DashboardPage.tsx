@@ -319,7 +319,7 @@ const GatewaySummaryStrip: React.FC<{
           <TrendHelpTooltip />
         </div>
       </div>
-      <dl className="mt-5 grid grid-cols-2 gap-x-4 gap-y-5 sm:gap-x-6 md:grid-cols-3 xl:grid-cols-6">
+      <dl className="mt-5 grid grid-cols-1 gap-x-4 gap-y-5 min-[400px]:grid-cols-2 sm:gap-x-6 md:grid-cols-3 xl:grid-cols-6">
         {metrics.map((metric) => (
           <div
             key={metric.label}
@@ -328,8 +328,8 @@ const GatewaySummaryStrip: React.FC<{
             <dt className="truncate text-xs font-medium text-slate-400">
               {metric.label}
             </dt>
-            <dd className="mt-2 flex min-w-0 items-baseline gap-2 leading-none">
-              <span className="truncate text-2xl font-semibold text-slate-50">{metric.value}</span>
+            <dd className="mt-2 flex min-w-0 flex-wrap items-baseline gap-x-2 gap-y-1 leading-none">
+              <span className="min-w-0 truncate text-2xl font-semibold text-slate-50">{metric.value}</span>
               {!isTrafficLoading && metric.trend}
             </dd>
           </div>

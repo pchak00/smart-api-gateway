@@ -142,8 +142,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
   };
 
   return (
-    <aside className={`glass-sidebar flex flex-col text-slate-300 ${className}`}>
-      <div className={cx('px-4 py-5', isCollapsed && 'px-3')}>
+    <aside className={`glass-sidebar flex min-w-0 flex-col text-slate-300 ${isCollapsed ? 'overflow-visible' : 'overflow-hidden'} ${className}`}>
+      <div className={cx('shrink-0 px-4 py-5', isCollapsed && 'px-3')}>
         <div className="relative">
           {canCollapse ? (
             <CollapsedTooltip label={toggleLabel} resetKey={isCollapsed}>
@@ -209,7 +209,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         </div>
       </div>
 
-      <nav className={cx('flex-1 px-3 py-2', isCollapsed ? 'overflow-visible' : 'overflow-y-auto')}>
+      <nav className={cx('min-h-0 flex-1 px-3 py-2', isCollapsed ? 'overflow-visible' : 'overflow-y-auto')}>
         {MENU_ITEMS.map((item) => {
           const Icon = item.icon;
           const isActive =
@@ -230,7 +230,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   type="button"
                   onClick={handleRestrictedClick}
                   className={cx(
-                    'pacific-control-focus flex w-full cursor-not-allowed items-center rounded-lg py-2.5 text-left text-sm text-slate-600 transition-colors hover:bg-slate-900/45',
+                    'pacific-control-focus flex w-full min-w-0 cursor-not-allowed items-center rounded-lg py-2.5 text-left text-sm text-slate-600 transition-colors hover:bg-slate-900/45',
                     isCollapsed ? 'justify-center px-0' : 'gap-3 px-3'
                   )}
                   aria-disabled="true"
@@ -264,7 +264,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 onClick={onNavigate}
                 aria-label={isCollapsed ? item.label : undefined}
                 className={cx(
-                  'pacific-control-focus flex items-center rounded-lg py-2.5 text-sm transition-colors',
+                  'pacific-control-focus flex min-w-0 items-center rounded-lg py-2.5 text-sm transition-colors',
                   isCollapsed ? 'justify-center px-0' : 'gap-3 px-3',
                   isActive
                     ? 'bg-slate-900/65 text-slate-100'
@@ -274,7 +274,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 <Icon size={17} aria-hidden="true" className="shrink-0" />
                 <span
                   className={cx(
-                    'overflow-hidden whitespace-nowrap transition-[opacity,width] duration-150 ease-out',
+                    'min-w-0 flex-1 overflow-hidden whitespace-nowrap transition-[opacity,width] duration-150 ease-out',
                     isCollapsed ? 'w-0 opacity-0' : 'w-auto opacity-100'
                   )}
                 >
@@ -312,7 +312,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 onClick={onNavigate}
                 aria-label={isCollapsed ? item.label : undefined}
                 className={cx(
-                  'pacific-control-focus flex items-center rounded-lg py-2.5 text-sm transition-colors',
+                  'pacific-control-focus flex min-w-0 items-center rounded-lg py-2.5 text-sm transition-colors',
                   isCollapsed ? 'justify-center px-0' : 'gap-3 px-3',
                   isActive
                     ? 'bg-slate-900/65 text-slate-100'
@@ -322,7 +322,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 <Icon size={17} aria-hidden="true" className="shrink-0" />
                 <span
                   className={cx(
-                    'overflow-hidden whitespace-nowrap transition-[opacity,width] duration-150 ease-out',
+                    'min-w-0 flex-1 overflow-hidden whitespace-nowrap transition-[opacity,width] duration-150 ease-out',
                     isCollapsed ? 'w-0 opacity-0' : 'w-auto opacity-100'
                   )}
                 >
@@ -334,7 +334,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         })}
       </nav>
 
-      <div ref={profileRef} className="relative px-3 pb-4 pt-3">
+      <div ref={profileRef} className="relative shrink-0 px-3 pb-4 pt-3">
         {isProfileOpen && (
           <div
             role="menu"

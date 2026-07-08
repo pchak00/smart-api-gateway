@@ -56,7 +56,7 @@ export const PageHeader: React.FC<PageHeaderProps> = ({
 );
 
 export const PageContainer: React.FC<PageContainerProps> = ({ children }) => (
-  <div className="w-full px-4 py-6 sm:px-5 md:px-6 lg:px-8 lg:py-8 2xl:px-10">
+  <div className="min-w-0 w-full max-w-full px-3 py-5 sm:px-5 md:px-6 lg:px-8 lg:py-8 2xl:px-10">
     {children}
   </div>
 );

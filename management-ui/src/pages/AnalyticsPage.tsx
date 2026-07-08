@@ -1319,7 +1319,7 @@ export const AnalyticsPage: React.FC = () => {
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(16rem,20rem)]">
         <Panel className="py-2">
-          <div className="mb-5 flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+          <div className="mb-5 flex min-w-0 flex-col gap-4 md:flex-row md:items-start md:justify-between">
             <div className="min-w-0">
               <h2 className="text-sm font-semibold text-slate-100">Route trends</h2>
               <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1">
@@ -1331,8 +1331,8 @@ export const AnalyticsPage: React.FC = () => {
                 )}
               </div>
             </div>
-            <div className="flex flex-wrap items-center gap-3">
-              <div className="flex gap-1">
+            <div className="flex min-w-0 flex-wrap items-center gap-3 md:justify-end">
+              <div className="flex flex-wrap gap-1">
                 {analyticsTimeRangeOptions.map((option) => (
                   <button
                     key={option.key}
@@ -1348,7 +1348,7 @@ export const AnalyticsPage: React.FC = () => {
                   </button>
                 ))}
               </div>
-              <div className="flex gap-1">
+              <div className="flex flex-wrap gap-1">
                 {routeTrendMetricOptions.map((option) => (
                   <button
                     key={option.key}
@@ -1364,15 +1364,15 @@ export const AnalyticsPage: React.FC = () => {
                   </button>
                 ))}
               </div>
-              <div ref={routeViewOptionsRef} className="relative">
+              <div ref={routeViewOptionsRef} className="relative min-w-0 max-w-full">
                 <button
                   type="button"
                   onClick={() => setIsRouteViewOptionsOpen((open) => !open)}
                   aria-haspopup="menu"
                   aria-expanded={isRouteViewOptionsOpen}
-                  className="pacific-control-focus inline-flex h-7 items-center gap-1.5 rounded px-2.5 text-xs font-medium text-slate-400 transition-colors hover:bg-slate-900/35 hover:text-slate-200"
+                  className="pacific-control-focus inline-flex h-7 max-w-full items-center gap-1.5 rounded px-2.5 text-xs font-medium text-slate-400 transition-colors hover:bg-slate-900/35 hover:text-slate-200"
                 >
-                  <span>{routeViewOptionsLabel}</span>
+                  <span className="min-w-0 truncate">{routeViewOptionsLabel}</span>
                   <ChevronDown
                     size={14}
                     aria-hidden="true"
