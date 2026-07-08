@@ -21,6 +21,11 @@ const ProvisioningRedirect: React.FC = () => {
   return <Navigate to={`/settings/provisioning${location.search}`} replace />;
 };
 
+const RouteLimitsRedirect: React.FC = () => {
+  const location = useLocation();
+  return <Navigate to={`/routes${location.search}${location.hash}`} replace />;
+};
+
 export const AppRoutes: React.FC = () => {
   const { isLoading } = useAuth();
 
@@ -50,7 +55,8 @@ export const AppRoutes: React.FC = () => {
           <Route path="clients" element={<ClientsListPage />} />
           <Route path="clients/:id" element={<ClientDetailPage />} />
           <Route path="plans" element={<PlansPage />} />
-          <Route path="route-limits" element={<RouteLimitsPage />} />
+          <Route path="routes" element={<RouteLimitsPage />} />
+          <Route path="route-limits" element={<RouteLimitsRedirect />} />
           <Route path="analytics" element={<AnalyticsPage />} />
           <Route path="abuse-alerts" element={<AbuseAlertsPage />} />
           <Route path="settings" element={<Navigate to="/settings/gateway" replace />} />

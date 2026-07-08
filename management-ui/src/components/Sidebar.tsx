@@ -35,7 +35,7 @@ const MENU_ITEMS: SidebarItem[] = [
   { label: 'Dashboard', path: '/', icon: LayoutDashboard },
   { label: 'Clients', path: '/clients', icon: Users },
   { label: 'Plans', path: '/plans', icon: CreditCard },
-  { label: 'Route Limits', path: '/route-limits', icon: Route },
+  { label: 'Routes', path: '/routes', icon: Route },
   { label: 'Analytics', path: '/analytics', icon: BarChart3 },
   { label: 'Abuse Alerts', path: '/abuse-alerts', icon: ShieldAlert },
   { label: 'Admin Users', path: '/admin-users', icon: UserCog, requiresAdminUsersAccess: true }

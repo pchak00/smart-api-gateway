@@ -22,7 +22,7 @@ const getPageTitle = (pathname: string) => {
   if (pathname === '/') return 'Dashboard';
   if (pathname.startsWith('/clients')) return 'Clients';
   if (pathname.startsWith('/plans')) return 'Plans';
-  if (pathname.startsWith('/route-limits')) return 'Route Limits';
+  if (pathname.startsWith('/routes') || pathname.startsWith('/route-limits')) return 'Routes';
   if (pathname.startsWith('/analytics')) return 'Analytics';
   if (pathname.startsWith('/abuse-alerts')) return 'Abuse Alerts';
   if (pathname.startsWith('/admin-users')) return 'Admin Users';

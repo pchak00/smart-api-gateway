@@ -286,7 +286,7 @@ const GatewaySummaryStrip: React.FC<{
   const metrics: SummaryMetric[] = [
     { label: 'Clients', value: valueOrLoading(summary?.clientCount, isLoading) },
     { label: 'Plans', value: valueOrLoading(summary?.planCount, isLoading) },
-    { label: 'Route limits', value: valueOrLoading(summary?.routeLimitCount, isLoading) },
+    { label: 'Rate limits', value: valueOrLoading(summary?.routeLimitCount, isLoading) },
     {
       label: 'Requests',
       value: trafficValueOrLoading(trafficTrend.totalRequests, hasTrafficTrend, isTrafficLoading),
@@ -522,7 +522,7 @@ const TopRoutesPanel: React.FC<TopRoutesPanelProps> = ({ routes }) => {
 
 const quickActions: QuickAction[] = [
   { label: 'Create API client', to: '/clients?action=create', icon: Users },
-  { label: 'Create route limit', to: '/route-limits?action=create', icon: Plus },
+  { label: 'Create rate limit', to: '/routes?action=create', icon: Plus },
   { label: 'Create provisioning token', to: '/settings/provisioning?action=create', icon: KeyRound },
   { label: 'Open gateway settings', to: '/settings/gateway', icon: SlidersHorizontal }
 ];

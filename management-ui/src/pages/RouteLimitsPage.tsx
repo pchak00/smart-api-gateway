@@ -54,7 +54,7 @@ export const RouteLimitsPage: React.FC = () => {
     } catch (error) {
       console.error('Failed to load route limits:', error);
       setRouteLimits([]);
-      setErrorMessage('Backend route limits are unavailable right now.');
+      setErrorMessage('Backend rate limits are unavailable right now.');
     } finally {
       setIsLoading(false);
     }
@@ -123,13 +123,13 @@ export const RouteLimitsPage: React.FC = () => {
         routePattern: routePattern.trim(),
         requestsPerMinute: Number(requestsPerMinute)
       });
-      showToast({ message: 'Route limit created.', type: 'success' });
+      showToast({ message: 'Rate limit created.', type: 'success' });
       resetForm();
       setIsCreateOpen(false);
       await loadRouteLimits();
     } catch (error) {
       showToast({
-        message: getApiErrorMessage(error, 'Could not create route limit.'),
+        message: getApiErrorMessage(error, 'Could not create rate limit.'),
         type: 'error'
       });
     } finally {
@@ -154,13 +154,13 @@ export const RouteLimitsPage: React.FC = () => {
         routePattern: routePattern.trim(),
         requestPerMinute: Number(requestsPerMinute)
       });
-      showToast({ message: 'Route limit updated.', type: 'success' });
+      showToast({ message: 'Rate limit updated.', type: 'success' });
       setEditingLimit(null);
       resetForm();
       await loadRouteLimits();
     } catch (error) {
       showToast({
-        message: getApiErrorMessage(error, 'Could not update route limit.'),
+        message: getApiErrorMessage(error, 'Could not update rate limit.'),
         type: 'error'
       });
     } finally {
@@ -170,17 +170,17 @@ export const RouteLimitsPage: React.FC = () => {
 
   const handleDeleteRouteLimit = async (limit: RouteLimitDto) => {
     if (!canMutate || !limit.id) return;
-    const routePath = limit.routePattern ?? limit.path ?? 'this route limit';
+    const routePath = limit.routePattern ?? limit.path ?? 'this rate limit';
     if (!window.confirm(`Delete ${routePath}?`)) return;
 
     setIsSubmitting(true);
     try {
       await api.deleteRouteLimit(limit.id);
-      showToast({ message: 'Route limit deleted.', type: 'success' });
+      showToast({ message: 'Rate limit deleted.', type: 'success' });
       await loadRouteLimits();
     } catch (error) {
       showToast({
-        message: getApiErrorMessage(error, 'Could not delete route limit.'),
+        message: getApiErrorMessage(error, 'Could not delete rate limit.'),
         type: 'error'
       });
     } finally {
@@ -304,7 +304,7 @@ export const RouteLimitsPage: React.FC = () => {
   ), [routeLimits, trimmedSearchQuery]);
   const routeLimitResultLabel = trimmedSearchQuery
     ? `${filteredRouteLimits.length} ${filteredRouteLimits.length === 1 ? 'result' : 'results'}`
-    : `${routeLimits.length} ${routeLimits.length === 1 ? 'route limit' : 'route limits'}`;
+    : `${routeLimits.length} ${routeLimits.length === 1 ? 'rate limit' : 'rate limits'}`;
   const planOptions = useMemo<DropdownOption[]>(() => (
     plans
       .filter((plan) => plan.id !== undefined)
@@ -332,42 +332,57 @@ export const RouteLimitsPage: React.FC = () => {
   return (
     <div className="min-w-0">
       <PageHeader
-        title="Route Limits"
+        title="Routes"
         titleAccessory={
-          <InfoTooltip label="Route limits details">
-            Route limits override a plan&apos;s default quota for specific API paths.
+          <InfoTooltip label="Routes details">
+            Configure rate-limit overrides and analytics grouping rules for API routes.
           </InfoTooltip>
         }
         meta={errorMessage ? <span className="text-xs text-slate-500">{errorMessage}</span> : undefined}
       />
 
-      <div className="mb-6 flex w-full flex-col gap-3 sm:flex-row sm:items-start">
-        <ListSearch
-          value={searchQuery}
-          onChange={setSearchQuery}
-          placeholder="Search route limits..."
-          resultLabel={!isLoading && !errorMessage ? routeLimitResultLabel : undefined}
-        />
-        <IconButton
-          type="button"
-          disabled={!canMutate}
-          tooltip={canMutate ? 'Add route limit' : writeTooltip ?? 'Admin required'}
-          aria-label="Add route limit"
-          onClick={() => {
-            setEditingLimit(null);
-            resetForm();
-            setIsCreateOpen((open) => !open);
-          }}
-        >
-          <Plus size={20} strokeWidth={2.2} aria-hidden="true" />
-        </IconButton>
-      </div>
+      <section>
+        <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+          <div>
+            <div className="inline-flex items-center gap-1.5">
+              <h2 className="text-sm font-semibold text-slate-100">Rate limits</h2>
+              <InfoTooltip label="Rate limits details">
+                Rate limits override a plan&apos;s default quota for specific API paths.
+              </InfoTooltip>
+            </div>
+            <p className="mt-1 text-xs text-slate-500">
+              Per-route quota overrides for gateway traffic.
+            </p>
+          </div>
+        </div>
 
-      {(isCreateOpen || editingLimit) && (
-        <form
-          onSubmit={editingLimit ? handleUpdateRouteLimit : handleCreateRouteLimit}
-          className="mb-8 max-w-6xl py-2"
-        >
+        <div className="mb-6 flex w-full flex-col gap-3 sm:flex-row sm:items-start">
+          <ListSearch
+            value={searchQuery}
+            onChange={setSearchQuery}
+            placeholder="Search rate limits..."
+            resultLabel={!isLoading && !errorMessage ? routeLimitResultLabel : undefined}
+          />
+          <IconButton
+            type="button"
+            disabled={!canMutate}
+            tooltip={canMutate ? 'Add rate limit' : writeTooltip ?? 'Admin required'}
+            aria-label="Add rate limit"
+            onClick={() => {
+              setEditingLimit(null);
+              resetForm();
+              setIsCreateOpen((open) => !open);
+            }}
+          >
+            <Plus size={20} strokeWidth={2.2} aria-hidden="true" />
+          </IconButton>
+        </div>
+
+        {(isCreateOpen || editingLimit) && (
+          <form
+            onSubmit={editingLimit ? handleUpdateRouteLimit : handleCreateRouteLimit}
+            className="mb-8 max-w-6xl py-2"
+          >
           <div className="grid gap-4 lg:grid-cols-[12rem_minmax(18rem,1fr)_10rem_auto] lg:items-end">
             {!editingLimit && (
               <div className="block text-sm text-slate-500">
@@ -376,7 +391,7 @@ export const RouteLimitsPage: React.FC = () => {
                   value={planId}
                   onChange={setPlanId}
                   options={planOptions}
-                  ariaLabel="Select route limit plan"
+                  ariaLabel="Select rate limit plan"
                   className="mt-2"
                   disabled={plans.length === 0}
                 />
@@ -430,29 +445,28 @@ export const RouteLimitsPage: React.FC = () => {
               </SecondaryButton>
             </div>
           </div>
-        </form>
-      )}
+          </form>
+        )}
 
-      <section>
         {isLoading ? (
-          <div className="px-6 py-12 text-center text-sm text-slate-500">Loading route limits...</div>
+          <div className="px-6 py-12 text-center text-sm text-slate-500">Loading rate limits...</div>
         ) : errorMessage ? (
           <EmptyState
             icon={Route}
-            title="Route limits unavailable"
+            title="Rate limits unavailable"
             description={errorMessage}
           />
         ) : routeLimits.length === 0 ? (
           <EmptyState
             icon={Route}
-            title="No route limits to show"
-            description="Route-specific overrides will appear here once the gateway returns them."
+            title="No rate limits to show"
+            description="Route-specific quota overrides will appear here once the gateway returns them."
           />
         ) : filteredRouteLimits.length === 0 ? (
           <EmptyState
             icon={Route}
-            title="No route limits match this search."
-            description="Clear the search to show all route limits."
+            title="No rate limits match this search."
+            description="Clear the search to show all rate limits."
           />
         ) : (
           <div className="overflow-x-auto pb-16">
@@ -490,14 +504,14 @@ export const RouteLimitsPage: React.FC = () => {
                             {
                               label: 'Edit',
                               disabled: !canMutate || !limit.id,
-                              title: writeTooltip ?? (!limit.id ? 'Route limit response does not include an id' : undefined),
+                              title: writeTooltip ?? (!limit.id ? 'Rate limit response does not include an id' : undefined),
                               onClick: () => startEdit(limit)
                             },
                             {
                               label: 'Delete',
                               tone: 'danger',
                               disabled: !canMutate || !limit.id,
-                              title: writeTooltip ?? (!limit.id ? 'Route limit response does not include an id' : undefined),
+                              title: writeTooltip ?? (!limit.id ? 'Rate limit response does not include an id' : undefined),
                               onClick: () => handleDeleteRouteLimit(limit)
                             }
                           ]}
@@ -522,7 +536,7 @@ export const RouteLimitsPage: React.FC = () => {
               </InfoTooltip>
             </div>
             <p className="mt-1 text-xs text-slate-500">
-              {routeGroups.length} {routeGroups.length === 1 ? 'group' : 'groups'}
+              {routeGroups.length} {routeGroups.length === 1 ? 'group' : 'groups'} for operation-level analytics.
             </p>
           </div>
           <IconButton
@@ -660,7 +674,7 @@ export const RouteLimitsPage: React.FC = () => {
           <EmptyState
             icon={Route}
             title="No route groups to show"
-            description="Operation groups will appear here once they are created."
+            description="Analytics grouping rules will appear here once they are created."
           />
         ) : (
           <div className="overflow-x-auto">

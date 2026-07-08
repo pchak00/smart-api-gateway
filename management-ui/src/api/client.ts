@@ -224,7 +224,7 @@ class ApiClient {
     await this.axiosInstance.delete(`/admin/clients/plans/${id}`);
   }
 
-  // Route limit endpoints
+  // Rate limit endpoints
   async getRouteLimits(): Promise<RouteLimitDto[]> {
     const response = await this.axiosInstance.get<RouteLimitDto[]>('/admin/route-limits');
     return response.data;

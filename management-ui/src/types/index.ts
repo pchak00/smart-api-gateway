@@ -96,7 +96,7 @@ export interface ClientStatsDto {
   lastRequestTime?: string | null;
 }
 
-// Route Limits
+// Rate limits
 export interface RouteLimitDto {
   id?: number;
   planId?: number;
