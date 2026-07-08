@@ -318,6 +318,16 @@ export const RouteLimitsPage: React.FC = () => {
     { value: 'PREFIX', label: 'Prefix' },
     { value: 'GLOB', label: 'Glob' }
   ], []);
+  const routeGroupMethodOptions = useMemo<DropdownOption[]>(() => [
+    { value: 'ANY', label: 'ANY' },
+    { value: 'GET', label: 'GET' },
+    { value: 'POST', label: 'POST' },
+    { value: 'PUT', label: 'PUT' },
+    { value: 'PATCH', label: 'PATCH' },
+    { value: 'DELETE', label: 'DELETE' },
+    { value: 'OPTIONS', label: 'OPTIONS' },
+    { value: 'HEAD', label: 'HEAD' }
+  ], []);
 
   return (
     <div className="min-w-0">
@@ -563,13 +573,14 @@ export const RouteLimitsPage: React.FC = () => {
                   required
                 />
               </label>
-              <label className="flex items-center gap-2 pb-2 text-sm text-slate-400">
+              <label className="inline-flex h-9 items-center gap-3 text-sm text-slate-300">
                 <input
                   type="checkbox"
                   checked={groupActive}
                   onChange={(event) => setGroupActive(event.target.checked)}
-                  className="h-4 w-4 rounded border-slate-700 bg-slate-950 text-cyan-300 focus:ring-cyan-300/20"
+                  className="peer sr-only"
                 />
+                <span className="relative h-5 w-9 rounded-full bg-slate-800/80 transition-colors after:absolute after:left-0.5 after:top-0.5 after:h-4 after:w-4 after:rounded-full after:bg-slate-500 after:transition-transform peer-checked:bg-cyan-950/70 peer-checked:after:translate-x-4 peer-checked:after:bg-cyan-300/80 peer-focus-visible:after:bg-slate-100" />
                 Active
               </label>
               <div className="flex gap-2">
@@ -595,15 +606,16 @@ export const RouteLimitsPage: React.FC = () => {
                   key={`${index}-${rule.pattern}`}
                   className="grid gap-3 md:grid-cols-[8rem_minmax(14rem,1fr)_9rem_auto] md:items-end"
                 >
-                  <label className="block text-sm text-slate-500">
-                    Method
-                    <input
-                      value={rule.method}
-                      onChange={(event) => updateGroupRule(index, { method: event.target.value })}
-                      className="mt-2 quiet-field uppercase"
-                      placeholder="Any"
+                  <div className="block text-sm text-slate-500">
+                    <span>Method</span>
+                    <AppDropdown
+                      value={rule.method || 'ANY'}
+                      onChange={(value) => updateGroupRule(index, { method: value === 'ANY' ? '' : value })}
+                      options={routeGroupMethodOptions}
+                      ariaLabel={`Select method for rule ${index + 1}`}
+                      className="mt-2"
                     />
-                  </label>
+                  </div>
                   <label className="block text-sm text-slate-500">
                     Pattern
                     <input
