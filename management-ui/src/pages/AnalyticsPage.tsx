@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowDown, ArrowUp, Minus, Route, Search, Users, X } from 'lucide-react';
+import { ArrowDown, ArrowUp, Check, ChevronDown, Minus, Route, Search, Users, X } from 'lucide-react';
 import {
   Line,
   LineChart,
@@ -968,9 +968,11 @@ export const AnalyticsPage: React.FC = () => {
   const [routeSearch, setRouteSearch] = useState('');
   const [selectedCustomRoutes, setSelectedCustomRoutes] = useState<string[]>([]);
   const [expandedRouteKeys, setExpandedRouteKeys] = useState<string[]>([]);
+  const [isRouteViewOptionsOpen, setIsRouteViewOptionsOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [routeTrendHoverGuide, setRouteTrendHoverGuide] = useState<RouteTrendHoverGuide | null>(null);
+  const routeViewOptionsRef = useRef<HTMLDivElement | null>(null);
   const routeTrendHoverGuideRef = useRef<RouteTrendHoverGuide | null>(null);
   const routeTrendDotPositionsRef = useRef<Map<number, Map<string, RouteTrendDotPosition>>>(new Map());
   const analyticsWindow = useMemo(() => getCurrentAnalyticsWindow(selectedTimeRange), [selectedTimeRange]);
@@ -1219,6 +1221,30 @@ export const AnalyticsPage: React.FC = () => {
     setExpandedRouteKeys([]);
   }, [selectedGroupBy]);
 
+  useEffect(() => {
+    if (!isRouteViewOptionsOpen) return undefined;
+
+    const handlePointerDown = (event: MouseEvent) => {
+      if (!routeViewOptionsRef.current?.contains(event.target as Node)) {
+        setIsRouteViewOptionsOpen(false);
+      }
+    };
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setIsRouteViewOptionsOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handlePointerDown);
+    document.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      document.removeEventListener('mousedown', handlePointerDown);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isRouteViewOptionsOpen]);
+
   const summaryTrend = useMemo(() => getSummaryTrend(filledTrafficAnalytics), [filledTrafficAnalytics]);
   const routeAnalyticsSort = useMemo<AnalyticsSortSelection>(() => ({
     field: routeAnalyticsSortField,
@@ -1260,6 +1286,9 @@ export const AnalyticsPage: React.FC = () => {
     [clientAnalyticsSort, filteredClientAnalytics]
   );
   const selectedClientPlanLabel = clientPlanFilterOptions.find((option) => option.value === clientPlanFilter)?.label ?? 'All';
+  const selectedRouteTrendModeLabel = routeTrendDisplayOptions.find((option) => option.key === routeTrendMode)?.label ?? 'Top 5';
+  const selectedGroupByLabel = routeAnalyticsGroupByOptions.find((option) => option.key === selectedGroupBy)?.label ?? 'Operation';
+  const routeViewOptionsLabel = `View: ${selectedRouteTrendModeLabel} · ${selectedGroupByLabel}`;
   const routeSearchPlaceholder = selectedCustomRoutes.length >= 5
     ? 'Remove a route to add another'
     : selectedCustomRoutes.length > 0
@@ -1335,38 +1364,85 @@ export const AnalyticsPage: React.FC = () => {
                   </button>
                 ))}
               </div>
-              <div className="flex gap-1">
-                {routeTrendDisplayOptions.map((option) => (
-                  <button
-                    key={option.key}
-                    type="button"
-                    onClick={() => setRouteTrendMode(option.key)}
-                    className={`pacific-control-focus rounded px-2.5 py-1 text-xs font-medium transition-colors ${
-                      routeTrendMode === option.key
-                        ? 'bg-slate-800/45 text-slate-100'
-                        : 'text-slate-400 hover:bg-slate-900/35 hover:text-slate-200'
-                    }`}
+              <div ref={routeViewOptionsRef} className="relative">
+                <button
+                  type="button"
+                  onClick={() => setIsRouteViewOptionsOpen((open) => !open)}
+                  aria-haspopup="menu"
+                  aria-expanded={isRouteViewOptionsOpen}
+                  className="pacific-control-focus inline-flex h-7 items-center gap-1.5 rounded px-2.5 text-xs font-medium text-slate-400 transition-colors hover:bg-slate-900/35 hover:text-slate-200"
+                >
+                  <span>{routeViewOptionsLabel}</span>
+                  <ChevronDown
+                    size={14}
+                    aria-hidden="true"
+                    className={`text-slate-600 transition-transform ${isRouteViewOptionsOpen ? 'rotate-180' : ''}`}
+                  />
+                </button>
+                {isRouteViewOptionsOpen && (
+                  <div
+                    role="menu"
+                    aria-label="Route trend view options"
+                    className="glass-popover absolute right-0 top-full z-30 mt-1 w-56 rounded-md py-2"
                   >
-                    {option.label}
-                  </button>
-                ))}
-              </div>
-              <div className="flex items-center gap-1">
-                <span className="text-xs text-slate-600">Group by</span>
-                {routeAnalyticsGroupByOptions.map((option) => (
-                  <button
-                    key={option.key}
-                    type="button"
-                    onClick={() => setSelectedGroupBy(option.key)}
-                    className={`pacific-control-focus rounded px-2.5 py-1 text-xs font-medium transition-colors ${
-                      selectedGroupBy === option.key
-                        ? 'bg-slate-800/45 text-slate-100'
-                        : 'text-slate-400 hover:bg-slate-900/35 hover:text-slate-200'
-                    }`}
-                  >
-                    {option.label}
-                  </button>
-                ))}
+                    <div className="px-2 pb-2">
+                      <p className="px-2 pb-1 text-[11px] font-medium text-slate-600">Routes shown</p>
+                      <div className="space-y-0.5">
+                        {routeTrendDisplayOptions.map((option) => {
+                          const isSelected = routeTrendMode === option.key;
+
+                          return (
+                            <button
+                              key={option.key}
+                              type="button"
+                              role="menuitemradio"
+                              aria-checked={isSelected}
+                              onClick={() => setRouteTrendMode(option.key)}
+                              className={`flex w-full items-center gap-2 rounded px-2 py-1.5 text-left text-xs transition-colors ${
+                                isSelected
+                                  ? 'text-slate-100'
+                                  : 'text-slate-400 hover:bg-slate-900/60 hover:text-slate-200'
+                              }`}
+                            >
+                              <span className="flex h-4 w-4 shrink-0 items-center justify-center text-slate-500">
+                                {isSelected && <Check size={13} aria-hidden="true" />}
+                              </span>
+                              {option.label}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                    <div className="px-2 pt-1">
+                      <p className="px-2 pb-1 text-[11px] font-medium text-slate-600">Group by</p>
+                      <div className="space-y-0.5">
+                        {routeAnalyticsGroupByOptions.map((option) => {
+                          const isSelected = selectedGroupBy === option.key;
+
+                          return (
+                            <button
+                              key={option.key}
+                              type="button"
+                              role="menuitemradio"
+                              aria-checked={isSelected}
+                              onClick={() => setSelectedGroupBy(option.key)}
+                              className={`flex w-full items-center gap-2 rounded px-2 py-1.5 text-left text-xs transition-colors ${
+                                isSelected
+                                  ? 'text-slate-100'
+                                  : 'text-slate-400 hover:bg-slate-900/60 hover:text-slate-200'
+                              }`}
+                            >
+                              <span className="flex h-4 w-4 shrink-0 items-center justify-center text-slate-500">
+                                {isSelected && <Check size={13} aria-hidden="true" />}
+                              </span>
+                              {option.label}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           </div>
