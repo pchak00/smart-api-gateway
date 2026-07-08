@@ -37,6 +37,7 @@ export const Tooltip: React.FC<TooltipProps> = ({
   const [isOpen, setIsOpen] = useState(false);
   const [tooltipPosition, setTooltipPosition] = useState<{ left: number; top: number } | null>(null);
   const pointerActivatedRef = useRef(false);
+  const suppressNextClickRef = useRef(false);
   const wrapperRef = useRef<HTMLSpanElement | null>(null);
   const tooltipRef = useRef<HTMLSpanElement | null>(null);
   const child = React.Children.only(children);
@@ -143,18 +144,32 @@ export const Tooltip: React.FC<TooltipProps> = ({
     <span
       ref={wrapperRef}
       className={wrapperClassName}
-      onPointerEnter={() => {
-        if (!disabled) setIsOpen(true);
+      onPointerEnter={(event) => {
+        if (!disabled && event.pointerType === 'mouse') setIsOpen(true);
       }}
-      onPointerLeave={() => {
+      onPointerLeave={(event) => {
+        if (event.pointerType !== 'mouse') return;
         pointerActivatedRef.current = false;
         close();
       }}
-      onPointerDown={() => {
+      onPointerDown={(event) => {
         pointerActivatedRef.current = true;
+        if (event.pointerType === 'mouse') {
+          close();
+          return;
+        }
+
+        suppressNextClickRef.current = true;
+        setIsOpen((open) => !open);
+      }}
+      onClick={() => {
+        if (suppressNextClickRef.current) {
+          suppressNextClickRef.current = false;
+          return;
+        }
+
         close();
       }}
-      onClick={close}
       onFocus={() => {
         if (!disabled && !pointerActivatedRef.current) {
           setIsOpen(true);

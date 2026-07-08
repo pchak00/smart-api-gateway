@@ -199,6 +199,18 @@ export const PlansPage: React.FC = () => {
     <div className="min-w-0">
       <PageHeader
         title="Plans"
+        titleAccessory={
+          <IconButton
+            type="button"
+            disabled={!canMutate}
+            tooltip={canMutate ? 'Create plan' : writeTooltip ?? 'Admin required'}
+            aria-label="Create plan"
+            className="sm:hidden"
+            onClick={startCreate}
+          >
+            <Plus size={20} strokeWidth={2.2} aria-hidden="true" />
+          </IconButton>
+        }
         meta={errorMessage ? <span className="text-xs text-slate-500">{errorMessage}</span> : undefined}
       />
 
@@ -214,6 +226,7 @@ export const PlansPage: React.FC = () => {
           disabled={!canMutate}
           tooltip={canMutate ? 'Create plan' : writeTooltip ?? 'Admin required'}
           aria-label="Create plan"
+          className="hidden sm:inline-flex"
           onClick={startCreate}
         >
           <Plus size={20} strokeWidth={2.2} aria-hidden="true" />

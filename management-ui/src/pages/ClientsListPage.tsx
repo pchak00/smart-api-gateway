@@ -318,6 +318,22 @@ export const ClientsListPage: React.FC = () => {
     <div className="min-w-0">
       <PageHeader
         title="Clients"
+        titleAccessory={
+          <IconButton
+            type="button"
+            disabled={!canMutate}
+            tooltip={canMutate ? 'Create client' : 'Admin required'}
+            aria-label="Create client"
+            className="sm:hidden"
+            onClick={() => {
+              resetCreateForm();
+              setEditingClient(null);
+              setIsCreateOpen((open) => !open);
+            }}
+          >
+            <Plus size={20} strokeWidth={2.2} aria-hidden="true" />
+          </IconButton>
+        }
         meta={clientsMeta}
       />
 
@@ -347,6 +363,7 @@ export const ClientsListPage: React.FC = () => {
           disabled={!canMutate}
           tooltip={canMutate ? 'Create client' : 'Admin required'}
           aria-label="Create client"
+          className="hidden sm:inline-flex"
           onClick={() => {
             resetCreateForm();
             setEditingClient(null);

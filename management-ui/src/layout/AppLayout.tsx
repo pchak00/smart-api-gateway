@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
-import { X } from 'lucide-react';
+import { ChevronLeft } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { Sidebar } from '../components/Sidebar';
 import { TopBar } from '../components/TopBar';
@@ -25,7 +25,7 @@ const getPageTitle = (pathname: string) => {
   if (pathname.startsWith('/routes') || pathname.startsWith('/route-limits')) return 'Routes';
   if (pathname.startsWith('/analytics')) return 'Analytics';
   if (pathname.startsWith('/abuse-alerts')) return 'Abuse Alerts';
-  if (pathname.startsWith('/admin-users')) return 'Admin Users';
+  if (pathname.startsWith('/admin-users')) return 'Admins';
   if (pathname.startsWith('/settings/gateway')) return 'Gateway Settings';
   if (pathname.startsWith('/settings/provisioning') || pathname.startsWith('/provisioning')) return 'Provisioning';
 
@@ -101,7 +101,7 @@ export const AppLayout: React.FC = () => {
               aria-label="Close navigation"
               className="pacific-icon-focus absolute right-3 top-4 z-20 inline-flex h-9 w-9 items-center justify-center rounded-md text-slate-500 transition-colors hover:bg-slate-900/60 hover:text-slate-100"
             >
-              <X size={18} aria-hidden="true" />
+              <ChevronLeft size={18} aria-hidden="true" />
             </button>
             <Sidebar
               isSuperAdmin={isSuperAdmin}

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Menu } from 'lucide-react';
+import { ChevronRight } from 'lucide-react';
 
 interface TopBarProps {
   title: string;
@@ -17,7 +17,7 @@ export const TopBar: React.FC<TopBarProps> = ({ title, onMenuClick }) => (
       aria-label="Open navigation"
       className="pacific-icon-focus inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-md text-slate-400 transition-colors hover:bg-slate-900/60 hover:text-slate-100"
     >
-      <Menu size={19} aria-hidden="true" />
+      <ChevronRight size={19} aria-hidden="true" />
     </button>
     <div className="min-w-0">
       <p className="truncate text-sm font-semibold leading-none text-slate-100">{title}</p>

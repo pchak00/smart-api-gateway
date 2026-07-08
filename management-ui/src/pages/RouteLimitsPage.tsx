@@ -333,11 +333,6 @@ export const RouteLimitsPage: React.FC = () => {
     <div className="min-w-0">
       <PageHeader
         title="Routes"
-        titleAccessory={
-          <InfoTooltip label="Routes details">
-            Configure rate-limit overrides and analytics grouping rules for API routes.
-          </InfoTooltip>
-        }
         meta={errorMessage ? <span className="text-xs text-slate-500">{errorMessage}</span> : undefined}
       />
 

@@ -140,7 +140,7 @@ export const AdminUsersPage: React.FC = () => {
     } catch (error) {
       console.error('Failed to load admin users:', error);
       setAdminUsers([]);
-      setErrorMessage('Backend admin users are unavailable right now.');
+      setErrorMessage('Backend admins are unavailable right now.');
     } finally {
       setIsLoading(false);
     }
@@ -184,13 +184,13 @@ export const AdminUsersPage: React.FC = () => {
         password: newPassword,
         role: newRole
       });
-      showToast({ message: 'Admin user created.', type: 'success' });
+      showToast({ message: 'Admin created.', type: 'success' });
       resetCreateForm();
       setIsCreateOpen(false);
       await loadAdminUsers();
     } catch (error) {
       showToast({
-        message: getApiErrorMessage(error, 'Could not create admin user.'),
+        message: getApiErrorMessage(error, 'Could not create admin.'),
         type: 'error'
       });
     } finally {
@@ -281,16 +281,16 @@ export const AdminUsersPage: React.FC = () => {
 
   const handleDeleteAdmin = async (adminUser: AdminUserDto) => {
     if (!adminUser.id || !canManageAdminUser(role, adminUser.role)) return;
-    if (!window.confirm(`Delete admin user ${adminUser.username}?`)) return;
+    if (!window.confirm(`Delete admin ${adminUser.username}?`)) return;
 
     setIsSubmitting(true);
     try {
       await api.deleteAdminUser(adminUser.id);
-      showToast({ message: 'Admin user deleted.', type: 'success' });
+      showToast({ message: 'Admin deleted.', type: 'success' });
       await loadAdminUsers();
     } catch (error) {
       showToast({
-        message: getApiErrorMessage(error, 'Could not delete admin user.'),
+        message: getApiErrorMessage(error, 'Could not delete admin.'),
         type: 'error'
       });
     } finally {
@@ -301,7 +301,7 @@ export const AdminUsersPage: React.FC = () => {
   return (
     <div className="min-w-0">
       <PageHeader
-        title="Admin Users"
+        title="Admins"
         titleAccessory={
           <IconButton
             type="button"
@@ -431,18 +431,18 @@ export const AdminUsersPage: React.FC = () => {
 
       <section>
         {isLoading ? (
-          <div className="px-6 py-12 text-center text-sm text-slate-500">Loading admin users...</div>
+          <div className="px-6 py-12 text-center text-sm text-slate-500">Loading admins...</div>
         ) : errorMessage ? (
           <EmptyState
             icon={UserCog}
-            title="Admin users unavailable"
+            title="Admins unavailable"
             description={errorMessage}
           />
         ) : adminUsers.length === 0 ? (
           <EmptyState
             icon={UserCog}
-            title="No admin users to show"
-            description="Admin user records will appear here once the gateway returns them."
+            title="No admins to show"
+            description="Admin records will appear here once the gateway returns them."
           />
         ) : (
           <div className="overflow-x-auto pb-16">

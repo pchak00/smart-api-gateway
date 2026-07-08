@@ -56,31 +56,14 @@ export const AppDropdown: React.FC<AppDropdownProps> = ({
       return;
     }
 
-    const rect = root.getBoundingClientRect();
     const viewportPadding = 12;
-    const viewportWidth = window.innerWidth;
-    const viewportHeight = window.innerHeight;
-    const width = Math.min(Math.max(rect.width, 220), viewportWidth - viewportPadding * 2);
-    const left = Math.min(
-      Math.max(rect.left, viewportPadding),
-      viewportWidth - viewportPadding - width
-    );
-    const spaceBelow = viewportHeight - rect.bottom - viewportPadding;
-    const spaceAbove = rect.top - viewportPadding;
-    const placeAbove = spaceBelow < 180 && spaceAbove > spaceBelow;
-    const availableHeight = Math.max(
-      140,
-      Math.min(256, (placeAbove ? spaceAbove : spaceBelow) - 8)
-    );
-    const top = placeAbove
-      ? Math.max(viewportPadding, rect.top - availableHeight - 8)
-      : Math.min(rect.bottom + 4, viewportHeight - viewportPadding - availableHeight);
+    const availableHeight = Math.max(180, window.innerHeight - viewportPadding * 2);
 
     setMobileMenuStyle({
-      left,
-      top,
-      width,
-      maxHeight: availableHeight,
+      left: viewportPadding,
+      right: viewportPadding,
+      bottom: viewportPadding,
+      maxHeight: Math.min(availableHeight, 360),
       position: 'fixed',
       zIndex: 60
     });

@@ -38,7 +38,7 @@ const MENU_ITEMS: SidebarItem[] = [
   { label: 'Routes', path: '/routes', icon: Route },
   { label: 'Analytics', path: '/analytics', icon: BarChart3 },
   { label: 'Abuse Alerts', path: '/abuse-alerts', icon: ShieldAlert },
-  { label: 'Admin Users', path: '/admin-users', icon: UserCog, requiresAdminUsersAccess: true }
+  { label: 'Admins', path: '/admin-users', icon: UserCog, requiresAdminUsersAccess: true }
 ];
 
 const SETTINGS_ITEMS: SidebarItem[] = [
@@ -239,8 +239,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   <Icon size={17} aria-hidden="true" className="shrink-0" />
                   <span
                     className={cx(
-                      'min-w-0 flex-1 overflow-hidden whitespace-nowrap transition-[opacity,width] duration-150 ease-out',
-                      isCollapsed ? 'w-0 opacity-0' : 'w-auto opacity-100'
+                      'min-w-0 overflow-hidden whitespace-nowrap transition-[opacity,width] duration-150 ease-out',
+                      isCollapsed ? 'w-0 flex-none opacity-0' : 'w-auto flex-1 opacity-100'
                     )}
                   >
                     {item.label}
@@ -264,7 +264,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 onClick={onNavigate}
                 aria-label={isCollapsed ? item.label : undefined}
                 className={cx(
-                  'pacific-control-focus flex min-w-0 items-center rounded-lg py-2.5 text-sm transition-colors',
+                  'pacific-control-focus flex w-full min-w-0 items-center rounded-lg py-2.5 text-sm transition-colors',
                   isCollapsed ? 'justify-center px-0' : 'gap-3 px-3',
                   isActive
                     ? 'bg-slate-900/65 text-slate-100'
@@ -274,8 +274,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 <Icon size={17} aria-hidden="true" className="shrink-0" />
                 <span
                   className={cx(
-                    'min-w-0 flex-1 overflow-hidden whitespace-nowrap transition-[opacity,width] duration-150 ease-out',
-                    isCollapsed ? 'w-0 opacity-0' : 'w-auto opacity-100'
+                    'min-w-0 overflow-hidden whitespace-nowrap transition-[opacity,width] duration-150 ease-out',
+                    isCollapsed ? 'w-0 flex-none opacity-0' : 'w-auto flex-1 opacity-100'
                   )}
                 >
                   {item.label}
@@ -312,7 +312,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 onClick={onNavigate}
                 aria-label={isCollapsed ? item.label : undefined}
                 className={cx(
-                  'pacific-control-focus flex min-w-0 items-center rounded-lg py-2.5 text-sm transition-colors',
+                  'pacific-control-focus flex w-full min-w-0 items-center rounded-lg py-2.5 text-sm transition-colors',
                   isCollapsed ? 'justify-center px-0' : 'gap-3 px-3',
                   isActive
                     ? 'bg-slate-900/65 text-slate-100'
@@ -322,8 +322,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 <Icon size={17} aria-hidden="true" className="shrink-0" />
                 <span
                   className={cx(
-                    'min-w-0 flex-1 overflow-hidden whitespace-nowrap transition-[opacity,width] duration-150 ease-out',
-                    isCollapsed ? 'w-0 opacity-0' : 'w-auto opacity-100'
+                    'min-w-0 overflow-hidden whitespace-nowrap transition-[opacity,width] duration-150 ease-out',
+                    isCollapsed ? 'w-0 flex-none opacity-0' : 'w-auto flex-1 opacity-100'
                   )}
                 >
                   {item.label}
