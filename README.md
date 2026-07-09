@@ -1,15 +1,20 @@
-# Smart API Gateway
+# Pacific — Smart API Gateway
 
-A self-hostable API gateway and API management platform built with Spring Boot, Redis, PostgreSQL, and Docker.
+Pacific is a self-hostable API gateway and API management platform built with Spring Boot, Redis, PostgreSQL, Docker, and a responsive React management UI.
+
+The repository and backend service names still use Smart API Gateway context, but Pacific is the product name used for the current operator experience.
 
 Features include:
 - distributed Redis-backed rate limiting
 - plan-based quotas
-- route-specific throttling
-- JWT admin authentication with refresh sessions
+- route-specific throttling with route groups for operation-level analytics
+- API key rotation and active/disabled client controls
+- stale client visibility for clients with no recent traffic
+- JWT admin authentication with refresh sessions, password reset, and a strong admin password policy
 - role-based admin authorization
-- usage analytics
+- usage analytics with 7d, 30d, 90d, and 12m UI ranges
 - abuse detection with alert lifecycle
+- emergency owner recovery guarded by `ADMIN_RECOVERY_TOKEN`
 
 Designed as a developer-first, SaaS-oriented gateway platform for small-to-mid sized teams.
 
@@ -33,7 +38,7 @@ built-in product-oriented features such as:
 - developer-focused administration
 - and simplified onboarding experiences
 
-Smart API Gateway was built to explore a middle ground:
+Pacific was built to explore a middle ground:
 a developer-first, self-hostable API management platform that combines infrastructure capabilities with SaaS-style management features.
 
 The goal is not to compete with low-level high-performance proxies,
@@ -42,19 +47,26 @@ but to provide a more accessible and product-oriented gateway experience for dev
 ## Current Capabilities
 
 - API key authentication for protected gateway routes.
+- API key rotation for clients, with the new raw key returned only in the rotation response.
+- Active/disabled client lifecycle controls; disabled clients receive `403 Forbidden` on protected gateway routes.
+- Stale client visibility in the Clients page for active clients with no traffic for 30+ days, including never-active clients.
 - Redis-backed rate limiting with plan quotas and route-specific wildcard overrides.
 - Usage logging, dashboard metrics, route analytics, client analytics, and traffic analytics.
+- Analytics UI ranges for 7d, 30d, 90d, and 12m windows.
+- Route analytics grouping by `OPERATION`, `PATTERN`, or `RAW_PATH`.
+- Route groups for operation-level analytics, with Exact, Prefix, and Glob matching rules.
 - Abuse detection with `OPEN`, `ACKNOWLEDGED`, and `RESOLVED` alert states.
-- JWT admin login, refresh sessions, logout, and role-based access control.
+- JWT admin login, refresh sessions, logout, admin password reset, strong password policy enforcement, and role-based access control.
+- Last-owner protection plus optional emergency owner recovery guarded by `ADMIN_RECOVERY_TOKEN`.
 - Manual client provisioning from the Pacific management UI or admin API.
 - Server-to-server client provisioning with provisioning token management.
 - DB-backed gateway settings for upstream URL, health check path, and timeout.
 - Dynamic upstream routing with environment/default fallback and test connection support.
-- Dockerized Pacific management UI for operating the gateway locally.
+- Dockerized, responsive Pacific management UI for operating the gateway locally.
 
 ## Architecture Overview
 
-Smart API Gateway is designed as a containerized, multi-service backend system where the gateway acts as the central policy enforcement layer between API consumers and backend services.
+Pacific is designed as a containerized, multi-service backend system where the gateway acts as the central policy enforcement layer between API consumers and backend services.
 
 Instead of acting only as a request router, the gateway is responsible for enforcing access rules, applying traffic policies, recording usage, detecting abuse, and protecting administrative platform features.
 
@@ -147,13 +159,15 @@ Rate limit state is kept outside the gateway process so the system is not depend
 
 PostgreSQL stores persistent platform data such as:
 
-- clients and API keys
+- clients, active/disabled state, and API keys
 - plans and quota rules
 - route-specific limits
+- route groups and route group rules
 - gateway settings
 - usage logs
 - abuse alerts
-- admin users and roles
+- admin users, roles, password hashes, and refresh sessions
+- provisioning tokens
 
 #### Backend Service
 
@@ -265,7 +279,16 @@ This allows administrators to observe:
 - request activity
 - blocked traffic patterns
 - client usage behavior
-- route-level traffic trends
+- stale clients with no recent traffic
+- route-level traffic trends by operation, normalized pattern, or raw path
+
+The Pacific UI supports 7d, 30d, 90d, and 12m analytics ranges. The backend analytics API accepts explicit `startDate` and `endDate` query parameters, and the UI maps those presets to concrete date windows.
+
+Route analytics can be grouped with `groupBy=OPERATION`, `groupBy=PATTERN`, or `groupBy=RAW_PATH`:
+
+- `OPERATION` groups traffic by active route groups first, then falls back to normalized patterns.
+- `PATTERN` normalizes numeric and UUID path segments, such as `/api/users/:id`.
+- `RAW_PATH` preserves the request path shape without route group or pattern normalization.
 
 #### Abuse Detection
 
@@ -334,6 +357,7 @@ For a polished walkthrough, see [Demo Script](docs/DEMO_SCRIPT.md).
 | `JWT_SECRET` | Admin JWT signing secret | replace with a long random secret |
 | `JWT_EXPIRATION_MS` | Admin access token lifetime | `3600000` |
 | `ADMIN_REFRESH_TOKEN_EXPIRATION_MS` | Admin refresh token lifetime | `604800000` |
+| `ADMIN_RECOVERY_TOKEN` | Optional break-glass token enabling `POST /admin/recovery/owner`; leave unset to disable recovery | unset |
 | `BACKEND_SERVICE_URL` | Fallback upstream backend URL for gateway routing | `http://backend-service:8081` |
 | `CORS_ALLOWED_ORIGINS` | Comma-separated allowed management UI origins | local UI origins |
 | `VITE_API_BASE_URL` | Browser-visible gateway/admin API base URL embedded into the UI bundle | `http://localhost:8080` |
@@ -432,7 +456,7 @@ username: owner
 password: Coastal gateway passphrase 2026!
 ```
 
-4. Inspect the dashboard and analytics pages. They use real backend usage logs and aggregate data from gateway traffic.
+4. Inspect the Dashboard and Analytics pages. They use real backend usage logs and aggregate data from gateway traffic.
 
 5. Create or inspect an API client in the Clients page. For a clean local database, the seeded free client has this API key:
 
@@ -457,7 +481,7 @@ for i in {1..15}; do
 done
 ```
 
-8. Return to the UI and confirm dashboard and analytics values update, blocked requests appear, and an abuse alert appears once the blocked-request threshold is crossed. As `owner` or `super admin`, acknowledge or resolve the alert from Abuse Alerts.
+8. Return to the UI and confirm Dashboard and Analytics values update, blocked requests appear, and an abuse alert appears once the blocked-request threshold is crossed. The Routes page contains Rate limits and Route groups; route groups are used by operation-level analytics. As `owner` or `super admin`, acknowledge or resolve the alert from Abuse Alerts.
 
 9. Log out and sign in as the seeded viewer:
 
@@ -466,7 +490,7 @@ username: viewer
 password: Coastal gateway passphrase 2026!
 ```
 
-The viewer can inspect allowed data but cannot mutate resources. The Admin Users area is blocked, and mutation controls are disabled or guarded.
+The viewer can inspect allowed data but cannot mutate resources. The Admins area is blocked, and mutation controls are disabled or guarded.
 
 ---
 
@@ -499,7 +523,7 @@ docker compose down -v
 
 The application automatically seeds demo data when the database is empty.
 
-#### Admin Users
+#### Admins
 
 | Username | Password | Role |
 |-----------|-----------|---------|
@@ -592,10 +616,22 @@ curl http://localhost:8080/admin/dashboard/summary \
 curl http://localhost:8080/admin/analytics/traffic \
   -H "Authorization: Bearer <token>"
 
+curl "http://localhost:8080/admin/analytics/traffic?startDate=2026-07-01&endDate=2026-07-07" \
+  -H "Authorization: Bearer <token>"
+
 curl http://localhost:8080/admin/analytics/routes \
   -H "Authorization: Bearer <token>"
 
+curl "http://localhost:8080/admin/analytics/routes?startDate=2026-07-01&endDate=2026-07-07&groupBy=OPERATION" \
+  -H "Authorization: Bearer <token>"
+
+curl "http://localhost:8080/admin/analytics/route-traffic?startDate=2026-07-01&endDate=2026-07-07&groupBy=PATTERN" \
+  -H "Authorization: Bearer <token>"
+
 curl http://localhost:8080/admin/analytics/clients \
+  -H "Authorization: Bearer <token>"
+
+curl "http://localhost:8080/admin/analytics/clients?planName=FREE&startDate=2026-07-01&endDate=2026-07-07" \
   -H "Authorization: Bearer <token>"
 
 curl http://localhost:8080/admin/settings/gateway \
@@ -604,6 +640,8 @@ curl http://localhost:8080/admin/settings/gateway \
 curl "http://localhost:8080/admin/abuse-alerts?status=OPEN" \
   -H "Authorization: Bearer <token>"
 ```
+
+Analytics date parameters use ISO dates. Route analytics endpoints accept `groupBy=OPERATION`, `groupBy=PATTERN`, or `groupBy=RAW_PATH`; the default is `OPERATION`. The Pacific UI's 7d, 30d, 90d, and 12m controls generate explicit `startDate` and `endDate` values for these endpoints.
 
 Gateway settings can be updated by an Owner or Admin:
 
@@ -755,7 +793,15 @@ curl -X DELETE http://localhost:8080/admin/clients/1 \
 
 ---
 
-### Route Limit Management
+### Route Configuration
+
+The Pacific UI labels this area as Routes and separates route configuration into Rate limits and Route groups.
+
+Rate limits are enforcement rules. They override a plan's default quota for specific API paths. Backend API names still use route-limit terminology.
+
+Route groups are analytics rules. They group related raw request paths into product-level operations, such as "Product catalog" or "Report generation", so route analytics can be read at the operation level instead of only as individual URLs.
+
+#### Rate Limits
 
 Route limits support exact paths and simple wildcard patterns. Use `*` for one path segment and `**` at the end of a pattern to match nested routes, such as `/api/users/*` or `/api/reports/**`. Exact paths still match only that path.
 
@@ -797,9 +843,50 @@ curl -X DELETE http://localhost:8080/admin/clients/route-limits/1 \
 -H "Authorization: Bearer <token>"
 ```
 
+#### Route Groups
+
+Route groups are configured at `/admin/route-groups` and contain one or more rules. Rules can optionally specify an HTTP method. If method is omitted, the rule can match any method.
+
+Route group rule matching supports:
+
+- `EXACT` — matches one normalized path exactly, such as `/api/products`.
+- `PREFIX` — matches the path and nested children, such as `/api/reports` and `/api/reports/daily`.
+- `GLOB` — supports whole-segment `*` and trailing `**`, such as `/api/users/*` or `/api/reports/**`.
+
+Higher-priority active route groups are considered first for `OPERATION` analytics grouping.
+
+```bash
+curl -X POST http://localhost:8080/admin/route-groups \
+-H "Authorization: Bearer <token>" \
+-H "Content-Type: application/json" \
+-d '{
+  "name":"Product catalog",
+  "description":"Read operations for product browsing",
+  "active":true,
+  "priority":10,
+  "rules":[
+    {
+      "method":"GET",
+      "pattern":"/api/products/**",
+      "matchType":"GLOB"
+    }
+  ]
+}'
+```
+
+#### Analytics Grouping
+
+Route analytics endpoints accept `groupBy`:
+
+- `OPERATION` groups by active route groups first, then falls back to normalized route patterns.
+- `PATTERN` groups by normalized path patterns, replacing numeric segments with `:id` and UUIDs with `:uuid`.
+- `RAW_PATH` groups by the raw request path shape.
+
 ---
 
 ### Admin Management
+
+The UI labels this area as Admins. Backend endpoint paths continue to use `/admin/users`.
 
 #### Create Admin
 
@@ -825,11 +912,40 @@ curl -X PATCH http://localhost:8080/admin/users/2/role \
 }'
 ```
 
+#### Reset Admin Password
+
+Owners can reset passwords for any admin. Admins can reset Viewer passwords only. New passwords must pass the same admin password policy used at account creation.
+
+```bash
+curl -X PATCH http://localhost:8080/admin/users/2/password \
+-H "Authorization: Bearer <token>" \
+-H "Content-Type: application/json" \
+-d '{
+  "newPassword":"<new-admin-password>",
+  "confirmPassword":"<new-admin-password>"
+}'
+```
+
 #### Delete Admin
 
 ```bash
 curl -X DELETE http://localhost:8080/admin/users/2 \
 -H "Authorization: Bearer <token>"
+```
+
+#### Emergency Owner Recovery
+
+`POST /admin/recovery/owner` is a break-glass recovery endpoint for restoring or creating an Owner account. It is disabled unless `ADMIN_RECOVERY_TOKEN` is set, and callers must provide the matching token in the `X-Admin-Recovery-Token` header.
+
+```bash
+curl -X POST http://localhost:8080/admin/recovery/owner \
+-H "X-Admin-Recovery-Token: <recovery-token>" \
+-H "Content-Type: application/json" \
+-d '{
+  "username":"owner",
+  "newPassword":"<new-owner-password>",
+  "confirmPassword":"<new-owner-password>"
+}'
 ```
 
 #### Safety Rules
@@ -838,6 +954,8 @@ curl -X DELETE http://localhost:8080/admin/users/2 \
 - Admins can create or delete Viewer accounts, but cannot manage Owners or other Admins.
 - Viewers cannot mutate admin users.
 - The system prevents deletion or demotion of the last Owner.
+- Admin passwords must be 12 to 128 characters, must not contain the username, must not be common/demo passwords, and must meet the built-in strength check.
+- Emergency owner recovery should remain unset unless a deployment intentionally enables break-glass recovery.
 
 ---
 
