@@ -1,2 +1,6 @@
 .env
 *.env.local
+
+# Local AI and project context
+AGENTS.md
+PROJECT_HANDOFF.md
