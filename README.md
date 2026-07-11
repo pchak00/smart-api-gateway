@@ -120,34 +120,13 @@ flowchart TD
 
 ### Service Responsibilities
 
-#### Pacific Management UI
-
-- management workflows for clients, plans, routes, route groups, analytics, admins, provisioning, and settings
-- responsive operator experience for desktop and mobile
-- communicates with the Gateway Service through the browser-accessible API
-
-#### Gateway Service
-
-- validates API keys and client state
-- resolves plan and route-specific limits
-- enforces Redis-backed rate limits
-- forwards allowed traffic to the configured upstream service
-- records usage data and evaluates abuse alerts
-- exposes admin and provisioning APIs
-- enforces JWT authentication and role-based authorization
-- manages runtime gateway settings
-
-#### Redis
-
-- stores shared sliding-window rate-limit state
-
-#### PostgreSQL
-
-- stores clients, plans, route limits, route groups, settings, usage logs, alerts, admins, refresh sessions, and provisioning tokens
-
-#### Backend Service
-
-- demo upstream application used to validate routing and gateway behavior
+| Service | Responsibility |
+|---|---|
+| **Pacific Management UI** | React and TypeScript operator interface for managing clients, plans, rate limits, route groups, analytics, abuse alerts, admins, provisioning tokens, and gateway settings. It communicates with the Gateway Service through the browser-accessible API. |
+| **Gateway Service** | Core Spring Boot application responsible for API key validation, client-state checks, quota resolution, Redis-backed rate limiting, upstream forwarding, usage logging, abuse detection, admin authentication, role-based authorization, provisioning, and runtime gateway configuration. |
+| **Redis** | Stores shared sliding-window rate-limit counters so multiple gateway instances can evaluate requests against the same quota state. |
+| **PostgreSQL** | Stores persistent platform data, including clients, plans, route limits, route groups, gateway settings, usage logs, abuse alerts, admins, refresh sessions, and provisioning tokens. |
+| **Backend Service** | Demonstration upstream application used for routing examples, integration testing, and validating gateway behavior. |
 
 ## Core Features
 
