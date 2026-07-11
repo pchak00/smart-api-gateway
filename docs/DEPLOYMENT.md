@@ -75,6 +75,8 @@ API consumer
 | `postgres` | `5432` | Persistent platform data: clients, plans, gateway settings, usage logs, abuse alerts, admin users, and refresh sessions. |
 | `redis` | `6379` | Shared Redis state for rate limiting counters. |
 
+Docker Compose networking uses service-level DNS names for container-to-container communication. For example, the gateway container can use `postgres`, `redis`, and `backend-service` as internal hostnames. Browser code must not use those internal names.
+
 Current Dockerfiles:
 
 - `gateway-service/Dockerfile`
@@ -139,6 +141,7 @@ Use the root `.env.example` as the source of truth for variable names. Do not co
 | `JWT_SECRET` | Signing secret for admin JWT access tokens. | `replace-with-at-least-32-random-characters` | Must be replaced with a long random secret before any public deployment. |
 | `JWT_EXPIRATION_MS` | Admin access token lifetime. | `3600000` | Tune for your demo or organization policy. |
 | `ADMIN_REFRESH_TOKEN_EXPIRATION_MS` | Admin refresh token lifetime. | `604800000` | Tune for your demo or organization policy. |
+| `ADMIN_RECOVERY_TOKEN` | Optional break-glass token enabling `POST /admin/recovery/owner`. | unset | Leave unset to disable emergency Owner recovery. If enabled, use a long random secret and store it outside source control. |
 
 ### Gateway / Upstream
 
@@ -176,6 +179,17 @@ CORS_ALLOWED_ORIGINS=https://your-pacific-ui.example.com
 ```
 
 Avoid unrestricted wildcard origins for admin APIs. Update this value whenever the public UI URL changes.
+
+## Health Endpoints
+
+Health endpoints are intentionally lightweight:
+
+```text
+Gateway Service: GET /health
+Backend Service: GET /health
+```
+
+Use these endpoints for local checks and deployment smoke tests. They do not replace full application monitoring.
 
 ## Managed PostgreSQL and Redis
 
@@ -232,14 +246,21 @@ Checklist:
 ## Security Notes
 
 - Change `JWT_SECRET` before any public deployment.
+- Leave `ADMIN_RECOVERY_TOKEN` unset unless a deployment intentionally enables break-glass Owner recovery.
 - Do not commit a real `.env` file.
 - Use strong database passwords.
 - Restrict `CORS_ALLOWED_ORIGINS` to the deployed UI origin.
 - Treat provisioning tokens and API keys as secrets.
-- Demo credentials are for local/demo use only.
+- Seeded demo accounts, API keys, and provisioning tokens are for local/demo use only and should not be treated as production credentials.
 - Use HTTPS for public deployment.
 - Do not expose PostgreSQL or Redis publicly if avoidable.
 - Store deployment secrets in your platform's secret manager or environment variable system.
+
+## Production-Oriented Service Separation
+
+Pacific separates traffic management, backend business services, distributed cache/state, persistent storage, and the operator UI into independent services. This keeps each responsibility deployable and scalable separately for demos or self-hosted single-organization deployments.
+
+This separation is an architectural boundary, not a production-readiness claim. Public deployments still need real secret management, backups, monitoring, HTTPS, deployment-specific seed policy, and operational hardening.
 
 ## Future Production Hardening
 

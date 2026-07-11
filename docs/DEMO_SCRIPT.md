@@ -21,6 +21,132 @@ CLIENT_API_KEY=<demo-client-api-key>
 
 Before presenting, confirm the public deployment is seeded with demo-safe users, one active demo client, plans, route limits, gateway settings, and enough traffic data for the dashboard to look useful.
 
+## Local Docker Walkthrough
+
+Use this flow for a local recruiter demo or technical walkthrough.
+
+### A. Clone And Start Pacific
+
+```bash
+git clone https://github.com/pchak00/smart-api-gateway.git
+cd smart-api-gateway
+docker compose up --build
+```
+
+Local service URLs:
+
+| Service | URL |
+|---|---|
+| Pacific Management UI | `http://localhost:3000` |
+| Gateway and Admin API | `http://localhost:8080` |
+| Demo Backend | `http://localhost:8081` |
+
+### B. Login As Seeded Owner
+
+Open the Pacific Management UI:
+
+```text
+http://localhost:3000
+```
+
+Use the local-development seeded Owner credentials:
+
+```text
+username: owner
+password: Coastal gateway passphrase 2026!
+```
+
+### C. Dashboard And Analytics
+
+Show the Dashboard and Analytics pages. Point out:
+
+- request totals
+- allowed and blocked traffic
+- open abuse alerts
+- top routes
+- route and traffic analytics
+- client analytics
+
+These views use real usage logs recorded by the Gateway Service.
+
+### D. Clients And API Key
+
+Open Clients and inspect or create a client. For a clean local database, the seeded free client has this local-development API key:
+
+```text
+free-demo-api-key
+```
+
+Explain that clients represent API consumers, API keys identify callers, and plans attach default quotas.
+
+### E. Call A Protected Route
+
+```bash
+curl -i http://localhost:8080/api/products \
+  -H "X-API-Key: free-demo-api-key"
+```
+
+Explain that the gateway validates the API key, checks client state, applies the matching quota, forwards allowed traffic to the demo backend, and records the result for analytics.
+
+### F. Trigger A Route-Specific Rate Limit
+
+The seeded FREE `/api/products` route limit allows 5 requests per minute.
+
+```bash
+for i in {1..15}; do
+  curl -i http://localhost:8080/api/products \
+    -H "X-API-Key: free-demo-api-key"
+  echo
+done
+```
+
+Return to the UI and confirm:
+
+- allowed and blocked request counts update
+- traffic analytics changes
+- route analytics shows the affected route
+- an abuse alert appears after the blocked-request threshold is crossed
+
+### G. Routes, Rate Limits, And Route Groups
+
+Open Routes. Explain:
+
+- Rate limits are enforcement rules that override a plan quota for specific paths.
+- Route groups are analytics rules that group related paths into operations.
+
+Show that route analytics can be read by operation-level groupings rather than only raw paths.
+
+### H. Abuse Alerts
+
+Open Abuse Alerts. If an alert was generated, acknowledge it and then resolve it as the seeded Owner.
+
+Explain that repeated blocked traffic becomes visible to operators instead of only returning `429` responses to clients.
+
+### I. Viewer Permissions
+
+Logout and sign in with the seeded Viewer account:
+
+```text
+username: viewer
+password: Coastal gateway passphrase 2026!
+```
+
+Confirm that the Viewer can inspect allowed pages but cannot mutate resources. Mutation controls should be disabled, blocked, or unavailable for Viewer users. The Admins area and protected actions are restricted.
+
+### J. Stop Or Reset The Local Environment
+
+Stop the platform:
+
+```bash
+docker compose down
+```
+
+If local PostgreSQL contains stale seeded data and you need a clean demo database:
+
+```bash
+docker compose down -v
+```
+
 ## Suggested Length
 
 - 3-minute version: quick portfolio or recruiter demo focused on the UI, dashboard, clients, and one rate-limit proof.
@@ -244,7 +370,7 @@ Login fails:
 
 Gateway API routes return `500`:
 
-- Check Redis username and password environment variables.
+- Check Redis host and port environment variables.
 - Check `BACKEND_SERVICE_URL`.
 - Check gateway logs.
 
