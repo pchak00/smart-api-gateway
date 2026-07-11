@@ -1,22 +1,25 @@
 # Pacific — Smart API Gateway
 
-Pacific is a self-hostable API gateway and API management platform built with Spring Boot, Redis, PostgreSQL, Docker, and a responsive React management UI.
+Pacific is a self-hostable API gateway and API management platform for teams that need API keys, rate limits, usage analytics, abuse alerts, and a clean operator UI without adopting a large enterprise gateway stack.
 
-The repository and backend service names still use Smart API Gateway context, but Pacific is the product name used for the current operator experience.
+Built with Spring Boot, Redis, PostgreSQL, Docker, and a responsive React management UI.
 
-Features include:
-- distributed Redis-backed rate limiting
-- plan-based quotas
-- route-specific throttling with route groups for operation-level analytics
+Core capabilities include:
+
+- API key authentication for protected gateway routes
+- Redis-backed rate limiting with plan-based quotas
+- route-specific rate limit overrides for expensive or sensitive endpoints
+- route groups for operation-level analytics
 - API key rotation and active/disabled client controls
-- stale client visibility for clients with no recent traffic
-- JWT admin authentication with refresh sessions, password reset, and a strong admin password policy
-- role-based admin authorization
-- usage analytics with 7d, 30d, 90d, and 12m UI ranges
-- abuse detection with alert lifecycle
-- emergency owner recovery guarded by `ADMIN_RECOVERY_TOKEN`
+- dashboard, client, route, and traffic analytics
+- stale client visibility for inactive API consumers
+- abuse detection with alert lifecycle management
+- JWT admin authentication with refresh sessions and role-based access control
+- server-to-server client provisioning
+- runtime gateway settings for upstream routing
+- responsive Pacific management UI
 
-Designed as a developer-first, SaaS-oriented gateway platform for small-to-mid sized teams.
+Pacific is designed as a developer-first, SaaS-oriented gateway platform for small-to-mid sized teams.
 
 ## Why This Project?
 
@@ -47,22 +50,18 @@ but to provide a more accessible and product-oriented gateway experience for dev
 ## Current Capabilities
 
 - API key authentication for protected gateway routes.
-- API key rotation for clients, with the new raw key returned only in the rotation response.
-- Active/disabled client lifecycle controls; disabled clients receive `403 Forbidden` on protected gateway routes.
-- Stale client visibility in the Clients page for active clients with no traffic for 30+ days, including never-active clients.
-- Redis-backed rate limiting with plan quotas and route-specific wildcard overrides.
-- Usage logging, dashboard metrics, route analytics, client analytics, and traffic analytics.
-- Analytics UI ranges for 7d, 30d, 90d, and 12m windows.
-- Route analytics grouping by `OPERATION`, `PATTERN`, or `RAW_PATH`.
-- Route groups for operation-level analytics, with Exact, Prefix, and Glob matching rules.
-- Abuse detection with `OPEN`, `ACKNOWLEDGED`, and `RESOLVED` alert states.
-- JWT admin login, refresh sessions, logout, admin password reset, strong password policy enforcement, and role-based access control.
-- Last-owner protection plus optional emergency owner recovery guarded by `ADMIN_RECOVERY_TOKEN`.
-- Manual client provisioning from the Pacific management UI or admin API.
-- Server-to-server client provisioning with provisioning token management.
-- DB-backed gateway settings for upstream URL, health check path, and timeout.
-- Dynamic upstream routing with environment/default fallback and test connection support.
-- Dockerized, responsive Pacific management UI for operating the gateway locally.
+- Client lifecycle management, including API key rotation, active/disabled states, plan assignment, and stale-client visibility.
+- Redis-backed sliding-window rate limiting with plan quotas and route-specific wildcard overrides.
+- Dashboard, client, route, and time-series traffic analytics with 7d, 30d, 90d, and 12m ranges.
+- Route analytics grouped by developer-defined operations, normalized route patterns, or raw request paths.
+- Configurable route groups with method-aware Exact, Prefix, and Glob matching rules.
+- Usage logging and abuse detection with `OPEN`, `ACKNOWLEDGED`, and `RESOLVED` alert states.
+- JWT admin authentication with refresh sessions, logout, password reset, strong password enforcement, and role-based access control.
+- Last-owner protection with optional break-glass Owner recovery guarded by `ADMIN_RECOVERY_TOKEN`.
+- Manual client management through the Pacific UI and admin API.
+- Server-to-server client onboarding through restricted provisioning tokens.
+- Database-backed gateway settings for upstream routing, health checks, request timeout, and connection testing.
+- Dockerized services and a responsive React management UI for desktop and mobile operation.
 
 ## Architecture Overview
 
