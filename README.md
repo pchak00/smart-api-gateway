@@ -4,21 +4,6 @@ Pacific is a self-hostable API gateway and API management platform for teams tha
 
 Built with Spring Boot, Redis, PostgreSQL, Docker, and a responsive React management UI.
 
-Core capabilities include:
-
-- API key authentication for protected gateway routes
-- Redis-backed rate limiting with plan-based quotas
-- route-specific rate limit overrides for expensive or sensitive endpoints
-- route groups for operation-level analytics
-- API key rotation and active/disabled client controls
-- dashboard, client, route, and traffic analytics
-- stale client visibility for inactive API consumers
-- abuse detection with alert lifecycle management
-- JWT admin authentication with refresh sessions and role-based access control
-- server-to-server client provisioning
-- runtime gateway settings for upstream routing
-- responsive Pacific management UI
-
 Pacific is designed as a developer-first, SaaS-oriented gateway platform for small-to-mid sized teams.
 
 ## Why This Project?
