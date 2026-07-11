@@ -250,41 +250,18 @@ The gateway validates the API key, applies the matching quota, forwards allowed 
 - [Railway Deployment](docs/RAILWAY_DEPLOYMENT.md) — Railway-specific setup
 - [Demo Script](docs/DEMO_SCRIPT.md) — complete local and public walkthrough
 
-## Upcoming Updates
+## Roadmap
 
-Planned improvements and future platform enhancements include:
+### Near-Term Improvements
 
-### Advanced Rate Limiting Algorithms
+- Add webhook delivery for abuse and quota alerts.
+- Support multiple upstream services with route-based mappings.
+- Improve pagination and filtering for larger client, usage, and alert datasets.
 
-The current implementation uses Redis-backed sliding-window rate limiting for rolling 60-second enforcement.
+### Longer-Term Direction
 
-Future versions will introduce:
-- token bucket algorithms
-- burst traffic handling
-- dynamic quota policies
-
-to provide more accurate and flexible traffic control behavior.
-
-### Multi-Tenant Platform Support
-
-Future versions will support tenant or organization-level resource management, allowing multiple teams or companies to manage clients, plans, and gateway configuration within isolated platform boundaries.
-
-### Webhook-Based Alerting
-
-The abuse detection system may be extended with webhook notifications for operational alerts such as:
-- repeated rate limit violations
-- suspicious traffic activity
-- quota exhaustion events
-
-### Platform Hardening and Configuration
-
-Planned incremental improvements include:
-- multi-upstream route mapping for more advanced deployments
-- API key hashing with key-prefix lookup
-- a public developer self-service portal
-- richer alert notifications and webhook delivery
-- pagination and filtering improvements for large admin datasets
-- an isolated test profile or Testcontainers so Spring context tests do not require a local PostgreSQL instance
+- Token-bucket rate limiting and configurable burst capacity.
+- Organization-level multi-tenancy and resource isolation.
 
 ## Feedback & Contributions
 
