@@ -153,126 +153,65 @@ flowchart TD
 
 ### Traffic Management
 
-#### Plan-Based Rate Limiting
+Pacific applies traffic policies at the gateway before requests reach the upstream service.
 
-Clients are assigned to centralized plans with configurable default request quotas. `FREE`, `PRO`, and `ENTERPRISE` are seeded defaults, and admins can create custom plans.
+```mermaid
+flowchart TD
+    A[Authenticated client request] --> B[Load client's assigned plan]
+    B --> C[Resolve default plan quota]
+    C --> D{Matching route-specific limit?}
+    D -- Yes --> E[Use route-specific quota]
+    D -- No --> F[Use plan quota]
+    E --> G[Evaluate rolling window in Redis]
+    F --> G
+    G --> H{Request allowed?}
+    H -- Yes --> I[Forward to upstream service]
+    H -- No --> J[Return 429 Too Many Requests]
+```
 
-This allows quota policies to be managed centrally without duplicating configuration across individual clients.
+#### Plan-Based Quotas
 
-#### Route-Specific Traffic Policies
+Clients are assigned to centralized plans with configurable default request limits. Pacific seeds `FREE`, `PRO`, and `ENTERPRISE` plans for local demonstrations, and operators can create additional plans through the UI or admin API.
 
-The gateway supports route-level rate limit overrides for endpoints with different operational costs.
+Updating a plan changes the default quota for clients assigned to it without requiring individual client configuration.
 
-For example, expensive endpoints such as AI inference, image generation, or report-processing APIs can enforce stricter limits than lightweight endpoints, even when clients belong to the same plan.
+#### Route-Specific Rate Limits
 
-When a route-specific policy exists, it overrides the default plan quota for that endpoint.
+Routes with different operational costs can override a plan’s default quota.
 
-Patterns can be exact paths such as `/api/products`, one-segment wildcards such as `/api/users/*`, or nested wildcards such as `/api/users/**`.
+For example, report generation or AI-processing endpoints can use stricter limits than lightweight read endpoints while remaining part of the same client plan.
 
-#### Distributed Redis-Backed Rate Limiting
+Supported route patterns include:
 
-Pacific uses Redis-backed sliding-window rate limiting to enforce plan and route-specific quotas over a rolling 60-second window. This avoids fixed-window boundary bursts while preserving plan defaults and route override behavior, including exact paths, one-segment wildcards, and nested wildcard route limits.
+- exact paths, such as `/api/products`
+- one-segment wildcards, such as `/api/users/*`
+- nested wildcards, such as `/api/reports/**`
 
-This allows multiple gateway instances to share rate limit state consistently and supports a more horizontally scalable architecture compared to application-local counters.
+When multiple policies could apply, the matching route-specific limit takes precedence over the plan default.
 
-#### Centralized Policy Enforcement
+#### Redis-Backed Sliding Window
 
-Traffic policies are enforced at the gateway layer before requests reach backend services.
+Pacific evaluates quotas using Redis-backed sliding-window counters over a rolling 60-second period.
 
-This allows authentication, quota enforcement, and traffic control to remain centralized rather than being duplicated across individual backend applications.
+Because rate-limit state is stored outside the gateway process, multiple gateway instances can share the same counters instead of enforcing separate in-memory limits.
 
-#### Runtime Gateway Settings
+### Gateway Configuration
 
-Gateway settings are stored in PostgreSQL and exposed through the admin API at `GET /admin/settings/gateway` and `PUT /admin/settings/gateway`.
+Gateway forwarding settings are stored in PostgreSQL and can be managed through the Pacific UI or admin API.
 
-These settings currently include the intended upstream base URL, health-check path, and request timeout. They are runtime product configuration for admins to view and update without editing source code or environment variables.
+Current settings include:
 
-Gateway forwarding uses the database upstream base URL when a valid settings row is available. If the settings row is missing, invalid, or temporarily unavailable, the gateway falls back to the existing deployment configuration such as `BACKEND_SERVICE_URL`.
+- upstream base URL
+- health-check path
+- request timeout
 
-Admins can test upstream reachability from the UI or with `POST /admin/settings/gateway/test-connection`. The endpoint accepts draft `upstreamBaseUrl`, `healthCheckPath`, and `timeoutMs` values, or uses the currently saved settings when the request body is empty. It sends a simple GET request to the joined health-check URL and returns whether the upstream responded with a 2xx status.
+The gateway uses the saved upstream URL when valid configuration is available. If runtime configuration is unavailable, it falls back to deployment configuration such as `BACKEND_SERVICE_URL`.
 
-### Authentication & Authorization
+Operators can test saved or draft settings before applying them using:
 
-#### API Key Authentication
-
-External API consumers authenticate using API keys provided through the `X-API-Key` header.
-
-Requests are validated at the gateway layer before traffic is forwarded to backend services.
-
-#### JWT-Based Admin Authentication
-
-Administrative platform endpoints are protected using JWT-based authentication.
-
-Admins authenticate through a login endpoint and receive a signed JWT access token used for subsequent protected requests.
-
-#### Role-Based Authorization
-
-Administrative actions are protected using role-based access control.
-
-Current roles include:
-
-- `OWNER` — can manage high-privilege admins and all gateway resources
-- `SUPER_ADMIN` — can manage gateway resources and viewer accounts
-- `READ_ONLY_ADMIN` — can access monitoring and observability endpoints such as analytics, usage statistics, and abuse alerts
-
-The Pacific UI presents these roles as Owner, Admin, and Viewer, but API payloads and JWT claims continue to use the backend enum values.
-
-This separation allows sensitive platform operations to remain protected while still supporting restricted operational visibility for lower-privileged administrators.
-
-#### Centralized Security Enforcement
-
-Authentication and authorization are enforced centrally at the gateway layer rather than being duplicated across backend services.
-
-This keeps security policies consistent across the platform and simplifies backend service design.
-
-### Analytics & Abuse Detection
-
-#### Usage Logging
-
-Requests processed through the gateway are recorded for monitoring and analytics purposes.
-
-Logged information includes:
-- client identity
-- request path
-- HTTP method
-- status code
-- request timestamp
-- allowed or blocked request state
-
-#### Analytics & Monitoring
-
-Usage data is aggregated to support operational analytics and platform monitoring.
-
-This allows administrators to observe:
-- request activity
-- blocked traffic patterns
-- client usage behavior
-- stale clients with no recent traffic
-- route-level traffic trends by operation, normalized pattern, or raw path
-
-The Pacific UI supports 7d, 30d, 90d, and 12m analytics ranges. The backend analytics API accepts explicit `startDate` and `endDate` query parameters, and the UI maps those presets to concrete date windows.
-
-Route analytics can be grouped with `groupBy=OPERATION`, `groupBy=PATTERN`, or `groupBy=RAW_PATH`:
-
-- `OPERATION` groups traffic by active route groups first, then falls back to normalized patterns.
-- `PATTERN` normalizes numeric and UUID path segments, such as `/api/users/:id`.
-- `RAW_PATH` preserves the request path shape without route group or pattern normalization.
-
-#### Abuse Detection
-
-The platform monitors blocked request activity to identify potentially abusive behavior.
-
-When clients repeatedly exceed configured rate limits within a defined time window, the system evaluates abuse thresholds and tracks suspicious activity patterns.
-
-#### Alerting System
-
-When blocked requests cross the abuse threshold, the gateway creates or updates abuse alerts associated with the affected client.
-
-A cooldown mechanism is used to avoid repeatedly generating duplicate alerts for the same abusive activity window.
-
-Abuse alerts use lifecycle states: `OPEN`, `ACKNOWLEDGED`, and `RESOLVED`. Dashboard `openAlertCount` counts only `OPEN` alerts, so resolved historical alerts no longer inflate the operational alert count.
-
-Super admins can move alerts forward with `PATCH /admin/abuse-alerts/{id}/acknowledge` and `PATCH /admin/abuse-alerts/{id}/resolve`; read-only viewers can inspect alert lists only.
+```http
+POST /admin/settings/gateway/test-connection
+```
 
 ## Infrastructure & Deployment
 
