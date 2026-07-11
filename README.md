@@ -50,120 +50,108 @@ but to provide a more accessible and product-oriented gateway experience for dev
 
 ## Architecture Overview
 
-Pacific is designed as a containerized, multi-service backend system where the gateway acts as the central policy enforcement layer between API consumers and backend services.
+Pacific is a containerized, multi-service system in which the Gateway Service acts as the central enforcement and management layer between API consumers, platform operators, and upstream backend services.
 
-Instead of acting only as a request router, the gateway is responsible for enforcing access rules, applying traffic policies, recording usage, detecting abuse, and protecting administrative platform features.
+The platform supports two distinct access paths:
 
-The architecture is easiest to understand through two main request flows:
+1. **API consumer traffic**, authenticated with API keys and subject to gateway policies.
+2. **Administrative traffic**, authenticated with JWT access tokens and protected by role-based authorization.
 
-1. **API Consumer Flow** — requests made by external clients using API keys
-2. **Admin Platform Flow** — requests made by admins using JWT authentication and role-based authorization
+```mermaid
+flowchart LR
+    Consumer[API Consumer] -->|X-API-Key| Gateway[Gateway Service]
+
+    Operator[Owner / Admin / Viewer] --> UI[Pacific Management UI]
+    UI -->|JWT access token| Gateway
+
+    Gateway -->|Rate-limit counters| Redis[(Redis)]
+    Gateway -->|Clients, plans, settings,<br/>usage logs, alerts, and sessions| PostgreSQL[(PostgreSQL)]
+    Gateway -->|Forward allowed traffic| Backend[Backend Service]
+    Backend -->|Upstream response| Gateway
+```
 
 ### API Consumer Flow
 
-This flow represents requests made by external API consumers to protected backend services.
+Requests from external API consumers pass through the following enforcement flow:
 
-```mermaid
-flowchart TD
-    A[API Consumer] --> B[Gateway Service]
-    B --> C[API Key Validation]
-    C --> D{Valid API Key?}
+1. The gateway validates the supplied API key and confirms that the client is active.
+2. It resolves the client’s plan quota and any matching route-specific rate limit.
+3. Redis evaluates the request against the rolling rate-limit window.
+4. Allowed requests are forwarded to the configured upstream backend.
+5. Requests exceeding their quota receive `429 Too Many Requests`.
+6. Request outcomes are stored for usage analytics. Blocked requests are also evaluated against abuse thresholds so an alert can be created or updated when necessary.
 
-    D -- No --> E[Reject Request]
-    D -- Yes --> F[Determine Request Limit<br/>Based on service policy<br/>Use Route-Specific Limit<br/>or a default plan limit]
-
-    F --> G{Within Limit?}
-
-    G -- Yes --> H[Forward Request to Backend Service]
-    H --> I[Backend Service Response]
-    I --> J[Record Usage Log & Update Analytics]
-    J --> K[Return Response to API Consumer]
-
-    G -- No --> L[Return 429 Too Many Requests]
-    L --> M[Record Blocked Request]
-    M --> N[Check Abuse Thresholds<br/>Create or Update Alert<br/>if Threshold exceeded]
-    
-```
-
+Route groups do not affect quota enforcement. They are used to organize recorded traffic into developer-defined operations for analytics.
 
 ### Admin Platform Flow
 
-Admin authentication is intentionally separated from API consumer authentication. API consumers access protected backend services using API keys, while platform administrators use JWT-based authentication to manage internal gateway resources and administrative features.
+Platform operators use the Pacific management UI to access administrative APIs.
 
-The platform supports three administrative roles:
+Login returns a short-lived JWT access token and a longer-lived refresh token. The access token authorizes protected `/admin/**` requests, while refresh sessions allow the UI to renew an expired access token without requiring another login.
 
-- `OWNER` — owns the workspace and can manage high-privilege admins
-- `SUPER_ADMIN` — manages gateway resources and viewer accounts
-- `READ_ONLY_ADMIN` — can access read-only administrative endpoints such as analytics, usage statistics, view clients, plans, route-specific policies, and abuse alerts
+The backend uses three role values:
 
-This separation allows the platform to enforce role-based access control for sensitive management operations while still supporting restricted monitoring and observability access.
+- `OWNER`
+- `SUPER_ADMIN`
+- `READ_ONLY_ADMIN`
 
-```mermaid
-flowchart TD
-    A[Admin User] --> B[Login with Admin Credentials]
-    B --> C[Generate JWT Access Token]
-    C --> D[Request Protected Admin Endpoint]
-    D --> E[Validate JWT]
-    E --> F{Valid Token?}
+The UI presents these roles as **Owner**, **Admin**, and **Viewer**. Authorization checks are enforced by the Gateway Service before administrative operations are executed.
 
-    F -- No --> G[Reject Request]
-    F -- Yes --> H[Check Admin Role]
+### Service Responsibilities
 
-    H --> I{Authorized for Action?}
-    I -- No --> J[Return 403 Forbidden]
-    I -- Yes --> K[Execute Admin Operation]
+#### Pacific Management UI
 
-    K --> L[Return Admin Response]
-```
+The React and TypeScript management UI provides operator workflows for:
 
-### Infrastructure & Service Responsibilities
+- clients and API keys
+- plans and rate limits
+- route groups
+- analytics and abuse alerts
+- admins and access roles
+- provisioning tokens
+- runtime gateway settings
 
-The system is separated into multiple services so each component has a clear responsibility.
+The UI communicates with the Gateway Service through its browser-accessible API URL.
 
 #### Gateway Service
 
-The Gateway Service is the core application in the system. It acts as the central policy enforcement layer for incoming traffic.
+The Spring Boot Gateway Service is the core application and policy enforcement layer.
 
-Responsibilities include:
+Its responsibilities include:
 
-- validating API keys for API consumers
-- resolving plan-based and route-specific rate limits
-- forwarding valid requests to backend services
-- recording usage logs for analytics
-- tracking blocked requests for abuse detection
-- protecting admin endpoints with JWT authentication and role-based authorization
+- validating API keys and client status
+- resolving plan and route-specific quotas
+- enforcing Redis-backed rate limits
+- forwarding allowed traffic to the configured upstream service
+- recording usage data
+- evaluating blocked traffic for abuse alerts
+- exposing administrative and provisioning APIs
+- enforcing JWT authentication and role-based authorization
+- managing runtime gateway settings
 
 #### Redis
 
-Redis is used for fast, shared rate-limiting counters.
+Redis stores shared sliding-window rate-limit state.
 
-Rate limit state is kept outside the gateway process so the system is not dependent on local application memory. This allows multiple gateway instances to share request counters and supports a more horizontally scalable design.
+Keeping counters outside application memory allows multiple gateway instances to evaluate requests against the same quota state.
 
 #### PostgreSQL
 
-PostgreSQL stores persistent platform data such as:
+PostgreSQL stores persistent platform data, including:
 
-- clients, active/disabled state, and API keys
-- plans and quota rules
-- route-specific limits
+- clients, API keys, and client status
+- plans and route-specific limits
 - route groups and route group rules
 - gateway settings
-- usage logs
-- abuse alerts
-- admin users, roles, password hashes, and refresh sessions
+- usage logs and abuse alerts
+- admins, password hashes, roles, and refresh sessions
 - provisioning tokens
 
 #### Backend Service
 
-The Backend Service is a demo service used to validate gateway behavior.
+The Backend Service is a demonstration upstream used to validate routing and gateway behavior.
 
-It exists mainly for routing demonstrations, integration testing, and showing how protected backend APIs can sit behind the gateway.
-
-#### Docker Compose
-
-Docker Compose is used to run the full system locally with separate containers for the management UI, gateway, backend service, Redis, and PostgreSQL.
-
-This creates a more production-like development environment and demonstrates container networking, service isolation, and infrastructure configuration.
+It provides sample protected endpoints and shows how an application can operate behind Pacific without implementing its own API-key or quota logic.
 
 ## Core Features
 
