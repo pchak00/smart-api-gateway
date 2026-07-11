@@ -50,12 +50,7 @@ but to provide a more accessible and product-oriented gateway experience for dev
 
 ## Architecture Overview
 
-Pacific is a containerized, multi-service system in which the Gateway Service acts as the central enforcement and management layer between API consumers, platform operators, and upstream backend services.
-
-The platform supports two distinct access paths:
-
-1. **API consumer traffic**, authenticated with API keys and subject to gateway policies.
-2. **Administrative traffic**, authenticated with JWT access tokens and protected by role-based authorization.
+Pacific is a containerized, multi-service API management platform. The Gateway Service sits between API consumers, platform operators, and upstream backend services, enforcing traffic policies while exposing administrative APIs through the Pacific Management UI.
 
 ```mermaid
 flowchart LR
@@ -65,93 +60,94 @@ flowchart LR
     UI -->|JWT access token| Gateway
 
     Gateway -->|Rate-limit counters| Redis[(Redis)]
-    Gateway -->|Clients, plans, settings,<br/>usage logs, alerts, and sessions| PostgreSQL[(PostgreSQL)]
+    Gateway -->|Clients, plans, settings,<br/>usage logs, alerts, sessions,<br/>route groups| PostgreSQL[(PostgreSQL)]
     Gateway -->|Forward allowed traffic| Backend[Backend Service]
     Backend -->|Upstream response| Gateway
 ```
 
-### API Consumer Flow
+### API Consumer Request Flow
 
-Requests from external API consumers pass through the following enforcement flow:
-
-1. The gateway validates the supplied API key and confirms that the client is active.
-2. It resolves the client’s plan quota and any matching route-specific rate limit.
-3. Redis evaluates the request against the rolling rate-limit window.
-4. Allowed requests are forwarded to the configured upstream backend.
-5. Requests exceeding their quota receive `429 Too Many Requests`.
-6. Request outcomes are stored for usage analytics. Blocked requests are also evaluated against abuse thresholds so an alert can be created or updated when necessary.
-
-Route groups do not affect quota enforcement. They are used to organize recorded traffic into developer-defined operations for analytics.
+```mermaid
+flowchart TD
+    A[Incoming request with X-API-Key] --> B[Validate API key]
+    B --> C{Client active?}
+    C -- No --> D[Reject request]
+    C -- Yes --> E[Resolve client plan]
+    E --> F[Check matching route-specific limit]
+    F --> G[Evaluate rate limit in Redis]
+    G --> H{Within quota?}
+    H -- No --> I[Return 429 Too Many Requests]
+    H -- Yes --> J[Forward request to upstream backend]
+    J --> K[Receive upstream response]
+    K --> L[Return response to client]
+    I --> M[Record usage + blocked event]
+    L --> N[Record usage log]
+    M --> O[Evaluate abuse threshold]
+```
 
 ### Admin Platform Flow
 
-Platform operators use the Pacific management UI to access administrative APIs.
+```mermaid
+flowchart TD
+    A[Admin opens Pacific UI] --> B[Submit username + password]
+    B --> C[Gateway validates credentials]
+    C --> D[Issue access token + refresh token]
+    D --> E[UI calls protected admin APIs]
+    E --> F[Gateway validates JWT + role]
+    F --> G[Execute admin action]
+    G --> H[Return admin response]
+    H --> I{Access token expired?}
+    I -- Yes --> J[Use refresh token]
+    J --> K[Issue new access token]
+    K --> E
+    I -- No --> L[Continue session]
+```
 
-Login returns a short-lived JWT access token and a longer-lived refresh token. The access token authorizes protected `/admin/**` requests, while refresh sessions allow the UI to renew an expired access token without requiring another login.
+### Analytics and Abuse Monitoring Flow
 
-The backend uses three role values:
+```mermaid
+flowchart TD
+    A[Gateway processes request outcome] --> B[Persist usage log]
+    B --> C[Aggregate traffic for analytics]
+    C --> D[Group routes by Operation, Pattern, or Raw path]
+    D --> E[Expose dashboard + analytics APIs]
 
-- `OWNER`
-- `SUPER_ADMIN`
-- `READ_ONLY_ADMIN`
-
-The UI presents these roles as **Owner**, **Admin**, and **Viewer**. Authorization checks are enforced by the Gateway Service before administrative operations are executed.
+    A --> F{Request blocked?}
+    F -- Yes --> G[Evaluate abuse thresholds]
+    G --> H[Create or update abuse alert]
+    F -- No --> E
+```
 
 ### Service Responsibilities
 
 #### Pacific Management UI
 
-The React and TypeScript management UI provides operator workflows for:
-
-- clients and API keys
-- plans and rate limits
-- route groups
-- analytics and abuse alerts
-- admins and access roles
-- provisioning tokens
-- runtime gateway settings
-
-The UI communicates with the Gateway Service through its browser-accessible API URL.
+- management workflows for clients, plans, routes, route groups, analytics, admins, provisioning, and settings
+- responsive operator experience for desktop and mobile
+- communicates with the Gateway Service through the browser-accessible API
 
 #### Gateway Service
 
-The Spring Boot Gateway Service is the core application and policy enforcement layer.
-
-Its responsibilities include:
-
-- validating API keys and client status
-- resolving plan and route-specific quotas
-- enforcing Redis-backed rate limits
-- forwarding allowed traffic to the configured upstream service
-- recording usage data
-- evaluating blocked traffic for abuse alerts
-- exposing administrative and provisioning APIs
-- enforcing JWT authentication and role-based authorization
-- managing runtime gateway settings
+- validates API keys and client state
+- resolves plan and route-specific limits
+- enforces Redis-backed rate limits
+- forwards allowed traffic to the configured upstream service
+- records usage data and evaluates abuse alerts
+- exposes admin and provisioning APIs
+- enforces JWT authentication and role-based authorization
+- manages runtime gateway settings
 
 #### Redis
 
-Redis stores shared sliding-window rate-limit state.
-
-Keeping counters outside application memory allows multiple gateway instances to evaluate requests against the same quota state.
+- stores shared sliding-window rate-limit state
 
 #### PostgreSQL
 
-PostgreSQL stores persistent platform data, including:
-
-- clients, API keys, and client status
-- plans and route-specific limits
-- route groups and route group rules
-- gateway settings
-- usage logs and abuse alerts
-- admins, password hashes, roles, and refresh sessions
-- provisioning tokens
+- stores clients, plans, route limits, route groups, settings, usage logs, alerts, admins, refresh sessions, and provisioning tokens
 
 #### Backend Service
 
-The Backend Service is a demonstration upstream used to validate routing and gateway behavior.
-
-It provides sample protected endpoints and shows how an application can operate behind Pacific without implementing its own API-key or quota logic.
+- demo upstream application used to validate routing and gateway behavior
 
 ## Core Features
 
