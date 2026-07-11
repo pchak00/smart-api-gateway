@@ -28,8 +28,8 @@ Use this flow for a local recruiter demo or technical walkthrough.
 ### A. Clone And Start Pacific
 
 ```bash
-git clone https://github.com/pchak00/smart-api-gateway.git
-cd smart-api-gateway
+git clone https://github.com/pchak00/pacific-api-gateway.git
+cd pacific-api-gateway
 docker compose up --build
 ```
 

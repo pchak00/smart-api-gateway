@@ -212,8 +212,8 @@ Configuration is environment-variable driven. The root `.env.example` documents 
 ### Start Pacific
 
 ```bash
-git clone https://github.com/pchak00/smart-api-gateway.git
-cd smart-api-gateway
+git clone https://github.com/pchak00/pacific-api-gateway.git
+cd pacific-api-gateway
 docker compose up --build
 ```
 
