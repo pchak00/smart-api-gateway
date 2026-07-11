@@ -1,11 +1,11 @@
-import React, { FormEvent, useEffect, useMemo, useState } from 'react';
+import React, { FormEvent, useEffect, useMemo, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Plus, Route } from 'lucide-react';
+import { Route } from 'lucide-react';
 import { api } from '../api/client';
 import { useAuth } from '../hooks/useAuth';
 import { useToast } from '../hooks/useToast';
 import { PlanDto, RouteGroupDto, RouteGroupMatchType, RouteLimitDto } from '../types';
-import { IconButton, PrimaryButton, SecondaryButton } from '../components/Button';
+import { PageTitleCreateAction, PrimaryButton, SecondaryButton } from '../components/Button';
 import { ListSearch } from '../components/ListSearch';
 import { EmptyState, PageHeader } from '../components/PageShell';
 import { RowActions } from '../components/RowActions';
@@ -28,6 +28,7 @@ export const RouteLimitsPage: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [isCreateMenuOpen, setIsCreateMenuOpen] = useState(false);
   const [editingLimit, setEditingLimit] = useState<RouteLimitDto | null>(null);
   const [isGroupFormOpen, setIsGroupFormOpen] = useState(false);
   const [editingGroup, setEditingGroup] = useState<RouteGroupDto | null>(null);
@@ -42,6 +43,7 @@ export const RouteLimitsPage: React.FC = () => {
     { method: '', pattern: '/api/', matchType: 'EXACT' }
   ]);
   const [searchQuery, setSearchQuery] = useState('');
+  const createMenuRef = useRef<HTMLDivElement>(null);
   const writeTooltip = !canMutate
     ? 'Admin required'
     : undefined;
@@ -105,12 +107,55 @@ export const RouteLimitsPage: React.FC = () => {
     setGroupRules([{ method: '', pattern: '/api/', matchType: 'EXACT' }]);
   };
 
+  const startCreateRouteLimit = () => {
+    if (!canMutate) return;
+    setEditingLimit(null);
+    setEditingGroup(null);
+    resetForm();
+    setIsGroupFormOpen(false);
+    setIsCreateOpen(true);
+    setIsCreateMenuOpen(false);
+  };
+
+  const startCreateRouteGroup = () => {
+    if (!canMutate) return;
+    setEditingLimit(null);
+    setEditingGroup(null);
+    resetGroupForm();
+    setIsCreateOpen(false);
+    setIsGroupFormOpen(true);
+    setIsCreateMenuOpen(false);
+  };
+
   useEffect(() => {
     if (!createActionRequested || !canMutate) return;
-    setEditingLimit(null);
-    resetForm();
-    setIsCreateOpen(true);
+    startCreateRouteLimit();
   }, [canMutate, createActionRequested]);
+
+  useEffect(() => {
+    if (!isCreateMenuOpen) return;
+
+    const handlePointerDown = (event: MouseEvent | TouchEvent) => {
+      if (!createMenuRef.current?.contains(event.target as Node)) {
+        setIsCreateMenuOpen(false);
+      }
+    };
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setIsCreateMenuOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handlePointerDown);
+    document.addEventListener('touchstart', handlePointerDown, { passive: true });
+    document.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      document.removeEventListener('mousedown', handlePointerDown);
+      document.removeEventListener('touchstart', handlePointerDown);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isCreateMenuOpen]);
 
   const handleCreateRouteLimit = async (event: FormEvent) => {
     event.preventDefault();
@@ -333,6 +378,45 @@ export const RouteLimitsPage: React.FC = () => {
     <div className="min-w-0">
       <PageHeader
         title="Routes"
+        titleAccessory={
+          <div ref={createMenuRef} className="relative inline-flex">
+            <PageTitleCreateAction
+              type="button"
+              disabled={!canMutate}
+              tooltip={canMutate ? 'Create' : writeTooltip ?? 'Admin required'}
+              aria-label="Create"
+              aria-haspopup="menu"
+              aria-expanded={isCreateMenuOpen}
+              onClick={() => {
+                if (!canMutate) return;
+                setIsCreateMenuOpen((open) => !open);
+              }}
+            />
+            {isCreateMenuOpen && canMutate && (
+              <div
+                role="menu"
+                className="glass-popover absolute left-0 top-full z-30 mt-2 w-48 max-w-[calc(100vw-2rem)] rounded-md p-1 text-sm shadow-xl"
+              >
+                <button
+                  type="button"
+                  role="menuitem"
+                  className="pacific-control-focus flex min-h-10 w-full items-center rounded px-3 text-left text-sm font-medium text-slate-200 transition-colors hover:bg-slate-900/45"
+                  onClick={startCreateRouteLimit}
+                >
+                  Create rate limit
+                </button>
+                <button
+                  type="button"
+                  role="menuitem"
+                  className="pacific-control-focus flex min-h-10 w-full items-center rounded px-3 text-left text-sm font-medium text-slate-200 transition-colors hover:bg-slate-900/45"
+                  onClick={startCreateRouteGroup}
+                >
+                  Create route group
+                </button>
+              </div>
+            )}
+          </div>
+        }
         meta={errorMessage ? <span className="text-xs text-slate-500">{errorMessage}</span> : undefined}
       />
 
@@ -346,20 +430,6 @@ export const RouteLimitsPage: React.FC = () => {
               </InfoTooltip>
             </div>
           </div>
-          <IconButton
-            type="button"
-            disabled={!canMutate}
-            tooltip={canMutate ? 'Add rate limit' : writeTooltip ?? 'Admin required'}
-            aria-label="Add rate limit"
-            className="sm:hidden"
-            onClick={() => {
-              setEditingLimit(null);
-              resetForm();
-              setIsCreateOpen((open) => !open);
-            }}
-          >
-            <Plus size={20} strokeWidth={2.2} aria-hidden="true" />
-          </IconButton>
         </div>
 
         <div className="mb-6 flex w-full flex-col gap-3 sm:flex-row sm:items-start">
@@ -369,20 +439,6 @@ export const RouteLimitsPage: React.FC = () => {
             placeholder="Search rate limits..."
             resultLabel={!isLoading && !errorMessage ? routeLimitResultLabel : undefined}
           />
-          <IconButton
-            type="button"
-            disabled={!canMutate}
-            tooltip={canMutate ? 'Add rate limit' : writeTooltip ?? 'Admin required'}
-            aria-label="Add rate limit"
-            className="hidden sm:inline-flex"
-            onClick={() => {
-              setEditingLimit(null);
-              resetForm();
-              setIsCreateOpen((open) => !open);
-            }}
-          >
-            <Plus size={20} strokeWidth={2.2} aria-hidden="true" />
-          </IconButton>
         </div>
 
         {(isCreateOpen || editingLimit) && (
@@ -543,19 +599,6 @@ export const RouteLimitsPage: React.FC = () => {
               </InfoTooltip>
             </div>
           </div>
-          <IconButton
-            type="button"
-            disabled={!canMutate}
-            tooltip={canMutate ? 'Add route group' : writeTooltip ?? 'Admin required'}
-            aria-label="Add route group"
-            onClick={() => {
-              setEditingGroup(null);
-              resetGroupForm();
-              setIsGroupFormOpen((open) => !open);
-            }}
-          >
-            <Plus size={20} strokeWidth={2.2} aria-hidden="true" />
-          </IconButton>
         </div>
 
         {(isGroupFormOpen || editingGroup) && (

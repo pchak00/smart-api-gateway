@@ -1,9 +1,9 @@
 import React, { FormEvent, useEffect, useMemo, useState } from 'react';
-import { Plus, UserCog } from 'lucide-react';
+import { UserCog } from 'lucide-react';
 import { api } from '../api/client';
 import { useAuth } from '../hooks/useAuth';
 import { useToast } from '../hooks/useToast';
-import { IconButton, PrimaryButton, SecondaryButton } from '../components/Button';
+import { PageTitleCreateAction, PrimaryButton, SecondaryButton } from '../components/Button';
 import { EmptyState, PageHeader } from '../components/PageShell';
 import { AdminRole, AdminUserDto } from '../types';
 import { canManageAdminUser, getAssignableRoles, getRoleLabel, isOwnerRole, isSuperAdminRole } from '../utils/roles';
@@ -303,7 +303,7 @@ export const AdminUsersPage: React.FC = () => {
       <PageHeader
         title="Admins"
         titleAccessory={
-          <IconButton
+          <PageTitleCreateAction
             type="button"
             disabled={!canCreateAdminUsers}
             tooltip={canCreateAdminUsers ? 'Create admin' : writeTooltip ?? 'Owner or Admin required'}
@@ -314,9 +314,7 @@ export const AdminUsersPage: React.FC = () => {
               resetCreateForm();
               setIsCreateOpen((open) => !open);
             }}
-          >
-            <Plus size={20} strokeWidth={2.2} aria-hidden="true" />
-          </IconButton>
+          />
         }
         meta={errorMessage ? <span className="text-xs text-slate-500">{errorMessage}</span> : undefined}
       />

@@ -1,10 +1,10 @@
 import React, { FormEvent, useEffect, useMemo, useState } from 'react';
-import { CreditCard, Plus } from 'lucide-react';
+import { CreditCard } from 'lucide-react';
 import { api } from '../api/client';
 import { useAuth } from '../hooks/useAuth';
 import { useToast } from '../hooks/useToast';
 import { ClientDto, PlanDto } from '../types';
-import { IconButton, PrimaryButton, SecondaryButton } from '../components/Button';
+import { PageTitleCreateAction, PrimaryButton, SecondaryButton } from '../components/Button';
 import { ListSearch } from '../components/ListSearch';
 import { EmptyState, PageHeader } from '../components/PageShell';
 import { RowActions } from '../components/RowActions';
@@ -200,16 +200,13 @@ export const PlansPage: React.FC = () => {
       <PageHeader
         title="Plans"
         titleAccessory={
-          <IconButton
+          <PageTitleCreateAction
             type="button"
             disabled={!canMutate}
             tooltip={canMutate ? 'Create plan' : writeTooltip ?? 'Admin required'}
             aria-label="Create plan"
-            className="sm:hidden"
             onClick={startCreate}
-          >
-            <Plus size={20} strokeWidth={2.2} aria-hidden="true" />
-          </IconButton>
+          />
         }
         meta={errorMessage ? <span className="text-xs text-slate-500">{errorMessage}</span> : undefined}
       />
@@ -221,16 +218,6 @@ export const PlansPage: React.FC = () => {
           placeholder="Search plans..."
           resultLabel={!isLoading && !errorMessage ? planResultLabel : undefined}
         />
-        <IconButton
-          type="button"
-          disabled={!canMutate}
-          tooltip={canMutate ? 'Create plan' : writeTooltip ?? 'Admin required'}
-          aria-label="Create plan"
-          className="hidden sm:inline-flex"
-          onClick={startCreate}
-        >
-          <Plus size={20} strokeWidth={2.2} aria-hidden="true" />
-        </IconButton>
       </div>
 
       {(isCreateOpen || editingPlan) && (

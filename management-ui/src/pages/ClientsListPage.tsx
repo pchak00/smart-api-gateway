@@ -1,11 +1,11 @@
 import React, { FormEvent, useEffect, useMemo, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { Plus, Users } from 'lucide-react';
+import { Users } from 'lucide-react';
 import { api } from '../api/client';
 import { ClientDto, PlanDto } from '../types';
 import { useAuth } from '../hooks/useAuth';
 import { useToast } from '../hooks/useToast';
-import { IconButton, PrimaryButton, SecondaryButton } from '../components/Button';
+import { PageTitleCreateAction, PrimaryButton, SecondaryButton } from '../components/Button';
 import { ListSearch } from '../components/ListSearch';
 import { EmptyState, PageHeader } from '../components/PageShell';
 import { RowActions } from '../components/RowActions';
@@ -319,20 +319,17 @@ export const ClientsListPage: React.FC = () => {
       <PageHeader
         title="Clients"
         titleAccessory={
-          <IconButton
+          <PageTitleCreateAction
             type="button"
             disabled={!canMutate}
             tooltip={canMutate ? 'Create client' : 'Admin required'}
             aria-label="Create client"
-            className="sm:hidden"
             onClick={() => {
               resetCreateForm();
               setEditingClient(null);
               setIsCreateOpen((open) => !open);
             }}
-          >
-            <Plus size={20} strokeWidth={2.2} aria-hidden="true" />
-          </IconButton>
+          />
         }
         meta={clientsMeta}
       />
@@ -358,20 +355,6 @@ export const ClientsListPage: React.FC = () => {
           <span className="relative h-4 w-8 shrink-0 rounded-full bg-slate-800/85 transition-colors after:absolute after:left-0.5 after:top-0.5 after:h-3 after:w-3 after:rounded-full after:bg-slate-500 after:transition-transform peer-checked:bg-cyan-950/70 peer-checked:after:translate-x-4 peer-checked:after:bg-cyan-300/80 peer-focus-visible:after:bg-slate-100" />
           <span className="whitespace-nowrap text-xs font-medium">Stale</span>
         </label>
-        <IconButton
-          type="button"
-          disabled={!canMutate}
-          tooltip={canMutate ? 'Create client' : 'Admin required'}
-          aria-label="Create client"
-          className="hidden sm:inline-flex"
-          onClick={() => {
-            resetCreateForm();
-            setEditingClient(null);
-            setIsCreateOpen((open) => !open);
-          }}
-        >
-          <Plus size={20} strokeWidth={2.2} aria-hidden="true" />
-        </IconButton>
       </div>
 
       {isCreateOpen && (

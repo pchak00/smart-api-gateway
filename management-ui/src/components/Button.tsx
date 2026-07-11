@@ -1,4 +1,5 @@
 import React from 'react';
+import { Plus } from 'lucide-react';
 import { Tooltip } from './Tooltip';
 
 export interface DisabledButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
@@ -13,6 +14,8 @@ export interface IconButtonProps extends Omit<React.ButtonHTMLAttributes<HTMLBut
   tooltip: string;
   children: React.ReactNode;
 }
+
+export interface PageTitleCreateActionProps extends Omit<IconButtonProps, 'children'> {}
 
 const cx = (...classes: Array<string | undefined | false>) =>
   classes.filter(Boolean).join(' ');
@@ -107,3 +110,9 @@ export const IconButton: React.FC<IconButtonProps> = ({
     </Tooltip>
   );
 };
+
+export const PageTitleCreateAction: React.FC<PageTitleCreateActionProps> = (props) => (
+  <IconButton {...props}>
+    <Plus size={20} strokeWidth={2.2} aria-hidden="true" />
+  </IconButton>
+);
