@@ -5,7 +5,6 @@ import {
   ChevronLeft,
   ChevronRight,
   ChevronUp,
-  CircleUserRound,
   CreditCard,
   KeyRound,
   LayoutDashboard,
@@ -124,7 +123,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const displayUsername = username || 'admin';
   const roleLabel = getRoleLabel(role);
   const toggleLabel = isCollapsed ? 'Expand sidebar' : 'Collapse sidebar';
-  const accountTooltipLabel = `Signed in as ${roleLabel}`;
 
   const handleRestrictedClick = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -335,61 +333,58 @@ export const Sidebar: React.FC<SidebarProps> = ({
       </nav>
 
       <div ref={profileRef} className="relative shrink-0 px-3 pb-4 pt-3">
-        {isProfileOpen && (
-          <div
-            role="menu"
-            className={cx(
-              'glass-popover absolute z-50 rounded-lg p-1',
-              isCollapsed ? 'bottom-3 left-full ml-3 w-56' : 'bottom-16 left-3 right-3'
-            )}
-          >
-            <div className="px-3 py-2 text-xs text-slate-500">
-              Signed in as <span className="text-slate-300">{roleLabel}</span>
-            </div>
+        {isCollapsed ? (
+          <CollapsedTooltip label="Logout" resetKey={location.pathname}>
             <button
               type="button"
-              role="menuitem"
+              aria-label="Logout"
               onClick={handleLogout}
-              className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm text-slate-300 transition-colors hover:bg-slate-800/65 hover:text-slate-100"
+              className="pacific-control-focus group flex w-full items-center justify-center rounded-lg px-0 py-2.5 text-sm text-slate-500 transition-colors hover:bg-slate-900/55 hover:text-slate-100"
             >
-              <LogOut size={15} aria-hidden="true" />
-              Logout
-            </button>
-          </div>
-        )}
-
-        <CollapsedTooltip
-          label={accountTooltipLabel}
-          disabled={!isCollapsed || isProfileOpen}
-          resetKey={`${isProfileOpen}-${location.pathname}`}
-        >
-          <button
-            type="button"
-            aria-haspopup="menu"
-            aria-expanded={isProfileOpen}
-            aria-label="Open account menu"
-            onClick={() => setIsProfileOpen((open) => !open)}
-            className={cx(
-              'pacific-control-focus group flex w-full items-center rounded-lg py-2.5 text-left text-sm text-slate-400 transition-colors hover:bg-slate-900/55 hover:text-slate-100',
-              isCollapsed ? 'justify-center px-0' : 'justify-between px-3'
-            )}
-          >
-            {isCollapsed ? (
-              <span className="flex h-8 w-8 items-center justify-center rounded-md text-slate-500 transition-colors group-hover:text-slate-200 group-focus-within:text-slate-200">
-                <CircleUserRound size={18} aria-hidden="true" />
+              <span className="flex h-8 w-8 items-center justify-center rounded-md transition-colors group-hover:text-slate-200 group-focus-visible:text-slate-200">
+                <LogOut size={18} aria-hidden="true" />
               </span>
-            ) : (
-              <>
-                <span className="truncate font-medium">{displayUsername}</span>
-                <ChevronUp
-                  size={15}
-                  aria-hidden="true"
-                  className={`shrink-0 text-slate-600 transition-transform ${isProfileOpen ? 'rotate-180' : ''}`}
-                />
-              </>
+            </button>
+          </CollapsedTooltip>
+        ) : (
+          <>
+            {isProfileOpen && (
+              <div
+                role="menu"
+                className="glass-popover absolute bottom-16 left-3 right-3 z-50 rounded-lg p-1"
+              >
+                <div className="px-3 py-2 text-xs text-slate-500">
+                  Signed in as <span className="text-slate-300">{roleLabel}</span>
+                </div>
+                <button
+                  type="button"
+                  role="menuitem"
+                  onClick={handleLogout}
+                  className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm text-slate-300 transition-colors hover:bg-slate-800/65 hover:text-slate-100"
+                >
+                  <LogOut size={15} aria-hidden="true" />
+                  Logout
+                </button>
+              </div>
             )}
-          </button>
-        </CollapsedTooltip>
+
+            <button
+              type="button"
+              aria-haspopup="menu"
+              aria-expanded={isProfileOpen}
+              aria-label="Open account menu"
+              onClick={() => setIsProfileOpen((open) => !open)}
+              className="pacific-control-focus group flex w-full items-center justify-between rounded-lg px-3 py-2.5 text-left text-sm text-slate-400 transition-colors hover:bg-slate-900/55 hover:text-slate-100"
+            >
+              <span className="truncate font-medium">{displayUsername}</span>
+              <ChevronUp
+                size={15}
+                aria-hidden="true"
+                className={`shrink-0 text-slate-600 transition-transform ${isProfileOpen ? 'rotate-180' : ''}`}
+              />
+            </button>
+          </>
+        )}
       </div>
     </aside>
   );
